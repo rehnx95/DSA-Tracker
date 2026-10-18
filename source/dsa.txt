@@ -1,0 +1,591 @@
+Striver's A2Z DSA Sheet — Custom Edition
+Step 1 — Learn the Basics
+1.1 — Things to Know in C++
+1. User Input and Output
+2. Data Types
+3. If Else Statements
+4. Switch Statement
+5. What are Arrays and Strings
+6. For Loops
+7. While Loops
+8. Functions (Pass by Reference and Value)
+9. Time Complexity
+10. Patterns
+1.2 — STL
+11. C++ STL
+12. Java Collections
+13. Python Libraries Part 1
+14. Python Libraries Part 2
+1.3 — Basic Math
+15. Count Digits
+16. Count Number of Odd Digits in a Number
+17. Reverse a Number
+18. Check Palindrome (LC 9)
+19. Return the Largest Digit in a Number
+20. Factorial of a Given Number
+21. GCD or HCF (Skip)
+22. LCM of Two Numbers
+23. Armstrong Numbers
+24. Check for Perfect Number
+25. Print all Divisors
+26. Check for Prime
+27. Count of Prime Numbers till N
+1.4 — Basic Recursion
+28. Understand Recursion by Printing Something N Times
+29. Recursion Concepts with Parameters
+30. Print Name N Times Using Recursion
+31. Print 1 to N Using Recursion
+32. Print N to 1 Using Recursion
+33. Sum of First N Numbers Using Recursion
+34. Factorial of N Numbers Using Recursion
+35. Sum of Array Elements Using Recursion
+36. Reverse a String Using Recursion
+37. Reverse an Array Using Recursion
+38. Check if a Number is Prime Using Recursion
+39. Check if the Array is Sorted Using Recursion
+40. Sum of Digits of a Number Using Recursion
+41. Check if a String is Palindrome Using Recursion (LC 125) (Skip)
+42. Fibonacci Number (LC 509)
+1.5 — Basic Hashing
+43. Hashing Theory
+44. Counting Frequencies of Array Elements
+45. Highest Occurring Element (Skip)
+46. Second Highest Occurring Element
+47. Sum of Highest and Lowest Frequency
+1.6 — Basic Arrays
+48. Sum of Array Elements
+49. Count of Odd Numbers in an Array
+50. Reverse an Array
+Step 2 — Sorting Techniques
+2.1 — Sorting I
+51. Selection Sort
+52. Bubble Sort
+53. Insertion Sort
+2.2 — Sorting II
+54. Merge Sort (LC 912)
+55. Recursive Bubble Sort (Skip)
+56. Recursive Insertion Sort (Skip)
+57. Quick Sort (LC 912)
+Step 3 — Arrays Easy to Hard
+3.1 — Easy
+58. Largest Element in an Array
+59. Second Largest Element in an Array (LC 414)
+60. Check if the Array is Sorted (LC 1752)
+61. Remove Duplicates from Sorted Array (LC 26)
+62. Left Rotate an Array by One Place63. Left Rotate an Array by D Places (LC 189)
+64. Move Zeros to End (LC 283)
+65. Linear Search (LC 704)
+66. Union of Two Sorted Arrays
+67. Intersection of Two Sorted Arrays
+68. Find Missing Number in an Array (LC 268)
+69. Maximum Consecutive Ones (LC 485)
+70. Find the Number that Appears Once (LC 136)
+71. Longest Subarray with Sum K (positive)
+72. Longest Subarray with Sum K
+3.2 — Medium
+73. Two Sum (LC 1)
+74. Sort 0s 1s and 2s (LC 75)
+75. Majority Element (LC 169)
+76. Kadane's Algorithm Maximum Subarray (LC 53)
+77. Print Subarray with Maximum Subarray Sum
+78. Stock Buy and Sell (LC 121)
+79. Rearrange Array Elements by Sign (LC 2149)
+80. Next Permutation (LC 31)
+81. Leaders in an Array
+82. Longest Consecutive Sequence (LC 128)
+83. Set Matrix Zeroes (LC 73)
+84. Rotate Matrix 90 Degrees (LC 48)
+85. Spiral Traversal of Matrix (LC 54)
+86. Count Subarrays with Given Sum (LC 560)
+3.3 — Hard
+87. Pascal's Triangle I
+88. Pascal's Triangle II
+89. Pascal's Triangle (LC 118) (Skip)
+90. Majority Element II (LC 229) (Skip)
+91. Three Sum (LC 15) (Skip)
+92. Four Sum (LC 18) (Skip)
+93. Largest Subarray with 0 Sum (Skip)
+94. Count Number of Subarrays with Given XOR K (Skip)
+95. Merge Overlapping Subintervals (LC 56) (Skip)
+96. Merge Two Sorted Arrays Without Extra Space (LC 88) (Skip)
+97. Find the Repeating and Missing Number (Skip)
+98. Count Inversions (Skip)
+99. Reverse Pairs (LC 493) (Skip)
+100. Maximum Product Subarray (LC 152) (Skip)
+Step 4 — Binary Search 1D and 2D and Search Space
+4.1 — BS on 1D Arrays
+101. Binary Search (LC 704)
+102. Implement Lower Bound (LC 35)
+103. Implement Upper Bound (LC 34)
+104. Search Insert Position (LC 35)
+105. Floor and Ceil in Sorted Array
+106. First and Last Occurrence (LC 34)
+107. Count Occurrences in Sorted Array
+108. Search in Rotated Sorted Array (LC 33)
+109. Search in Rotated Sorted Array II (LC 81)
+110. Find Minimum in Rotated Sorted Array (LC 153)
+111. Find out How Many Times Array Has Been Rotated
+112. Single Element in a Sorted Array (LC 540)
+113. Find Peak Element (LC 162)
+4.2 — BS on Answers
+114. Find Square Root of a Number (LC 69)
+115. Find the Nth Root of a Number
+116. Koko Eating Bananas (LC 875)
+117. Minimum Number of Days to Make M Bouquets (LC 1482)
+118. Find the Smallest Divisor (LC 1283)
+119. Capacity to Ship Packages Within D Days (LC 1011)
+120. Kth Missing Positive Number (LC 1539)
+121. Aggressive Cows
+122. Book Allocation Problem
+123. Split Array Largest Sum (LC 410)
+124. Painter's Partition Problem
+125. Minimize Max Distance to Gas Station (Skip)
+126. Median of Two Sorted Arrays (LC 4) (Skip)
+127. Kth Element of Two Sorted Arrays (Skip)
+4.3 — BS on 2D Arrays
+128. Find the Row with Maximum Number of 1s
+129. Search in a 2D Matrix (LC 74)
+130. Search in a 2D Matrix II (LC 240)
+131. Find Peak Grid Element (LC 1901) (Skip)
+132. Matrix Median (Skip)
+Step 5 — Strings Basic and Medium
+5.1 — Basic and Easy String Problems
+133. Reverse a String134. Palindrome Check
+135. Remove Outermost Parentheses (LC 1021)
+136. Reverse Words in a String (LC 151)
+137. Largest Odd Number in String (LC 1903)
+138. Longest Common Prefix (LC 14)
+139. Isomorphic Strings (LC 205)
+140. Check Whether Two Strings are Anagram (LC 242)
+141. Sort Characters by Frequency (LC 451)
+142. Maximum Nesting Depth of Parentheses (LC 1614)
+143. Roman to Integer (LC 13)
+144. Integer to Roman (LC 12)
+145. Rotate String (LC 796)
+146. Reverse Every Word in a String
+5.2 — Medium String Problems
+147. String to Integer Atoi (LC 8)
+148. Count Number of Substrings
+149. Longest Palindromic Substring (LC 5) (Skip)
+150. Sum of Beauty of All Substrings (LC 1781) (Skip)
+151. Minimum Bracket Reversals (Skip)
+152. Count and Say
+Step 6 — Linked List
+6.1 — Learn Single LL
+153. Introduction to Linked List and struct
+154. Traversal in Linked List
+155. Inserting a Node in Linked List
+156. Insertion at the Head of Linked List
+157. Insertion at the Tail of Linked List
+158. Insertion at the Kth Position of Linked List
+159. Insertion before the Value X in Linked List
+160. Deleting a Node in Linked List
+161. Deletion of the Head of Linked List
+162. Deletion of the Tail of Linked List
+163. Deletion of the Kth Element of Linked List
+164. Delete the Element with Value X
+165. Find the Length of the Linked List
+166. Search an Element in the LL
+6.2 — Learn Doubly LL
+167. Introduction to Doubly Linked List
+168. Convert Array to Doubly Linked List
+169. Insert a Node in DLL
+170. Insert Node before Head in DLL
+171. Insert Node before Tail in DLL
+172. Insert Node before Kth Node in DLL
+173. Insert before Given Node in DLL
+174. Delete a Node in DLL
+175. Delete Head of DLL
+176. Delete Tail of DLL
+177. Delete Kth Element of DLL
+178. Remove Given Node in DLL
+179. Reverse a DLL
+6.3 — Medium Problems of LL
+180. Middle of a Linked List (LC 876)
+181. Reverse a Linked List Iterative (LC 206)
+182. Reverse a Linked List Recursive (LC 206)
+183. Detect a Loop in LL (LC 141)
+184. Find the Starting Point of Loop in LL (LC 142)
+185. Length of Loop in LL
+186. Check if LL is Palindrome (LC 234)
+187. Segregate Odd and Even Nodes in LL (LC 328)
+188. Remove Nth Node from the Back of LL (LC 19)
+189. Delete the Middle Node of LL (LC 2095)
+190. Sort LL (LC 148)
+191. Sort a LL of 0s 1s and 2s
+192. Find the Intersection Point of Two LL (LC 160)
+193. Add 1 to a Number Represented by LL
+194. Add 2 Numbers in LL (LC 2)
+6.4 — Medium Problems of DLL
+195. Delete all Occurrences of a Key in DLL
+196. Find Pairs with Given Sum in DLL
+197. Remove Duplicates from Sorted DLL
+6.5 — Hard Problems of LL
+198. Reverse LL in Group of Given Size K (LC 25) (Skip)
+199. Rotate a LL (LC 61) (Skip)
+200. Merge Two Sorted Lists
+201. Flattening of a LL (Skip)
+202. Clone a Linked List with Random and Next Pointer (LC 138) (Skip)
+Step 7 — Recursion Pattern Wise
+7.1 — Get a Strong Hold203. Recursive Implementation of Atoi
+204. Pow(x, n) (LC 50)
+205. Count Good Numbers (LC 1922) (Skip)
+206. Sort a Stack Using Recursion
+207. Reverse a Stack Using Recursion
+7.2 — Subsequences Pattern
+208. Learn All Patterns of Subsequences (Theory)
+209. Generate all Binary Strings
+210. Generate Parentheses (LC 22)
+211. Print all Subsequences and Subsets
+212. Subsequence with Sum K
+213. Check if there Exists a Subsequence with Sum K
+214. Count all Subsequences with Sum K
+7.3 — Trying out all Combos
+215. Combination Sum (LC 39)
+216. Combination Sum II (LC 40)
+217. Combination Sum III (LC 216)
+218. Subset Sum I
+219. Subset Sum II (LC 90)
+220. Letter Combinations of a Phone Number (LC 17)
+7.4 — Hard Problems
+221. Permutations (LC 46)
+222. Palindrome Partitioning (LC 131) (Skip)
+223. Word Search (LC 79) (Skip)
+224. N Queens (LC 51) (Skip)
+225. Rat in a Maze (Skip)
+226. M Coloring Problem (Skip)
+227. Sudoku Solver (LC 37) (Skip)
+228. Expression Add Operators (LC 282) (Skip)
+Step 8 — Bit Manipulation
+8.1 — Learn Bit Manipulation
+229. Introduction to Bit Manipulation / Bits and Tricks
+230. Check if the i-th Bit is Set or Not
+231. Check if a Number is Odd or Even
+232. Check if a Number is a Power of 2 (LC 231)
+233. Count the Number of Set Bits (LC 191)
+234. Set the Ith Bit
+235. Clear the Ith Bit
+236. Toggle the Ith Bit
+237. Remove the Last Set Bit
+238. Set/Unset the Rightmost Unset Bit
+239. Swap Two Numbers
+8.2 — Interview Problems
+240. Divide Two Integers Without Division / Multiplication (LC 29)
+241. Minimum Bit Flips to Convert Number (LC 2220)
+242. Count the Number of Set Bits in a Range
+243. Single Number I (LC 136)
+244. Single Number II (LC 137)
+245. Single Number III (LC 260)
+246. Power Set Using Bit Manipulation (LC 78)
+247. XOR of Numbers in a Given Range (LC 2425)
+8.3 — Advanced Maths
+248. Print all Primes till N
+249. Print Prime Factors of a Number
+250. Divisors of a Number
+251. Count Primes in Range L to R
+252. Pow(x, n) (LC 50)
+Step 9 — Stack and Queues
+9.1 — Learning
+253. Implementation Using Different Data Structures
+254. Implement Stack Using Arrays
+255. Implement Queue Using Arrays
+256. Implement Stack Using Queue (LC 225)
+257. Implement Queue Using Stack (LC 232)
+258. Implement Stack Using Linked List
+259. Implement Queue Using Linked List
+260. Check for Balanced Parentheses (LC 20)
+261. Implement Min Stack (LC 155)
+9.2 — Prefix Infix Postfix Conversion
+262. Infix to Postfix Conversion
+263. Prefix to Infix Conversion
+264. Prefix to Postfix Conversion
+265. Postfix to Prefix Conversion
+266. Postfix to Infix Conversion
+267. Infix to Prefix Conversion
+9.3 — Monotonic Stack and Queue
+268. Next Greater Element I (LC 496)269. Next Greater Element II (LC 503)
+270. Next Smaller Element
+271. Number of NGEs to the Right
+272. Trapping Rainwater (LC 42)
+273. Sum of Subarray Minimums (LC 907)
+274. Asteroid Collision (LC 735)
+275. Sum of Subarray Ranges (LC 2104)
+276. Remove K Digits (LC 402)
+277. Largest Rectangle in Histogram (LC 84) (Skip)
+278. Maximal Rectangle (LC 85) (Skip)
+9.4 — Implementation Problems
+279. Sliding Window Maximum (LC 239) (Skip)
+280. LRU Cache (LC 146) (Skip)
+281. LFU Cache (LC 460) (Skip)
+282. Stock Span Problem (LC 901) (Skip)
+283. The Celebrity Problem (Skip)
+Step 10 — Sliding Window and Two Pointer
+10.1 — Medium Problems
+284. Sliding Window Pattern and Template (Theory)
+285. Longest Substring Without Repeating Characters (LC 3)
+286. Max Consecutive Ones III (LC 1004)
+287. Fruit Into Baskets (LC 904)
+288. Longest Repeating Character Replacement (LC 424)
+289. Binary Subarrays with Sum (LC 930)
+290. Count Number of Nice Subarrays (LC 1248)
+291. Number of Substrings Containing All Three Characters (LC 1358)
+292. Maximum Points You Can Obtain from Cards (LC 1423)
+10.2 — Hard Problems
+293. Longest Substring with At Most K Distinct Characters (LC 340) (Skip)
+294. Substrings of Size Three with Distinct Characters (LC 1876) (Skip)
+295. Minimum Window Substring (LC 76) (Skip)
+296. Minimum Window Subsequence
+297. Subarrays with K Different Integers
+298. Sliding Window Maximum (LC 239) (Skip)
+Step 11 — Heaps
+11.1 — Learning
+299. Introduction to Heap
+300. Heapify Algorithm
+301. Build Heap from a Given Array
+302. Min Heap and Max Heap Implementation
+303. Check if an Array Represents a Min Heap
+304. Convert Min Heap to Max Heap
+305. Heap Sort
+11.2 — Medium Problems
+306. Kth Largest Element in an Array (LC 215)
+307. Kth Smallest Element in an Array (LC 378)
+308. Sort K Sorted Array
+309. Merge M Sorted Lists (LC 23) (Skip)
+310. Replace Each Array Element by Its Corresponding Rank
+311. Task Scheduler (LC 621) (Skip)
+312. Hands of Straights (LC 846) (Skip)
+11.3 — Hard Problems
+313. Design Twitter (LC 355) (Skip)
+314. Connect N Ropes with Minimum Cost (Skip)
+315. Kth Largest Element in a Stream (LC 703) (Skip)
+316. Maximum Sum Combinations (Skip)
+317. Find Median from Data Stream (LC 295) (Skip)
+318. K Most Frequent Elements (LC 347) (Skip)
+Step 12 — Greedy Algorithms
+12.1 — Easy Problems
+319. Assign Cookies (LC 455)
+320. Fractional Knapsack
+321. Greedy Algorithm to Find Minimum Number of Coins (Skip)
+322. Lemonade Change (LC 860)
+323. Valid Parenthesis String (LC 678)
+12.2 — Medium and Hard Problems
+324. N Meetings in One Room
+325. Jump Game (LC 55)
+326. Jump Game II (LC 45)
+327. Minimum Number of Platforms
+328. Job Sequencing Problem
+329. Candy Distribution (LC 135) (Skip)
+330. Program for Shortest Job First
+331. Largest Number (LC 179) (Skip)
+332. Non Overlapping Intervals (LC 435)
+333. Insert Interval (LC 57)
+Step 13 — Binary Trees
+13.1 — Traversals
+334. Introduction to Trees
+335. Binary Tree Representation in C++
+336. Binary Tree Traversals in C++
+337. Preorder Traversal (LC 144)
+338. Inorder Traversal (LC 94)
+339. Postorder Traversal (LC 145)
+340. Level Order Traversal (LC 102)
+341. Iterative Preorder Traversal
+342. Iterative Inorder Traversal
+343. Iterative Postorder Using 2 Stacks
+344. Iterative Postorder Using 1 Stack
+345. Preorder Inorder Postorder in a Single Traversal
+13.2 — Medium Problems
+346. Height of a Binary Tree (LC 104)
+347. Check if the Binary Tree is Height Balanced (LC 110)
+348. Diameter of Binary Tree (LC 543)
+349. Maximum Path Sum in Binary Tree (LC 124)
+350. Check if Two Trees are Identical (LC 100)
+351. Zigzag Level Order Traversal (LC 103)
+352. Boundary Traversal of Binary Tree
+353. Vertical Order Traversal (LC 987)
+354. Top View of Binary Tree
+355. Bottom View of Binary Tree
+356. Right and Left View of Binary Tree (LC 199)
+357. Symmetric Binary Tree (LC 101)
+13.3 — Hard Problems
+358. Root to Node Path in Binary Tree
+359. LCA in Binary Tree (LC 236)
+360. Maximum Width of Binary Tree (LC 662)
+361. Check for Children Sum Property
+362. Print all Nodes at Distance K in Binary Tree (LC 863)
+363. Minimum Time to Burn the Binary Tree from a Leaf
+364. Count Total Nodes in a Complete Binary Tree (LC 222)
+365. Requirements to Construct a Unique Binary Tree
+366. Construct Binary Tree from Inorder and Preorder (LC 105)
+367. Construct Binary Tree from Postorder and Inorder (LC 106)
+368. Serialize and Deserialize Binary Tree (LC 297)
+369. Morris Preorder Traversal
+370. Morris Inorder Traversal
+371. Flatten Binary Tree to Linked List (LC 114)
+Step 14 — Binary Search Trees
+14.1 — Concepts
+372. Introduction to BST
+373. Search in BST (LC 700)
+374. Find Min and Max in BST
+375. Ceil in a BST
+376. Floor in a BST
+14.2 — Practice Problems
+377. Insert a Node in BST (LC 701)
+378. Delete a Node in BST (LC 450)
+379. Find Kth Smallest and Largest Element in BST (LC 230)
+380. Check if a Tree is a BST or BT (LC 98)
+381. LCA in BST (LC 235)
+382. Construct a BST from Preorder Traversal (LC 1008)
+383. Inorder Successor and Predecessor in BST
+384. BST Iterator (LC 173)
+385. Two Sum in BST (LC 653)
+386. Recover BST (LC 99)
+387. Largest BST in Binary Tree
+Step 15 — Graphs
+15.1 — Learning
+388. Graph and Types
+389. Graph Representation in C++
+390. Graph Representation in Java
+391. Connected Components Logic
+392. BFS Traversal
+393. DFS Traversal
+15.2 — Problems on BFS and DFS
+394. Number of Provinces (LC 547)
+395. Connected Components Problem in Matrix
+396. Rotten Oranges (LC 994)
+397. Flood Fill (LC 733)
+398. Cycle Detection in Undirected Graph using BFS
+399. Cycle Detection in Undirected Graph using DFS
+400. 0/1 Matrix (LC 542)
+401. Surrounded Regions (LC 130)402. Number of Enclaves (LC 1020)
+403. Word Ladder I (LC 127)
+404. Word Ladder II (LC 126)
+405. Number of Distinct Islands
+406. Bipartite Check using BFS (LC 785)
+407. Bipartite Check using DFS (LC 785)
+15.3 — Topo Sort and Problems
+408. Topological Sort using DFS
+409. Topological Sort using BFS Kahn's Algorithm
+410. Cycle Detection in Directed Graph using BFS
+411. Cycle Detection in Directed Graph using DFS
+412. Course Schedule I (LC 207)
+413. Course Schedule II (LC 210)
+414. Find Eventual Safe States (LC 802)
+415. Alien Dictionary
+15.4 — Shortest Path Algorithms
+416. Shortest Path in DAG
+417. Shortest Path in Undirected Graph with Unit Weights
+418. Dijkstra's Algorithm
+419. Print Shortest Path (Dijkstra's)
+420. Shortest Path in Binary Maze (LC 1091)
+421. Path with Minimum Effort (LC 1631)
+422. Cheapest Flights Within K Stops (LC 787)
+423. Network Delay Time (LC 743)
+424. Number of Ways to Arrive at Destination (LC 1976)
+425. Minimum Multiplications to Reach End
+426. Bellman Ford Algorithm
+427. Floyd Warshall Algorithm
+428. Find the City with Smallest Number of Neighbours (LC 1334)
+15.5 — MST and Disjoint Set
+429. Minimum Spanning Tree
+430. Prim's Algorithm
+431. Disjoint Set Union by Rank and Path Compression
+432. Disjoint Set Union by Size
+433. Kruskal's Algorithm
+434. Number of Operations to Make Network Connected (LC 1319)
+435. Most Stones Removed (LC 947)
+436. Accounts Merge (LC 721)
+437. Number of Islands II
+438. Making a Large Island (LC 827)
+439. Swim in Rising Water (LC 778)
+15.6 — Other Algorithms
+440. Bridges in Graph (LC 1192)
+441. Articulation Points in Graph
+442. Kosaraju's Algorithm for SCC
+443. Tarjan's Algorithm for SCC
+Step 16 — Dynamic Programming
+16.1 — 1D DP
+444. Introduction to DP
+445. Climbing Stairs (LC 70)
+446. Frog Jump
+447. Frog Jump with K Distances
+448. Maximum Sum of Non Adjacent Elements (LC 198)
+449. House Robber II (LC 213)
+450. Ninja's Training
+16.2 — 2D and Grid DP
+451. Grid Unique Paths (LC 62)
+452. Grid Unique Paths II (LC 63)
+453. Minimum Path Sum in Grid (LC 64)
+454. Minimum Path Sum in Triangular Grid (LC 120)
+455. Minimum and Maximum Falling Path Sum (LC 931)
+456. 3D DP Ninja and His Friends (LC 741)
+16.3 — DP on Subsequences
+457. Subset Sum Equal to Target
+458. Partition Equal Subset Sum (LC 416)
+459. Partition into Two Subsets with Min Absolute Sum Difference (LC 2035)
+460. Count Subsets with Sum K
+461. Count Partitions with Given Difference
+462. 0/1 Knapsack
+463. Minimum Coins (LC 322)
+464. Target Sum (LC 494)
+465. Coin Change II (LC 518)
+466. Unbounded Knapsack
+467. Rod Cutting Problem
+16.4 — DP on Strings
+468. Longest Common Subsequence (LC 1143)
+469. Print Longest Common Subsequence
+470. Longest Common Substring
+471. Longest Palindromic Subsequence (LC 516)472. Count Substrings that are Palindromes (LC 647)
+473. Minimum Insertions to Make String Palindrome (LC 1312)
+474. Minimum Insertions and Deletions to Convert String A to B (LC 583)
+475. Shortest Common Supersequence (LC 1092)
+476. Distinct Subsequences (LC 115)
+477. Edit Distance (LC 72)
+478. Wildcard Matching (LC 44)
+479. Word Break
+480. Count Palindromic Subsequences
+16.5 — DP on Stocks
+481. Best Time to Buy and Sell Stock (LC 121)
+482. Buy and Sell Stock II (LC 122)
+483. Buy and Sell Stock III (LC 123)
+484. Buy and Sell Stock IV (LC 188)
+485. Buy and Sell Stock with Cooldown (LC 309)
+486. Buy and Sell Stock with Transaction Fee (LC 714)
+16.6 — DP on Longest Increasing Subsequence
+487. Longest Increasing Subsequence (LC 300)
+488. Print LIS
+489. LIS Using Binary Search (LC 300)
+490. Largest Divisible Subset (LC 368)
+491. Longest String Chain (LC 1048)
+492. Longest Bitonic Subsequence
+493. Number of LIS (LC 673)
+16.7 — MCM and Partition DP
+494. Matrix Chain Multiplication
+495. Minimum Cost to Cut a Stick (LC 1547)
+496. Burst Balloons (LC 312)
+497. Palindrome Partitioning II (LC 132)
+498. Partition Array for Maximum Sum (LC 1043)
+499. Count Square Submatrices with All Ones (LC 1277)
+500. Evaluate Boolean Expression to True
+Step 17 — Tries
+17.1 — Theory and Implementation
+501. Implement Trie I (LC 208)
+502. Implement Trie II
+17.2 — Problems
+503. Longest String with All Prefixes
+504. Number of Distinct Substrings in a String
+505. Bit Prerequisites for Problems
+506. Maximum XOR of Two Numbers in an Array (LC 421)
+507. Maximum XOR with an Element from Array (LC 1707)
+Step 18 — Advanced Strings
+18.1 — Hard Problems
+508. Minimum Characters Needed to Make a String Palindrome
+509. Find the Longest Common Prefix Using Trie
+510. Power Set (LC 78)
+511. Hashing in Strings (Theory)
+512. Rabin Karp Algorithm
+513. Z-Function
+514. KMP Algorithm Pattern Matching (LC 28)
+515. Count Occurrences of Anagram (LC 438)
+516. Shortest Palindrome (LC 214)
+517. Longest Happy Prefix (LC 1392)
+518. String to Integer Atoi (LC 8)

@@ -1,0 +1,3580 @@
+{
+  "steps": [
+    {
+      "id": "s1",
+      "title": "Learn the Basics",
+      "subsections": [
+        {
+          "id": "s1-1.1",
+          "title": "Things to Know in C++",
+          "problems": [
+            {
+              "id": "s1-1.1-p1",
+              "title": "User Input and Output",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p2",
+              "title": "Data Types",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p3",
+              "title": "If Else Statements",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p4",
+              "title": "Switch Statement",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p5",
+              "title": "What are Arrays and Strings",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p6",
+              "title": "For Loops",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p7",
+              "title": "While Loops",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p8",
+              "title": "Functions (Pass by Reference and Value)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p9",
+              "title": "Time Complexity",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.1-p10",
+              "title": "Patterns",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s1-1.2",
+          "title": "STL",
+          "problems": [
+            {
+              "id": "s1-1.2-p11",
+              "title": "C++ STL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.2-p12",
+              "title": "Java Collections",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.2-p13",
+              "title": "Python Libraries Part 1",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.2-p14",
+              "title": "Python Libraries Part 2",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s1-1.3",
+          "title": "Basic Math",
+          "problems": [
+            {
+              "id": "s1-1.3-p15",
+              "title": "Count Digits",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p16",
+              "title": "Count Number of Odd Digits in a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p17",
+              "title": "Reverse a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p18",
+              "title": "Check Palindrome",
+              "lc": 9,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p19",
+              "title": "Return the Largest Digit in a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p20",
+              "title": "Factorial of a Given Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p21",
+              "title": "GCD or HCF",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s1-1.3-p22",
+              "title": "LCM of Two Numbers",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p23",
+              "title": "Armstrong Numbers",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p24",
+              "title": "Check for Perfect Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p25",
+              "title": "Print all Divisors",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p26",
+              "title": "Check for Prime",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.3-p27",
+              "title": "Count of Prime Numbers till N",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s1-1.4",
+          "title": "Basic Recursion",
+          "problems": [
+            {
+              "id": "s1-1.4-p28",
+              "title": "Understand Recursion by Printing Something N Times",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p29",
+              "title": "Recursion Concepts with Parameters",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p30",
+              "title": "Print Name N Times Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p31",
+              "title": "Print 1 to N Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p32",
+              "title": "Print N to 1 Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p33",
+              "title": "Sum of First N Numbers Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p34",
+              "title": "Factorial of N Numbers Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p35",
+              "title": "Sum of Array Elements Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p36",
+              "title": "Reverse a String Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p37",
+              "title": "Reverse an Array Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p38",
+              "title": "Check if a Number is Prime Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p39",
+              "title": "Check if the Array is Sorted Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p40",
+              "title": "Sum of Digits of a Number Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.4-p41",
+              "title": "Check if a String is Palindrome Using Recursion",
+              "lc": 125,
+              "defaultSkip": true
+            },
+            {
+              "id": "s1-1.4-p42",
+              "title": "Fibonacci Number",
+              "lc": 509,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s1-1.5",
+          "title": "Basic Hashing",
+          "problems": [
+            {
+              "id": "s1-1.5-p43",
+              "title": "Hashing Theory",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.5-p44",
+              "title": "Counting Frequencies of Array Elements",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.5-p45",
+              "title": "Highest Occurring Element",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s1-1.5-p46",
+              "title": "Second Highest Occurring Element",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.5-p47",
+              "title": "Sum of Highest and Lowest Frequency",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s1-1.6",
+          "title": "Basic Arrays",
+          "problems": [
+            {
+              "id": "s1-1.6-p48",
+              "title": "Sum of Array Elements",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.6-p49",
+              "title": "Count of Odd Numbers in an Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s1-1.6-p50",
+              "title": "Reverse an Array",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Sorting Techniques",
+      "subsections": [
+        {
+          "id": "s2-2.1",
+          "title": "Sorting I",
+          "problems": [
+            {
+              "id": "s2-2.1-p51",
+              "title": "Selection Sort",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s2-2.1-p52",
+              "title": "Bubble Sort",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s2-2.1-p53",
+              "title": "Insertion Sort",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s2-2.2",
+          "title": "Sorting II",
+          "problems": [
+            {
+              "id": "s2-2.2-p54",
+              "title": "Merge Sort",
+              "lc": 912,
+              "defaultSkip": false
+            },
+            {
+              "id": "s2-2.2-p55",
+              "title": "Recursive Bubble Sort",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s2-2.2-p56",
+              "title": "Recursive Insertion Sort",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s2-2.2-p57",
+              "title": "Quick Sort",
+              "lc": 912,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "Arrays Easy to Hard",
+      "subsections": [
+        {
+          "id": "s3-3.1",
+          "title": "Easy",
+          "problems": [
+            {
+              "id": "s3-3.1-p58",
+              "title": "Largest Element in an Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p59",
+              "title": "Second Largest Element in an Array",
+              "lc": 414,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p60",
+              "title": "Check if the Array is Sorted",
+              "lc": 1752,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p61",
+              "title": "Remove Duplicates from Sorted Array",
+              "lc": 26,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p62",
+              "title": "Left Rotate an Array by One Place",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p63",
+              "title": "Left Rotate an Array by D Places",
+              "lc": 189,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p64",
+              "title": "Move Zeros to End",
+              "lc": 283,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p65",
+              "title": "Linear Search",
+              "lc": 704,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p66",
+              "title": "Union of Two Sorted Arrays",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p67",
+              "title": "Intersection of Two Sorted Arrays",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p68",
+              "title": "Find Missing Number in an Array",
+              "lc": 268,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p69",
+              "title": "Maximum Consecutive Ones",
+              "lc": 485,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p70",
+              "title": "Find the Number that Appears Once",
+              "lc": 136,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p71",
+              "title": "Longest Subarray with Sum K (positive)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.1-p72",
+              "title": "Longest Subarray with Sum K",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s3-3.2",
+          "title": "Medium",
+          "problems": [
+            {
+              "id": "s3-3.2-p73",
+              "title": "Two Sum",
+              "lc": 1,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p74",
+              "title": "Sort 0s 1s and 2s",
+              "lc": 75,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p75",
+              "title": "Majority Element",
+              "lc": 169,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p76",
+              "title": "Kadane's Algorithm Maximum Subarray",
+              "lc": 53,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p77",
+              "title": "Print Subarray with Maximum Subarray Sum",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p78",
+              "title": "Stock Buy and Sell",
+              "lc": 121,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p79",
+              "title": "Rearrange Array Elements by Sign",
+              "lc": 2149,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p80",
+              "title": "Next Permutation",
+              "lc": 31,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p81",
+              "title": "Leaders in an Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p82",
+              "title": "Longest Consecutive Sequence",
+              "lc": 128,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p83",
+              "title": "Set Matrix Zeroes",
+              "lc": 73,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p84",
+              "title": "Rotate Matrix 90 Degrees",
+              "lc": 48,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p85",
+              "title": "Spiral Traversal of Matrix",
+              "lc": 54,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.2-p86",
+              "title": "Count Subarrays with Given Sum",
+              "lc": 560,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s3-3.3",
+          "title": "Hard",
+          "problems": [
+            {
+              "id": "s3-3.3-p87",
+              "title": "Pascal's Triangle I",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.3-p88",
+              "title": "Pascal's Triangle II",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s3-3.3-p89",
+              "title": "Pascal's Triangle",
+              "lc": 118,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p90",
+              "title": "Majority Element II",
+              "lc": 229,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p91",
+              "title": "Three Sum",
+              "lc": 15,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p92",
+              "title": "Four Sum",
+              "lc": 18,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p93",
+              "title": "Largest Subarray with 0 Sum",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p94",
+              "title": "Count Number of Subarrays with Given XOR K",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p95",
+              "title": "Merge Overlapping Subintervals",
+              "lc": 56,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p96",
+              "title": "Merge Two Sorted Arrays Without Extra Space",
+              "lc": 88,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p97",
+              "title": "Find the Repeating and Missing Number",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p98",
+              "title": "Count Inversions",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p99",
+              "title": "Reverse Pairs",
+              "lc": 493,
+              "defaultSkip": true
+            },
+            {
+              "id": "s3-3.3-p100",
+              "title": "Maximum Product Subarray",
+              "lc": 152,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Binary Search 1D and 2D and Search Space",
+      "subsections": [
+        {
+          "id": "s4-4.1",
+          "title": "BS on 1D Arrays",
+          "problems": [
+            {
+              "id": "s4-4.1-p101",
+              "title": "Binary Search",
+              "lc": 704,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p102",
+              "title": "Implement Lower Bound",
+              "lc": 35,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p103",
+              "title": "Implement Upper Bound",
+              "lc": 34,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p104",
+              "title": "Search Insert Position",
+              "lc": 35,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p105",
+              "title": "Floor and Ceil in Sorted Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p106",
+              "title": "First and Last Occurrence",
+              "lc": 34,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p107",
+              "title": "Count Occurrences in Sorted Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p108",
+              "title": "Search in Rotated Sorted Array",
+              "lc": 33,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p109",
+              "title": "Search in Rotated Sorted Array II",
+              "lc": 81,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p110",
+              "title": "Find Minimum in Rotated Sorted Array",
+              "lc": 153,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p111",
+              "title": "Find out How Many Times Array Has Been Rotated",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p112",
+              "title": "Single Element in a Sorted Array",
+              "lc": 540,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.1-p113",
+              "title": "Find Peak Element",
+              "lc": 162,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s4-4.2",
+          "title": "BS on Answers",
+          "problems": [
+            {
+              "id": "s4-4.2-p114",
+              "title": "Find Square Root of a Number",
+              "lc": 69,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p115",
+              "title": "Find the Nth Root of a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p116",
+              "title": "Koko Eating Bananas",
+              "lc": 875,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p117",
+              "title": "Minimum Number of Days to Make M Bouquets",
+              "lc": 1482,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p118",
+              "title": "Find the Smallest Divisor",
+              "lc": 1283,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p119",
+              "title": "Capacity to Ship Packages Within D Days",
+              "lc": 1011,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p120",
+              "title": "Kth Missing Positive Number",
+              "lc": 1539,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p121",
+              "title": "Aggressive Cows",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p122",
+              "title": "Book Allocation Problem",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p123",
+              "title": "Split Array Largest Sum",
+              "lc": 410,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p124",
+              "title": "Painter's Partition Problem",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.2-p125",
+              "title": "Minimize Max Distance to Gas Station",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s4-4.2-p126",
+              "title": "Median of Two Sorted Arrays",
+              "lc": 4,
+              "defaultSkip": true
+            },
+            {
+              "id": "s4-4.2-p127",
+              "title": "Kth Element of Two Sorted Arrays",
+              "lc": null,
+              "defaultSkip": true
+            }
+          ]
+        },
+        {
+          "id": "s4-4.3",
+          "title": "BS on 2D Arrays",
+          "problems": [
+            {
+              "id": "s4-4.3-p128",
+              "title": "Find the Row with Maximum Number of 1s",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.3-p129",
+              "title": "Search in a 2D Matrix",
+              "lc": 74,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.3-p130",
+              "title": "Search in a 2D Matrix II",
+              "lc": 240,
+              "defaultSkip": false
+            },
+            {
+              "id": "s4-4.3-p131",
+              "title": "Find Peak Grid Element",
+              "lc": 1901,
+              "defaultSkip": true
+            },
+            {
+              "id": "s4-4.3-p132",
+              "title": "Matrix Median",
+              "lc": null,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "Strings Basic and Medium",
+      "subsections": [
+        {
+          "id": "s5-5.1",
+          "title": "Basic and Easy String Problems",
+          "problems": [
+            {
+              "id": "s5-5.1-p133",
+              "title": "Reverse a String",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p134",
+              "title": "Palindrome Check",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p135",
+              "title": "Remove Outermost Parentheses",
+              "lc": 1021,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p136",
+              "title": "Reverse Words in a String",
+              "lc": 151,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p137",
+              "title": "Largest Odd Number in String",
+              "lc": 1903,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p138",
+              "title": "Longest Common Prefix",
+              "lc": 14,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p139",
+              "title": "Isomorphic Strings",
+              "lc": 205,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p140",
+              "title": "Check Whether Two Strings are Anagram",
+              "lc": 242,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p141",
+              "title": "Sort Characters by Frequency",
+              "lc": 451,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p142",
+              "title": "Maximum Nesting Depth of Parentheses",
+              "lc": 1614,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p143",
+              "title": "Roman to Integer",
+              "lc": 13,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p144",
+              "title": "Integer to Roman",
+              "lc": 12,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p145",
+              "title": "Rotate String",
+              "lc": 796,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.1-p146",
+              "title": "Reverse Every Word in a String",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s5-5.2",
+          "title": "Medium String Problems",
+          "problems": [
+            {
+              "id": "s5-5.2-p147",
+              "title": "String to Integer Atoi",
+              "lc": 8,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.2-p148",
+              "title": "Count Number of Substrings",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s5-5.2-p149",
+              "title": "Longest Palindromic Substring",
+              "lc": 5,
+              "defaultSkip": true
+            },
+            {
+              "id": "s5-5.2-p150",
+              "title": "Sum of Beauty of All Substrings",
+              "lc": 1781,
+              "defaultSkip": true
+            },
+            {
+              "id": "s5-5.2-p151",
+              "title": "Minimum Bracket Reversals",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s5-5.2-p152",
+              "title": "Count and Say",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "Linked List",
+      "subsections": [
+        {
+          "id": "s6-6.1",
+          "title": "Learn Single LL",
+          "problems": [
+            {
+              "id": "s6-6.1-p153",
+              "title": "Introduction to Linked List and struct",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p154",
+              "title": "Traversal in Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p155",
+              "title": "Inserting a Node in Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p156",
+              "title": "Insertion at the Head of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p157",
+              "title": "Insertion at the Tail of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p158",
+              "title": "Insertion at the Kth Position of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p159",
+              "title": "Insertion before the Value X in Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p160",
+              "title": "Deleting a Node in Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p161",
+              "title": "Deletion of the Head of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p162",
+              "title": "Deletion of the Tail of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p163",
+              "title": "Deletion of the Kth Element of Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p164",
+              "title": "Delete the Element with Value X",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p165",
+              "title": "Find the Length of the Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.1-p166",
+              "title": "Search an Element in the LL",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s6-6.2",
+          "title": "Learn Doubly LL",
+          "problems": [
+            {
+              "id": "s6-6.2-p167",
+              "title": "Introduction to Doubly Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p168",
+              "title": "Convert Array to Doubly Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p169",
+              "title": "Insert a Node in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p170",
+              "title": "Insert Node before Head in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p171",
+              "title": "Insert Node before Tail in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p172",
+              "title": "Insert Node before Kth Node in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p173",
+              "title": "Insert before Given Node in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p174",
+              "title": "Delete a Node in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p175",
+              "title": "Delete Head of DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p176",
+              "title": "Delete Tail of DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p177",
+              "title": "Delete Kth Element of DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p178",
+              "title": "Remove Given Node in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.2-p179",
+              "title": "Reverse a DLL",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s6-6.3",
+          "title": "Medium Problems of LL",
+          "problems": [
+            {
+              "id": "s6-6.3-p180",
+              "title": "Middle of a Linked List",
+              "lc": 876,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p181",
+              "title": "Reverse a Linked List Iterative",
+              "lc": 206,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p182",
+              "title": "Reverse a Linked List Recursive",
+              "lc": 206,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p183",
+              "title": "Detect a Loop in LL",
+              "lc": 141,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p184",
+              "title": "Find the Starting Point of Loop in LL",
+              "lc": 142,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p185",
+              "title": "Length of Loop in LL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p186",
+              "title": "Check if LL is Palindrome",
+              "lc": 234,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p187",
+              "title": "Segregate Odd and Even Nodes in LL",
+              "lc": 328,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p188",
+              "title": "Remove Nth Node from the Back of LL",
+              "lc": 19,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p189",
+              "title": "Delete the Middle Node of LL",
+              "lc": 2095,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p190",
+              "title": "Sort LL",
+              "lc": 148,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p191",
+              "title": "Sort a LL of 0s 1s and 2s",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p192",
+              "title": "Find the Intersection Point of Two LL",
+              "lc": 160,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p193",
+              "title": "Add 1 to a Number Represented by LL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.3-p194",
+              "title": "Add 2 Numbers in LL",
+              "lc": 2,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s6-6.4",
+          "title": "Medium Problems of DLL",
+          "problems": [
+            {
+              "id": "s6-6.4-p195",
+              "title": "Delete all Occurrences of a Key in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.4-p196",
+              "title": "Find Pairs with Given Sum in DLL",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.4-p197",
+              "title": "Remove Duplicates from Sorted DLL",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s6-6.5",
+          "title": "Hard Problems of LL",
+          "problems": [
+            {
+              "id": "s6-6.5-p198",
+              "title": "Reverse LL in Group of Given Size K",
+              "lc": 25,
+              "defaultSkip": true
+            },
+            {
+              "id": "s6-6.5-p199",
+              "title": "Rotate a LL",
+              "lc": 61,
+              "defaultSkip": true
+            },
+            {
+              "id": "s6-6.5-p200",
+              "title": "Merge Two Sorted Lists",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s6-6.5-p201",
+              "title": "Flattening of a LL",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s6-6.5-p202",
+              "title": "Clone a Linked List with Random and Next Pointer",
+              "lc": 138,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "title": "Recursion Pattern Wise",
+      "subsections": [
+        {
+          "id": "s7-7.1",
+          "title": "Get a Strong Hold",
+          "problems": [
+            {
+              "id": "s7-7.1-p203",
+              "title": "Recursive Implementation of Atoi",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.1-p204",
+              "title": "Pow(x, n)",
+              "lc": 50,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.1-p205",
+              "title": "Count Good Numbers",
+              "lc": 1922,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.1-p206",
+              "title": "Sort a Stack Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.1-p207",
+              "title": "Reverse a Stack Using Recursion",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s7-7.2",
+          "title": "Subsequences Pattern",
+          "problems": [
+            {
+              "id": "s7-7.2-p208",
+              "title": "Learn All Patterns of Subsequences (Theory)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p209",
+              "title": "Generate all Binary Strings",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p210",
+              "title": "Generate Parentheses",
+              "lc": 22,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p211",
+              "title": "Print all Subsequences and Subsets",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p212",
+              "title": "Subsequence with Sum K",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p213",
+              "title": "Check if there Exists a Subsequence with Sum K",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.2-p214",
+              "title": "Count all Subsequences with Sum K",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s7-7.3",
+          "title": "Trying out all Combos",
+          "problems": [
+            {
+              "id": "s7-7.3-p215",
+              "title": "Combination Sum",
+              "lc": 39,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.3-p216",
+              "title": "Combination Sum II",
+              "lc": 40,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.3-p217",
+              "title": "Combination Sum III",
+              "lc": 216,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.3-p218",
+              "title": "Subset Sum I",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.3-p219",
+              "title": "Subset Sum II",
+              "lc": 90,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.3-p220",
+              "title": "Letter Combinations of a Phone Number",
+              "lc": 17,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s7-7.4",
+          "title": "Hard Problems",
+          "problems": [
+            {
+              "id": "s7-7.4-p221",
+              "title": "Permutations",
+              "lc": 46,
+              "defaultSkip": false
+            },
+            {
+              "id": "s7-7.4-p222",
+              "title": "Palindrome Partitioning",
+              "lc": 131,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p223",
+              "title": "Word Search",
+              "lc": 79,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p224",
+              "title": "N Queens",
+              "lc": 51,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p225",
+              "title": "Rat in a Maze",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p226",
+              "title": "M Coloring Problem",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p227",
+              "title": "Sudoku Solver",
+              "lc": 37,
+              "defaultSkip": true
+            },
+            {
+              "id": "s7-7.4-p228",
+              "title": "Expression Add Operators",
+              "lc": 282,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "title": "Bit Manipulation",
+      "subsections": [
+        {
+          "id": "s8-8.1",
+          "title": "Learn Bit Manipulation",
+          "problems": [
+            {
+              "id": "s8-8.1-p229",
+              "title": "Introduction to Bit Manipulation / Bits and Tricks",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p230",
+              "title": "Check if the i-th Bit is Set or Not",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p231",
+              "title": "Check if a Number is Odd or Even",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p232",
+              "title": "Check if a Number is a Power of 2",
+              "lc": 231,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p233",
+              "title": "Count the Number of Set Bits",
+              "lc": 191,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p234",
+              "title": "Set the Ith Bit",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p235",
+              "title": "Clear the Ith Bit",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p236",
+              "title": "Toggle the Ith Bit",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p237",
+              "title": "Remove the Last Set Bit",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p238",
+              "title": "Set/Unset the Rightmost Unset Bit",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.1-p239",
+              "title": "Swap Two Numbers",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s8-8.2",
+          "title": "Interview Problems",
+          "problems": [
+            {
+              "id": "s8-8.2-p240",
+              "title": "Divide Two Integers Without Division / Multiplication",
+              "lc": 29,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p241",
+              "title": "Minimum Bit Flips to Convert Number",
+              "lc": 2220,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p242",
+              "title": "Count the Number of Set Bits in a Range",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p243",
+              "title": "Single Number I",
+              "lc": 136,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p244",
+              "title": "Single Number II",
+              "lc": 137,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p245",
+              "title": "Single Number III",
+              "lc": 260,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p246",
+              "title": "Power Set Using Bit Manipulation",
+              "lc": 78,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.2-p247",
+              "title": "XOR of Numbers in a Given Range",
+              "lc": 2425,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s8-8.3",
+          "title": "Advanced Maths",
+          "problems": [
+            {
+              "id": "s8-8.3-p248",
+              "title": "Print all Primes till N",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.3-p249",
+              "title": "Print Prime Factors of a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.3-p250",
+              "title": "Divisors of a Number",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.3-p251",
+              "title": "Count Primes in Range L to R",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s8-8.3-p252",
+              "title": "Pow(x, n)",
+              "lc": 50,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "title": "Stack and Queues",
+      "subsections": [
+        {
+          "id": "s9-9.1",
+          "title": "Learning",
+          "problems": [
+            {
+              "id": "s9-9.1-p253",
+              "title": "Implementation Using Different Data Structures",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p254",
+              "title": "Implement Stack Using Arrays",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p255",
+              "title": "Implement Queue Using Arrays",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p256",
+              "title": "Implement Stack Using Queue",
+              "lc": 225,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p257",
+              "title": "Implement Queue Using Stack",
+              "lc": 232,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p258",
+              "title": "Implement Stack Using Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p259",
+              "title": "Implement Queue Using Linked List",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p260",
+              "title": "Check for Balanced Parentheses",
+              "lc": 20,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.1-p261",
+              "title": "Implement Min Stack",
+              "lc": 155,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s9-9.2",
+          "title": "Prefix Infix Postfix Conversion",
+          "problems": [
+            {
+              "id": "s9-9.2-p262",
+              "title": "Infix to Postfix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.2-p263",
+              "title": "Prefix to Infix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.2-p264",
+              "title": "Prefix to Postfix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.2-p265",
+              "title": "Postfix to Prefix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.2-p266",
+              "title": "Postfix to Infix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.2-p267",
+              "title": "Infix to Prefix Conversion",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s9-9.3",
+          "title": "Monotonic Stack and Queue",
+          "problems": [
+            {
+              "id": "s9-9.3-p268",
+              "title": "Next Greater Element I",
+              "lc": 496,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p269",
+              "title": "Next Greater Element II",
+              "lc": 503,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p270",
+              "title": "Next Smaller Element",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p271",
+              "title": "Number of NGEs to the Right",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p272",
+              "title": "Trapping Rainwater",
+              "lc": 42,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p273",
+              "title": "Sum of Subarray Minimums",
+              "lc": 907,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p274",
+              "title": "Asteroid Collision",
+              "lc": 735,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p275",
+              "title": "Sum of Subarray Ranges",
+              "lc": 2104,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p276",
+              "title": "Remove K Digits",
+              "lc": 402,
+              "defaultSkip": false
+            },
+            {
+              "id": "s9-9.3-p277",
+              "title": "Largest Rectangle in Histogram",
+              "lc": 84,
+              "defaultSkip": true
+            },
+            {
+              "id": "s9-9.3-p278",
+              "title": "Maximal Rectangle",
+              "lc": 85,
+              "defaultSkip": true
+            }
+          ]
+        },
+        {
+          "id": "s9-9.4",
+          "title": "Implementation Problems",
+          "problems": [
+            {
+              "id": "s9-9.4-p279",
+              "title": "Sliding Window Maximum",
+              "lc": 239,
+              "defaultSkip": true
+            },
+            {
+              "id": "s9-9.4-p280",
+              "title": "LRU Cache",
+              "lc": 146,
+              "defaultSkip": true
+            },
+            {
+              "id": "s9-9.4-p281",
+              "title": "LFU Cache",
+              "lc": 460,
+              "defaultSkip": true
+            },
+            {
+              "id": "s9-9.4-p282",
+              "title": "Stock Span Problem",
+              "lc": 901,
+              "defaultSkip": true
+            },
+            {
+              "id": "s9-9.4-p283",
+              "title": "The Celebrity Problem",
+              "lc": null,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "title": "Sliding Window and Two Pointer",
+      "subsections": [
+        {
+          "id": "s10-10.1",
+          "title": "Medium Problems",
+          "problems": [
+            {
+              "id": "s10-10.1-p284",
+              "title": "Sliding Window Pattern and Template (Theory)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p285",
+              "title": "Longest Substring Without Repeating Characters",
+              "lc": 3,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p286",
+              "title": "Max Consecutive Ones III",
+              "lc": 1004,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p287",
+              "title": "Fruit Into Baskets",
+              "lc": 904,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p288",
+              "title": "Longest Repeating Character Replacement",
+              "lc": 424,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p289",
+              "title": "Binary Subarrays with Sum",
+              "lc": 930,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p290",
+              "title": "Count Number of Nice Subarrays",
+              "lc": 1248,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p291",
+              "title": "Number of Substrings Containing All Three Characters",
+              "lc": 1358,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.1-p292",
+              "title": "Maximum Points You Can Obtain from Cards",
+              "lc": 1423,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s10-10.2",
+          "title": "Hard Problems",
+          "problems": [
+            {
+              "id": "s10-10.2-p293",
+              "title": "Longest Substring with At Most K Distinct Characters",
+              "lc": 340,
+              "defaultSkip": true
+            },
+            {
+              "id": "s10-10.2-p294",
+              "title": "Substrings of Size Three with Distinct Characters",
+              "lc": 1876,
+              "defaultSkip": true
+            },
+            {
+              "id": "s10-10.2-p295",
+              "title": "Minimum Window Substring",
+              "lc": 76,
+              "defaultSkip": true
+            },
+            {
+              "id": "s10-10.2-p296",
+              "title": "Minimum Window Subsequence",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.2-p297",
+              "title": "Subarrays with K Different Integers",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s10-10.2-p298",
+              "title": "Sliding Window Maximum",
+              "lc": 239,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "Heaps",
+      "subsections": [
+        {
+          "id": "s11-11.1",
+          "title": "Learning",
+          "problems": [
+            {
+              "id": "s11-11.1-p299",
+              "title": "Introduction to Heap",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p300",
+              "title": "Heapify Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p301",
+              "title": "Build Heap from a Given Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p302",
+              "title": "Min Heap and Max Heap Implementation",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p303",
+              "title": "Check if an Array Represents a Min Heap",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p304",
+              "title": "Convert Min Heap to Max Heap",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.1-p305",
+              "title": "Heap Sort",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s11-11.2",
+          "title": "Medium Problems",
+          "problems": [
+            {
+              "id": "s11-11.2-p306",
+              "title": "Kth Largest Element in an Array",
+              "lc": 215,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.2-p307",
+              "title": "Kth Smallest Element in an Array",
+              "lc": 378,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.2-p308",
+              "title": "Sort K Sorted Array",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.2-p309",
+              "title": "Merge M Sorted Lists",
+              "lc": 23,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.2-p310",
+              "title": "Replace Each Array Element by Its Corresponding Rank",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s11-11.2-p311",
+              "title": "Task Scheduler",
+              "lc": 621,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.2-p312",
+              "title": "Hands of Straights",
+              "lc": 846,
+              "defaultSkip": true
+            }
+          ]
+        },
+        {
+          "id": "s11-11.3",
+          "title": "Hard Problems",
+          "problems": [
+            {
+              "id": "s11-11.3-p313",
+              "title": "Design Twitter",
+              "lc": 355,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.3-p314",
+              "title": "Connect N Ropes with Minimum Cost",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.3-p315",
+              "title": "Kth Largest Element in a Stream",
+              "lc": 703,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.3-p316",
+              "title": "Maximum Sum Combinations",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.3-p317",
+              "title": "Find Median from Data Stream",
+              "lc": 295,
+              "defaultSkip": true
+            },
+            {
+              "id": "s11-11.3-p318",
+              "title": "K Most Frequent Elements",
+              "lc": 347,
+              "defaultSkip": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "Greedy Algorithms",
+      "subsections": [
+        {
+          "id": "s12-12.1",
+          "title": "Easy Problems",
+          "problems": [
+            {
+              "id": "s12-12.1-p319",
+              "title": "Assign Cookies",
+              "lc": 455,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.1-p320",
+              "title": "Fractional Knapsack",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.1-p321",
+              "title": "Greedy Algorithm to Find Minimum Number of Coins",
+              "lc": null,
+              "defaultSkip": true
+            },
+            {
+              "id": "s12-12.1-p322",
+              "title": "Lemonade Change",
+              "lc": 860,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.1-p323",
+              "title": "Valid Parenthesis String",
+              "lc": 678,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s12-12.2",
+          "title": "Medium and Hard Problems",
+          "problems": [
+            {
+              "id": "s12-12.2-p324",
+              "title": "N Meetings in One Room",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p325",
+              "title": "Jump Game",
+              "lc": 55,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p326",
+              "title": "Jump Game II",
+              "lc": 45,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p327",
+              "title": "Minimum Number of Platforms",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p328",
+              "title": "Job Sequencing Problem",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p329",
+              "title": "Candy Distribution",
+              "lc": 135,
+              "defaultSkip": true
+            },
+            {
+              "id": "s12-12.2-p330",
+              "title": "Program for Shortest Job First",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p331",
+              "title": "Largest Number",
+              "lc": 179,
+              "defaultSkip": true
+            },
+            {
+              "id": "s12-12.2-p332",
+              "title": "Non Overlapping Intervals",
+              "lc": 435,
+              "defaultSkip": false
+            },
+            {
+              "id": "s12-12.2-p333",
+              "title": "Insert Interval",
+              "lc": 57,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "title": "Binary Trees",
+      "subsections": [
+        {
+          "id": "s13-13.1",
+          "title": "Traversals",
+          "problems": [
+            {
+              "id": "s13-13.1-p334",
+              "title": "Introduction to Trees",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p335",
+              "title": "Binary Tree Representation in C++",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p336",
+              "title": "Binary Tree Traversals in C++",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p337",
+              "title": "Preorder Traversal",
+              "lc": 144,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p338",
+              "title": "Inorder Traversal",
+              "lc": 94,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p339",
+              "title": "Postorder Traversal",
+              "lc": 145,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p340",
+              "title": "Level Order Traversal",
+              "lc": 102,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p341",
+              "title": "Iterative Preorder Traversal",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p342",
+              "title": "Iterative Inorder Traversal",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p343",
+              "title": "Iterative Postorder Using 2 Stacks",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p344",
+              "title": "Iterative Postorder Using 1 Stack",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.1-p345",
+              "title": "Preorder Inorder Postorder in a Single Traversal",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s13-13.2",
+          "title": "Medium Problems",
+          "problems": [
+            {
+              "id": "s13-13.2-p346",
+              "title": "Height of a Binary Tree",
+              "lc": 104,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p347",
+              "title": "Check if the Binary Tree is Height Balanced",
+              "lc": 110,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p348",
+              "title": "Diameter of Binary Tree",
+              "lc": 543,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p349",
+              "title": "Maximum Path Sum in Binary Tree",
+              "lc": 124,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p350",
+              "title": "Check if Two Trees are Identical",
+              "lc": 100,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p351",
+              "title": "Zigzag Level Order Traversal",
+              "lc": 103,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p352",
+              "title": "Boundary Traversal of Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p353",
+              "title": "Vertical Order Traversal",
+              "lc": 987,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p354",
+              "title": "Top View of Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p355",
+              "title": "Bottom View of Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p356",
+              "title": "Right and Left View of Binary Tree",
+              "lc": 199,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.2-p357",
+              "title": "Symmetric Binary Tree",
+              "lc": 101,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s13-13.3",
+          "title": "Hard Problems",
+          "problems": [
+            {
+              "id": "s13-13.3-p358",
+              "title": "Root to Node Path in Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p359",
+              "title": "LCA in Binary Tree",
+              "lc": 236,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p360",
+              "title": "Maximum Width of Binary Tree",
+              "lc": 662,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p361",
+              "title": "Check for Children Sum Property",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p362",
+              "title": "Print all Nodes at Distance K in Binary Tree",
+              "lc": 863,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p363",
+              "title": "Minimum Time to Burn the Binary Tree from a Leaf",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p364",
+              "title": "Count Total Nodes in a Complete Binary Tree",
+              "lc": 222,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p365",
+              "title": "Requirements to Construct a Unique Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p366",
+              "title": "Construct Binary Tree from Inorder and Preorder",
+              "lc": 105,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p367",
+              "title": "Construct Binary Tree from Postorder and Inorder",
+              "lc": 106,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p368",
+              "title": "Serialize and Deserialize Binary Tree",
+              "lc": 297,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p369",
+              "title": "Morris Preorder Traversal",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p370",
+              "title": "Morris Inorder Traversal",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s13-13.3-p371",
+              "title": "Flatten Binary Tree to Linked List",
+              "lc": 114,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "title": "Binary Search Trees",
+      "subsections": [
+        {
+          "id": "s14-14.1",
+          "title": "Concepts",
+          "problems": [
+            {
+              "id": "s14-14.1-p372",
+              "title": "Introduction to BST",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.1-p373",
+              "title": "Search in BST",
+              "lc": 700,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.1-p374",
+              "title": "Find Min and Max in BST",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.1-p375",
+              "title": "Ceil in a BST",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.1-p376",
+              "title": "Floor in a BST",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s14-14.2",
+          "title": "Practice Problems",
+          "problems": [
+            {
+              "id": "s14-14.2-p377",
+              "title": "Insert a Node in BST",
+              "lc": 701,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p378",
+              "title": "Delete a Node in BST",
+              "lc": 450,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p379",
+              "title": "Find Kth Smallest and Largest Element in BST",
+              "lc": 230,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p380",
+              "title": "Check if a Tree is a BST or BT",
+              "lc": 98,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p381",
+              "title": "LCA in BST",
+              "lc": 235,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p382",
+              "title": "Construct a BST from Preorder Traversal",
+              "lc": 1008,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p383",
+              "title": "Inorder Successor and Predecessor in BST",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p384",
+              "title": "BST Iterator",
+              "lc": 173,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p385",
+              "title": "Two Sum in BST",
+              "lc": 653,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p386",
+              "title": "Recover BST",
+              "lc": 99,
+              "defaultSkip": false
+            },
+            {
+              "id": "s14-14.2-p387",
+              "title": "Largest BST in Binary Tree",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "title": "Graphs",
+      "subsections": [
+        {
+          "id": "s15-15.1",
+          "title": "Learning",
+          "problems": [
+            {
+              "id": "s15-15.1-p388",
+              "title": "Graph and Types",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.1-p389",
+              "title": "Graph Representation in C++",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.1-p390",
+              "title": "Graph Representation in Java",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.1-p391",
+              "title": "Connected Components Logic",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.1-p392",
+              "title": "BFS Traversal",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.1-p393",
+              "title": "DFS Traversal",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s15-15.2",
+          "title": "Problems on BFS and DFS",
+          "problems": [
+            {
+              "id": "s15-15.2-p394",
+              "title": "Number of Provinces",
+              "lc": 547,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p395",
+              "title": "Connected Components Problem in Matrix",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p396",
+              "title": "Rotten Oranges",
+              "lc": 994,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p397",
+              "title": "Flood Fill",
+              "lc": 733,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p398",
+              "title": "Cycle Detection in Undirected Graph using BFS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p399",
+              "title": "Cycle Detection in Undirected Graph using DFS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p400",
+              "title": "0/1 Matrix",
+              "lc": 542,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p401",
+              "title": "Surrounded Regions",
+              "lc": 130,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p402",
+              "title": "Number of Enclaves",
+              "lc": 1020,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p403",
+              "title": "Word Ladder I",
+              "lc": 127,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p404",
+              "title": "Word Ladder II",
+              "lc": 126,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p405",
+              "title": "Number of Distinct Islands",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p406",
+              "title": "Bipartite Check using BFS",
+              "lc": 785,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.2-p407",
+              "title": "Bipartite Check using DFS",
+              "lc": 785,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s15-15.3",
+          "title": "Topo Sort and Problems",
+          "problems": [
+            {
+              "id": "s15-15.3-p408",
+              "title": "Topological Sort using DFS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p409",
+              "title": "Topological Sort using BFS Kahn's Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p410",
+              "title": "Cycle Detection in Directed Graph using BFS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p411",
+              "title": "Cycle Detection in Directed Graph using DFS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p412",
+              "title": "Course Schedule I",
+              "lc": 207,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p413",
+              "title": "Course Schedule II",
+              "lc": 210,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p414",
+              "title": "Find Eventual Safe States",
+              "lc": 802,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.3-p415",
+              "title": "Alien Dictionary",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s15-15.4",
+          "title": "Shortest Path Algorithms",
+          "problems": [
+            {
+              "id": "s15-15.4-p416",
+              "title": "Shortest Path in DAG",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p417",
+              "title": "Shortest Path in Undirected Graph with Unit Weights",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p418",
+              "title": "Dijkstra's Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p419",
+              "title": "Print Shortest Path (Dijkstra's)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p420",
+              "title": "Shortest Path in Binary Maze",
+              "lc": 1091,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p421",
+              "title": "Path with Minimum Effort",
+              "lc": 1631,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p422",
+              "title": "Cheapest Flights Within K Stops",
+              "lc": 787,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p423",
+              "title": "Network Delay Time",
+              "lc": 743,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p424",
+              "title": "Number of Ways to Arrive at Destination",
+              "lc": 1976,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p425",
+              "title": "Minimum Multiplications to Reach End",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p426",
+              "title": "Bellman Ford Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p427",
+              "title": "Floyd Warshall Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.4-p428",
+              "title": "Find the City with Smallest Number of Neighbours",
+              "lc": 1334,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s15-15.5",
+          "title": "MST and Disjoint Set",
+          "problems": [
+            {
+              "id": "s15-15.5-p429",
+              "title": "Minimum Spanning Tree",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p430",
+              "title": "Prim's Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p431",
+              "title": "Disjoint Set Union by Rank and Path Compression",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p432",
+              "title": "Disjoint Set Union by Size",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p433",
+              "title": "Kruskal's Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p434",
+              "title": "Number of Operations to Make Network Connected",
+              "lc": 1319,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p435",
+              "title": "Most Stones Removed",
+              "lc": 947,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p436",
+              "title": "Accounts Merge",
+              "lc": 721,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p437",
+              "title": "Number of Islands II",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p438",
+              "title": "Making a Large Island",
+              "lc": 827,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.5-p439",
+              "title": "Swim in Rising Water",
+              "lc": 778,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s15-15.6",
+          "title": "Other Algorithms",
+          "problems": [
+            {
+              "id": "s15-15.6-p440",
+              "title": "Bridges in Graph",
+              "lc": 1192,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.6-p441",
+              "title": "Articulation Points in Graph",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.6-p442",
+              "title": "Kosaraju's Algorithm for SCC",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s15-15.6-p443",
+              "title": "Tarjan's Algorithm for SCC",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "title": "Dynamic Programming",
+      "subsections": [
+        {
+          "id": "s16-16.1",
+          "title": "1D DP",
+          "problems": [
+            {
+              "id": "s16-16.1-p444",
+              "title": "Introduction to DP",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p445",
+              "title": "Climbing Stairs",
+              "lc": 70,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p446",
+              "title": "Frog Jump",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p447",
+              "title": "Frog Jump with K Distances",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p448",
+              "title": "Maximum Sum of Non Adjacent Elements",
+              "lc": 198,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p449",
+              "title": "House Robber II",
+              "lc": 213,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.1-p450",
+              "title": "Ninja's Training",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.2",
+          "title": "2D and Grid DP",
+          "problems": [
+            {
+              "id": "s16-16.2-p451",
+              "title": "Grid Unique Paths",
+              "lc": 62,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.2-p452",
+              "title": "Grid Unique Paths II",
+              "lc": 63,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.2-p453",
+              "title": "Minimum Path Sum in Grid",
+              "lc": 64,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.2-p454",
+              "title": "Minimum Path Sum in Triangular Grid",
+              "lc": 120,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.2-p455",
+              "title": "Minimum and Maximum Falling Path Sum",
+              "lc": 931,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.2-p456",
+              "title": "3D DP Ninja and His Friends",
+              "lc": 741,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.3",
+          "title": "DP on Subsequences",
+          "problems": [
+            {
+              "id": "s16-16.3-p457",
+              "title": "Subset Sum Equal to Target",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p458",
+              "title": "Partition Equal Subset Sum",
+              "lc": 416,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p459",
+              "title": "Partition into Two Subsets with Min Absolute Sum Difference",
+              "lc": 2035,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p460",
+              "title": "Count Subsets with Sum K",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p461",
+              "title": "Count Partitions with Given Difference",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p462",
+              "title": "0/1 Knapsack",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p463",
+              "title": "Minimum Coins",
+              "lc": 322,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p464",
+              "title": "Target Sum",
+              "lc": 494,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p465",
+              "title": "Coin Change II",
+              "lc": 518,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p466",
+              "title": "Unbounded Knapsack",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.3-p467",
+              "title": "Rod Cutting Problem",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.4",
+          "title": "DP on Strings",
+          "problems": [
+            {
+              "id": "s16-16.4-p468",
+              "title": "Longest Common Subsequence",
+              "lc": 1143,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p469",
+              "title": "Print Longest Common Subsequence",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p470",
+              "title": "Longest Common Substring",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p471",
+              "title": "Longest Palindromic Subsequence",
+              "lc": 516,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p472",
+              "title": "Count Substrings that are Palindromes",
+              "lc": 647,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p473",
+              "title": "Minimum Insertions to Make String Palindrome",
+              "lc": 1312,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p474",
+              "title": "Minimum Insertions and Deletions to Convert String A to B",
+              "lc": 583,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p475",
+              "title": "Shortest Common Supersequence",
+              "lc": 1092,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p476",
+              "title": "Distinct Subsequences",
+              "lc": 115,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p477",
+              "title": "Edit Distance",
+              "lc": 72,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p478",
+              "title": "Wildcard Matching",
+              "lc": 44,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p479",
+              "title": "Word Break",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.4-p480",
+              "title": "Count Palindromic Subsequences",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.5",
+          "title": "DP on Stocks",
+          "problems": [
+            {
+              "id": "s16-16.5-p481",
+              "title": "Best Time to Buy and Sell Stock",
+              "lc": 121,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.5-p482",
+              "title": "Buy and Sell Stock II",
+              "lc": 122,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.5-p483",
+              "title": "Buy and Sell Stock III",
+              "lc": 123,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.5-p484",
+              "title": "Buy and Sell Stock IV",
+              "lc": 188,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.5-p485",
+              "title": "Buy and Sell Stock with Cooldown",
+              "lc": 309,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.5-p486",
+              "title": "Buy and Sell Stock with Transaction Fee",
+              "lc": 714,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.6",
+          "title": "DP on Longest Increasing Subsequence",
+          "problems": [
+            {
+              "id": "s16-16.6-p487",
+              "title": "Longest Increasing Subsequence",
+              "lc": 300,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p488",
+              "title": "Print LIS",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p489",
+              "title": "LIS Using Binary Search",
+              "lc": 300,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p490",
+              "title": "Largest Divisible Subset",
+              "lc": 368,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p491",
+              "title": "Longest String Chain",
+              "lc": 1048,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p492",
+              "title": "Longest Bitonic Subsequence",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.6-p493",
+              "title": "Number of LIS",
+              "lc": 673,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s16-16.7",
+          "title": "MCM and Partition DP",
+          "problems": [
+            {
+              "id": "s16-16.7-p494",
+              "title": "Matrix Chain Multiplication",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p495",
+              "title": "Minimum Cost to Cut a Stick",
+              "lc": 1547,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p496",
+              "title": "Burst Balloons",
+              "lc": 312,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p497",
+              "title": "Palindrome Partitioning II",
+              "lc": 132,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p498",
+              "title": "Partition Array for Maximum Sum",
+              "lc": 1043,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p499",
+              "title": "Count Square Submatrices with All Ones",
+              "lc": 1277,
+              "defaultSkip": false
+            },
+            {
+              "id": "s16-16.7-p500",
+              "title": "Evaluate Boolean Expression to True",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "title": "Tries",
+      "subsections": [
+        {
+          "id": "s17-17.1",
+          "title": "Theory and Implementation",
+          "problems": [
+            {
+              "id": "s17-17.1-p501",
+              "title": "Implement Trie I",
+              "lc": 208,
+              "defaultSkip": false
+            },
+            {
+              "id": "s17-17.1-p502",
+              "title": "Implement Trie II",
+              "lc": null,
+              "defaultSkip": false
+            }
+          ]
+        },
+        {
+          "id": "s17-17.2",
+          "title": "Problems",
+          "problems": [
+            {
+              "id": "s17-17.2-p503",
+              "title": "Longest String with All Prefixes",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s17-17.2-p504",
+              "title": "Number of Distinct Substrings in a String",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s17-17.2-p505",
+              "title": "Bit Prerequisites for Problems",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s17-17.2-p506",
+              "title": "Maximum XOR of Two Numbers in an Array",
+              "lc": 421,
+              "defaultSkip": false
+            },
+            {
+              "id": "s17-17.2-p507",
+              "title": "Maximum XOR with an Element from Array",
+              "lc": 1707,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s18",
+      "title": "Advanced Strings",
+      "subsections": [
+        {
+          "id": "s18-18.1",
+          "title": "Hard Problems",
+          "problems": [
+            {
+              "id": "s18-18.1-p508",
+              "title": "Minimum Characters Needed to Make a String Palindrome",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p509",
+              "title": "Find the Longest Common Prefix Using Trie",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p510",
+              "title": "Power Set",
+              "lc": 78,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p511",
+              "title": "Hashing in Strings (Theory)",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p512",
+              "title": "Rabin Karp Algorithm",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p513",
+              "title": "Z-Function",
+              "lc": null,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p514",
+              "title": "KMP Algorithm Pattern Matching",
+              "lc": 28,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p515",
+              "title": "Count Occurrences of Anagram",
+              "lc": 438,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p516",
+              "title": "Shortest Palindrome",
+              "lc": 214,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p517",
+              "title": "Longest Happy Prefix",
+              "lc": 1392,
+              "defaultSkip": false
+            },
+            {
+              "id": "s18-18.1-p518",
+              "title": "String to Integer Atoi",
+              "lc": 8,
+              "defaultSkip": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
