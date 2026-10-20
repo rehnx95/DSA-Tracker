@@ -12,11 +12,27 @@
   --border-strong: #383838;
   --text: #f2f2f2;
   --muted: #969696;
+  --page-overlay: rgba(0, 0, 0, 0.96);
+  --shadow: rgba(0, 0, 0, 0.16);
   --accent: #765cf6;
   --accent-hover: #654be8;
   --positive: #28a86b;
   --warning: #d98232;
   --font-sans: 'Figtree', system-ui, sans-serif;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --page: #f4f5f7;
+  --surface: #ffffff;
+  --surface-raised: #f8f8fa;
+  --surface-hover: #f0eff5;
+  --border: #e1e2e8;
+  --border-strong: #c8cad3;
+  --text: #191922;
+  --muted: #666873;
+  --page-overlay: rgba(255, 255, 255, 0.96);
+  --shadow: rgba(25, 25, 34, 0.08);
 }
 
 * {
@@ -190,7 +206,7 @@ input:focus-visible {
 
 .dashboard-header {
   border-color: var(--border) !important;
-  background: rgba(0, 0, 0, 0.96) !important;
+  background: var(--page-overlay) !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
 
@@ -244,7 +260,7 @@ input:focus-visible {
   top: 0;
   padding: 0.7rem 0 0.8rem;
   border-bottom: 1px solid var(--border);
-  background: rgba(0, 0, 0, 0.96);
+  background: var(--page-overlay);
   backdrop-filter: blur(12px);
 }
 
@@ -316,7 +332,7 @@ input:focus-visible {
 .onboarding-panel {
   border-color: var(--border) !important;
   background: var(--surface) !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 10px 28px var(--shadow);
 }
 
 .sheet-nav-item {
@@ -652,4 +668,107 @@ input:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+:root[data-theme="light"] [class*="bg-[#0B0B0F]"],
+:root[data-theme="light"] [class*="bg-[#090909]"] {
+  background-color: #f4f5f7 !important;
+}
+
+:root[data-theme="light"] .auth-shell,
+:root[data-theme="light"] .dashboard-shell,
+:root[data-theme="light"] .profile-shell,
+:root[data-theme="light"] .profile-settings-shell {
+  background: #f4f5f7 !important;
+  color: #191922 !important;
+}
+
+:root[data-theme="light"] [class*="bg-[#15151B]"],
+:root[data-theme="light"] [class*="bg-[#111111]"] {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme="light"] [class*="bg-[#1C1C24]"],
+:root[data-theme="light"] [class*="bg-[#171717]"] {
+  background-color: #f0eff5 !important;
+}
+
+:root[data-theme="light"] [class*="bg-[#26262F]"],
+:root[data-theme="light"] [class*="bg-[#262626]"] {
+  background-color: #f8f8fa !important;
+}
+
+:root[data-theme="light"] [class*="text-[#E8E8EE]"],
+:root[data-theme="light"] [class*="text-[#F2F2F2]"],
+:root[data-theme="light"] [class*="text-zinc-300"],
+:root[data-theme="light"] [class*="text-zinc-400"],
+:root[data-theme="light"] [class~="text-white"] {
+  color: #191922 !important;
+}
+
+:root[data-theme="light"] [class*="text-[#A1A1AA]"],
+:root[data-theme="light"] [class*="text-[#969696]"],
+:root[data-theme="light"] [class*="text-[#8A8A98]"],
+:root[data-theme="light"] [class*="text-[#858585]"],
+:root[data-theme="light"] [class*="text-[#777777]"] {
+  color: #666873 !important;
+}
+
+:root[data-theme="light"] [class*="border-[#26262F]"],
+:root[data-theme="light"] [class*="border-[#262626]"] {
+  border-color: #e1e2e8 !important;
+}
+
+:root[data-theme="light"] [class*="border-[#34343F]"],
+:root[data-theme="light"] [class*="border-[#383838]"] {
+  border-color: #c8cad3 !important;
+}
+
+:root[data-theme="light"] .dashboard-header {
+  box-shadow: 0 6px 20px rgba(25, 25, 34, 0.06);
+}
+
+:root[data-theme="light"] .dashboard-header .profile-trigger {
+  border-color: #d6d0ff;
+  background: #f0edff;
+  color: #6049d8;
+}
+
+:root[data-theme="light"] .dashboard-header .profile-trigger:hover {
+  border-color: #a99aff;
+  background: #e7e2ff;
+  color: #5038c5;
+}
+
+:root[data-theme="light"] .sheet-nav-item[aria-current="page"] {
+  color: #5038c5;
+}
+
+:root[data-theme="light"] .dashboard-content .tracker-toolbar button[aria-pressed="true"] {
+  color: #fff !important;
+}
+
+:root[data-theme="light"] [class*="bg-[#6D5BF6]"] {
+  color: #fff !important;
+}
+
+:root[data-theme="light"] .google-signin-button {
+  color: #191922 !important;
+}
+
+:root[data-theme="light"] .auth-panel h2 {
+  color: #191922 !important;
+}
+
+:root[data-theme="light"] .recent-ac-check {
+  color: #17834c;
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb,
+:root[data-theme="light"] .activity-scroll::-webkit-scrollbar-thumb {
+  background: #c4c6cf;
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #a8aab5;
 }
