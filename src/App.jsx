@@ -1,462 +1,558 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, X as XIcon, Settings, Calendar, Trophy, Target, LogOut } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, Settings, Calendar, Trophy, Target, LogOut } from 'lucide-react';
 import data from './data/sheet.json';
+import { supabase } from './lib/supabase';
+import { useProgress } from './hooks/useProgress';
 
-/* ===================== Hooks ===================== */
-function useProgress() {
-  const [progress, setProgress] = useState(() => {
-    try {
-      const stored = localStorage.getItem('dsa-progress');
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
+// =============================================================================
+// Authentication Routing State Machine
+// =============================================================================
+const AppState = {
+  LOADING: 'LOADING',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+  ONBOARDING: 'ONBOARDING',
+  AUTHENTICATED: 'AUTHENTICATED',
+};
 
-  const progressRef = useRef(progress);
-  useEffect(() => { progressRef.current = progress; }, [progress]);
+function App() {
+  const [appState, setAppState] = useState(AppState.LOADING);
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
 
-  const [activityLog, setActivityLog] = useState(() => {
-    try {
-      const stored = localStorage.getItem('dsa-activity-log');
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
-
+  // =======================================================================
+  // Authentication State Machine
+  // =======================================================================
   useEffect(() => {
-    localStorage.setItem('dsa-progress', JSON.stringify(progress));
-  }, [progress]);
+    // Initialize auth state
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        handleAuthChange(session);
+      } else {
+        setAppState(AppState.UNAUTHENTICATED);
+      }
+    });
 
-  useEffect(() => {
-    localStorage.setItem('dsa-activity-log', JSON.stringify(activityLog));
-  }, [activityLog]);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleAuthChange(session);
+    });
 
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    if (theme === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleAuthChange = async (session) => {
+    if (session) {
+      setUser(session.user);
+
+      // Fetch user profile to check onboarding status
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('onboarding_completed')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error('Failed to fetch profile:', error);
+        setAppState(AppState.UNAUTHENTICATED);
+        return;
+      }
+
+      if (profileData) {
+        setProfile(profileData);
+        if (profileData.onboarding_completed) {
+          setAppState(AppState.AUTHENTICATED);
+        } else {
+          setAppState(AppState.ONBOARDING);
+        }
+      } else {
+        // Profile doesn't exist, create it via trigger
+        setAppState(AppState.ONBOARDING);
+      }
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      setUser(null);
+      setProfile(null);
+      setAppState(AppState.UNAUTHENTICATED);
     }
-  }, [theme]);
+  };
 
-  const update = useCallback((id, state) => {
-    const currentState = progressRef.current[id];
-    setProgress(p => ({ ...p, [id]: state }));
-
-    const today = new Date().toISOString().split('T')[0];
-
-    if (state === 'done' && currentState !== 'done') {
-      setActivityLog(log => {
-        const current = log[today] || 0;
-        return { ...log, [today]: current + 1 };
-      });
-    }
-    else if (currentState === 'done' && state !== 'done') {
-      setActivityLog(log => {
-        const current = log[today] || 0;
-        if (current <= 0) return log;
-        const newLog = { ...log, [today]: current - 1 };
-        if (newLog[today] === 0) delete newLog[today];
-        return newLog;
-      });
+  const handleSignOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      // Clear any localStorage user-specific data
+      localStorage.removeItem('dsa-progress');
+      localStorage.removeItem('dsa-activity-log');
+      localStorage.removeItem('dsa-expanded-steps');
+      localStorage.removeItem('dsa-expanded-subs');
+      localStorage.removeItem('dsa-hide-skipped');
+      localStorage.removeItem('dsa-filter');
+      localStorage.removeItem('dsa-search');
+      localStorage.removeItem('theme');
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
   }, []);
 
-  const bulkUpdate = useCallback((newProgress) => {
-    setProgress(newProgress);
-  }, []);
+  // =======================================================================
+  // Render: Unauthenticated State
+  // =======================================================================
+  if (appState === AppState.UNAUTHENTICATED) {
+    return (
+      <UnauthenticatedView onSignIn={handleSignOut} />
+    );
+  }
 
-  const getState = useCallback((id, defaultSkip) => {
-    if (progress[id]) return progress[id];
-    if (defaultSkip) return 'skipped';
-    return 'todo';
-  }, [progress]);
-
-  const reset = useCallback(() => {
-    setProgress({});
-    setActivityLog({});
-  }, []);
-
-  return { progress, activityLog, update, bulkUpdate, getState, theme, setTheme, reset };
-}
-
-/* ===================== Components ===================== */
-function ProgressBar({ done, total, colorClass = "bg-[#6D5BF6]" }) {
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  return (
-    <div className="w-full h-[3px] bg-[#26262F] rounded-full overflow-hidden flex-shrink-0" aria-label={`${pct}% complete`}>
-      <div
-        className={`${colorClass} h-full rounded-full transition-all duration-300 ease-out`}
-        style={{ width: `${pct}%` }}
+  // =======================================================================
+  // Render: Onboarding State
+  // =======================================================================
+  if (appState === AppState.ONBOARDING && user) {
+    return (
+      <OnboardingPage
+        user={user}
+        onComplete={() => {
+          setAppState(AppState.AUTHENTICATED);
+        }}
+        onSignOut={handleSignOut}
       />
-    </div>
-  );
-}
-
-function ProblemRow({ prob, state, onToggle, onSkip }) {
-  const isDone = state === 'done';
-  const isSkip = state === 'skipped';
-
-  return (
-    <div
-      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? 'opacity-50 bg-[#15151B]/40' : 'hover:bg-[#1C1C24]'}`}
-    >
-      <button
-        onClick={() => onToggle(prob.id)}
-        aria-label={isDone ? `Mark ${prob.title} as not done` : `Mark ${prob.title} as done`}
-        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? 'bg-[#22A559] border-[#22A559]' : 'border-[#6D5BF6]/60 bg-transparent hover:border-[#6D5BF6]'}`}
-      >
-        {isDone && (
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
-            <path d="M2 7l3.5 3.5L12 4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
-      </button>
-
-      <button
-        onClick={() => onToggle(prob.id)}
-        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? 'line-through text-[#8A8A98]' : 'text-[#E8E8EE] hover:text-white'}`}
-      >
-        {prob.title}
-      </button>
-
-      <button
-        onClick={() => onSkip(prob.id)}
-        aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
-        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? 'text-[#E65100] bg-[#E65100]/10' : 'text-[#8A8A98] hover:text-[#E65100] hover:bg-[#E65100]/10'}`}
-      >
-        <SkipForward size={13} />
-        <span>Skip</span>
-      </button>
-    </div>
-  );
-}
-
-function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggleProb, onSkipProb, hideSkipped, filter }) {
-  const done = sub.problems.filter(p => progressState(p.id) === 'done').length;
-  const total = sub.problems.length;
-
-  let visible = sub.problems;
-  if (hideSkipped) {
-    visible = visible.filter(p => progressState(p.id) !== 'skipped');
+    );
   }
 
-  if (filter === 'done') {
-    visible = visible.filter(p => progressState(p.id) === 'done');
-  } else if (filter === 'skipped') {
-    visible = visible.filter(p => progressState(p.id) === 'skipped');
-  } else if (filter === 'todo') {
-    visible = visible.filter(p => progressState(p.id) === 'todo');
+  // =======================================================================
+  // Render: Loading State
+  // =======================================================================
+  if (appState === AppState.LOADING) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-3 border-[#6D5BF6] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#8A8A98]">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
+  // =======================================================================
+  // Render: Authenticated State
+  // =======================================================================
   return (
-    <div className="ml-4 pl-3 border-l border-[#26262F]">
-      <button
-        onClick={() => onToggle(sub.id)}
-        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#E8E8EE] transition-colors"
-      >
-        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="font-medium text-[#E8E8EE]">{sub.title}</span>
-        <div className="flex-1 mx-2"><ProgressBar done={done} total={total} /></div>
-        <span className="text-xs text-[#8A8A98] tabular-nums">{done}/{total}</span>
-      </button>
-
-      {expanded && (
-        <div className="mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
-          {visible.length > 0 ? (
-            visible.map(p => (
-              <ProblemRow
-                key={p.id}
-                prob={p}
-                state={progressState(p.id)}
-                onToggle={onToggleProb}
-                onSkip={onSkipProb}
-              />
-            ))
-          ) : (
-            <div className="py-4 text-center text-xs text-[#8A8A98]">No problems match the filter</div>
-          )}
-        </div>
-      )}
-    </div>
+    <AuthenticatedApp
+      user={user}
+      profile={profile}
+      onSignOut={handleSignOut}
+    />
   );
 }
 
-function StepRow({ step, progressState, expandedSteps, onToggleStep, expandedSubs, onToggleSub, onToggleProb, onSkipProb, hideSkipped, filter }) {
-  const done = step.subsections.reduce((sum, s) => sum + s.problems.filter(p => progressState(p.id) === 'done').length, 0);
-  const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
-
+// =============================================================================
+// Unauthenticated View Component
+// =============================================================================
+function UnauthenticatedView({ onSignIn }) {
   return (
-    <div className="rounded-xl bg-[#15151B] border border-[#26262F] overflow-hidden mb-3">
-      <button
-        onClick={() => onToggleStep(step.id)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1C1C24] transition-colors"
-      >
-        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-          {expandedSteps.has(step.id) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-lg shadow-[#6D5BF6]/30 mb-4">
+            <CheckSquare size={32} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-[#E8E8EE] mb-2">DSA Sheet Tracker</h1>
+          <p className="text-[#8A8A98]">Track your LeetCode progress across 518 problems</p>
         </div>
-        <h2 className="font-semibold text-[17px] text-[#E8E8EE] flex-1">{step.title}</h2>
-        <div className="flex-1 mx-3 hidden md:block"><ProgressBar done={done} total={total} /></div>
-        <span className="text-sm text-[#8A8A98] tabular-nums whitespace-nowrap">{done}/{total}</span>
-      </button>
 
-      <div className="px-4 pb-3">
-        {expandedSteps.has(step.id) && step.subsections.map(sub => (
-          <SubSectionRow
-            key={sub.id}
-            sub={sub}
-            stepId={step.id}
-            expanded={expandedSubs.has(sub.id)}
-            onToggle={() => onToggleSub(sub.id)}
-            progressState={progressState}
-            onToggleProb={onToggleProb}
-            onSkipProb={onSkipProb}
-            hideSkipped={hideSkipped}
-            filter={filter}
-          />
-        ))}
+        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
+          <h2 className="text-lg font-semibold text-[#E8E8EE] mb-4">Sign in to continue</h2>
+          <p className="text-sm text-[#8A8A98] mb-6">Your progress will be saved to the cloud and synced across devices.</p>
+
+          <button
+            onClick={onSignIn}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs text-[#8A8A98]">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ===================== Profile Page Component ===================== */
-function ProfilePage({ doneCount,
-  userName, setUserName,
-  userEmail, setUserEmail,
-  userId, setUserId,
-  dailyStreak, heatmapData,
-  exportProgress, importProgress,
-  onBack
-}) {
+// =============================================================================
+// Onboarding Page Component
+// =============================================================================
+function OnboardingPage({ user, onComplete, onSignOut }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    username: '',
+    bio: '',
+    location: '',
+    website: ''
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+  const [validationMessage, setValidationMessage] = useState('');
+
+  // Check username availability in real-time
+  useEffect(() => {
+    if (!formData.username || formData.username.length < 3) {
+      setUsernameAvailable(null);
+      setValidationMessage('');
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('username', formData.username)
+          .single();
+
+        if (data) {
+          setUsernameAvailable(false);
+          setValidationMessage('This username is already taken');
+        } else {
+          setUsernameAvailable(true);
+          setValidationMessage('');
+        }
+      } catch (error) {
+        setUsernameAvailable(null);
+        setValidationMessage('');
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData.username]);
+
+  const validateUsername = (username) => {
+    if (username.length < 3) return 'Username must be at least 3 characters';
+    if (username.includes(' ')) return 'Username cannot contain spaces';
+    if (!/^[a-z0-9-]+$/.test(username)) return 'Username can only contain lowercase letters, numbers, and hyphens';
+    return null;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Auto-generate username from name
+    if (name === 'name' && !formData.username) {
+      const generatedUsername = value
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      if (generatedUsername) {
+        setFormData(prev => ({ ...prev, username: generatedUsername }));
+      }
+    }
+
+    // Clear errors
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.bio.trim()) newErrors.bio = 'Bio is required';
+    else if (formData.bio.length < 10) newErrors.bio = 'Bio must be at least 10 characters';
+
+    const usernameError = validateUsername(formData.username);
+    if (usernameError) newErrors.username = usernameError;
+    else if (usernameAvailable === false) newErrors.username = 'Username is already taken';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Update profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          username: formData.username,
+          bio: formData.bio,
+          location: formData.location,
+          website: formData.website,
+          onboarding_completed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      onComplete();
+    } catch (error) {
+      console.error('Onboarding error:', error);
+      setErrors({ submit: 'Failed to save profile. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
-      <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
-        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
-          <button onClick={onBack} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]">
-            <ChevronDown size={20} className="rotate-90" />
-          </button>
-          <h1 className="font-bold text-xl">My Profile</h1>
-          <div className="flex-1" />
-          <button onClick={() => alert('Settings coming soon!')} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]">
-            <Settings size={20} />
+    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex flex-col">
+      {/* Header */}
+      <header className="bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+        <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center">
+              <CheckSquare size={16} className="text-white" />
+            </div>
+            <h1 className="font-bold text-lg">Complete Your Profile</h1>
+          </div>
+          <button onClick={onSignOut} className="text-[#8A8A98] hover:text-[#E8E8EE] flex items-center gap-2 text-sm">
+            <LogOut size={14} />
+            Sign out
           </button>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
-        {/* Profile Header */}
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
-          <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center text-4xl font-bold text-white shadow-lg shadow-[#6D5BF6]/30">
-            {userName.charAt(0).toUpperCase() || 'U'}
+      {/* Main Content */}
+      <main className="flex-1 max-w-2xl mx-auto px-4 md:px-6 py-8">
+        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-2">Welcome to DSA Sheet Tracker</h2>
+            <p className="text-[#8A8A98]">Let's set up your profile to get started with tracking your coding journey.</p>
           </div>
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8EE]">{userName || 'User Name'}</h1>
-            <p className="text-[#8A8A98] mt-1">{userEmail || 'user@example.com'}</p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
-              <span className="px-3 py-1 bg-[#15151B] border border-[#26262F] rounded-full text-xs text-[#8A8A98]">
-                ID: {userId || 'Not set'}
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-            <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-              <Calendar size={16} />
-              <span className="text-xs font-medium">Streak</span>
+          {errors.submit && (
+            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-6 text-red-400 text-sm">
+              {errors.submit}
             </div>
-            <div className="text-2xl font-bold text-[#FF6B35]">{dailyStreak}</div>
-            <div className="text-xs text-[#8A8A98] mt-1">days</div>
-          </div>
-          <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-            <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-              <Trophy size={16} />
-              <span className="text-xs font-medium">Rank</span>
-            </div>
-            <div className="text-2xl font-bold text-[#6D5BF6]">Novice</div>
-            <div className="text-xs text-[#8A8A98] mt-1">Beginner tier</div>
-          </div>
-          <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-            <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-              <Target size={16} />
-              <span className="text-xs font-medium">Problems</span>
-            </div>
-            <div className="text-2xl font-bold text-[#22A559]">{doneCount}</div>
-            <div className="text-xs text-[#8A8A98] mt-1">Solved</div>
-          </div>
-          <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-            <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-              <LogOut size={16} />
-              <span className="text-xs font-medium">Logout</span>
-            </div>
-            <button onClick={() => alert('Signed out!')} className="text-[#6D5BF6] text-sm font-medium mt-1">Sign out</button>
-          </div>
-        </div>
+          )}
 
-        {/* Activity Section */}
-        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-[#E8E8EE]">Activity Heatmap</h3>
-            <div className="flex items-center gap-2 text-xs text-[#8A8A98]">
-              <span>Less</span>
-              <div className="flex gap-1">
-                <div className="w-3 h-3 rounded-sm bg-zinc-800/30" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-900/40" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-700/60" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-500/80" />
-                <div className="w-3 h-3 rounded-sm bg-emerald-400" />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name Field */}
+            <div>
+              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+                Full Name <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]" />
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="John Doe"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
+                />
               </div>
-              <span>More</span>
+              {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
             </div>
-          </div>
-          <div className="overflow-x-auto activity-scroll">
-            <div className="flex gap-2 min-w-max">
-              {heatmapData.map((week, weekIdx) => (
-                <div key={weekIdx} className="flex flex-col gap-1">
-                  {week.map((day, dayIdx) => {
-                    const intensityColors = [
-                      'bg-zinc-800/30',
-                      'bg-emerald-900/40',
-                      'bg-emerald-700/60',
-                      'bg-emerald-500/80',
-                      'bg-emerald-400',
-                    ];
-                    return (
-                      <div
-                        key={dayIdx}
-                        className={`w-3 h-3 rounded-sm ${intensityColors[day.intensity]} hover:ring-1 hover:ring-white/20 transition-all cursor-pointer`}
-                        title={`${day.date.toLocaleDateString()}: ${day.count} problems`}
-                      />
-                    );
-                  })}
+
+            {/* Username Field */}
+            <div>
+              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+                Username (Handle) <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]" />
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="johndoe"
+                  className={`w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 transition-all ${
+                    usernameAvailable === true ? 'border-green-500 focus:ring-green-500' :
+                    usernameAvailable === false ? 'border-red-500 focus:ring-red-500' :
+                    'border-[#26262F] focus:ring-[#6D5BF6]'
+                  }`}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {usernameAvailable === true && (
+                    <span className="text-green-400 text-xs flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 bg-green-500 rounded-full" />
+                      Available
+                    </span>
+                  )}
+                  {usernameAvailable === false && (
+                    <span className="text-red-400 text-xs flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 bg-red-500 rounded-full" />
+                      Taken
+                    </span>
+                  )}
                 </div>
-              ))}
+              </div>
+              <p className="text-xs text-[#8A8A98] mt-1">
+                3+ characters, lowercase letters, numbers, and hyphens only
+              </p>
+              <p className={`text-sm mt-1 ${validationMessage ? 'text-red-400' : 'text-[#8A8A98]'}`}>
+                {validationMessage}
+              </p>
             </div>
-          </div>
-          <div className="mt-4 flex items-center justify-between text-xs text-[#8A8A98]">
-            <span>Last 52 weeks</span>
-            <span>Last updated today</span>
-          </div>
-        </div>
 
-        {/* Account Settings */}
-        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] divide-y divide-[#26262F] mb-6">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Account Information</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-[#8A8A98] mb-1.5">Full Name</label>
-                <input
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full px-4 py-2.5 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-sm text-[#E8E8EE] focus:border-[#6D5BF6] focus:outline-none transition-colors"
+            {/* Bio Field */}
+            <div>
+              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+                Bio <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-3 text-[#8A8A98]">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  placeholder="Tell us about your coding journey and goals..."
+                  rows={4}
+                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all resize-none"
                 />
+                <div className="absolute right-3 bottom-3 text-xs text-[#8A8A98]">
+                  {formData.bio.length}/10 min
+                </div>
               </div>
-              <div>
-                <label className="block text-xs text-[#8A8A98] mb-1.5">Email Address</label>
+              {errors.bio && <p className="text-red-400 text-sm mt-1">{errors.bio}</p>}
+            </div>
+
+            {/* Location Field */}
+            <div>
+              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+                Location
+              </label>
+              <div className="relative">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
                 <input
-                  value={userEmail}
-                  onChange={(e) => setUserEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  type="email"
-                  className="w-full px-4 py-2.5 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-sm text-[#E8E8EE] focus:border-[#6D5BF6] focus:outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-[#8A8A98] mb-1.5">User ID</label>
-                <input
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value)}
-                  placeholder="Enter your user ID"
-                  className="w-full px-4 py-2.5 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-sm text-[#E8E8EE] focus:border-[#6D5BF6] focus:outline-none transition-colors"
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="New York, USA"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
                 />
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Backup & Security */}
-        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] divide-y divide-[#26262F]">
-          <div className="p-4">
-            <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Backup & Data</h3>
-            <div className="space-y-3">
+            {/* Website Field */}
+            <div>
+              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+                Website / Portfolio
+              </label>
+              <div className="relative">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                <input
+                  type="url"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleChange}
+                  placeholder="https://johndoe.dev"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="pt-4">
               <button
-                onClick={exportProgress}
-                className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                type="submit"
+                disabled={isLoading || usernameAvailable === false}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#6D5BF6] hover:bg-[#5B4AD6] disabled:bg-[#26262F] disabled:text-[#8A8A98] disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:ring-offset-2 focus:ring-offset-[#0B0B0F] shadow-lg shadow-[#6D5BF6]/20"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#6D5BF6]/20 flex items-center justify-center text-[#6D5BF6]">
-                    <Download size={20} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-[#E8E8EE]">Export Progress</div>
-                    <div className="text-xs text-[#8A8A98]">Download your progress as JSON</div>
-                  </div>
-                </div>
-                <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Creating Profile...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Complete Setup</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </>
+                )}
               </button>
-
-              <button
-                onClick={() => document.getElementById('import-file').click()}
-                className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#E65100]/20 flex items-center justify-center text-[#E65100]">
-                    <Upload size={20} />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-sm font-medium text-[#E8E8EE]">Import Progress</div>
-                    <div className="text-xs text-[#8A8A98]">Restore progress from backup</div>
-                  </div>
-                </div>
-                <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
-              </button>
-
-              <input id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
             </div>
-          </div>
+          </form>
         </div>
       </main>
     </div>
   );
 }
 
-/* ===================== Main App ===================== */
-export default function App() {
-  const { progress, activityLog, update, bulkUpdate, getState, theme, setTheme, reset } = useProgress();
-  const [search, setSearch] = useState(() => localStorage.getItem('dsa-search') || '');
+// =============================================================================
+// Authenticated App Component (Main DSA Tracker)
+// =============================================================================
+function AuthenticatedApp({ user, profile, onSignOut }) {
+  const { progress, activityLog, update, bulkUpdate, getState, theme, setTheme, reset, signIn, signOut } = useProgress();
 
+  const [search, setSearch] = useState(() => localStorage.getItem('dsa-search') || '');
   const [expandedSteps, setExpandedSteps] = useState(() => {
     try { const stored = localStorage.getItem('dsa-expanded-steps'); return stored ? new Set(JSON.parse(stored)) : new Set(); }
     catch { return new Set(); }
   });
-
   const [expandedSubs, setExpandedSubs] = useState(() => {
     try { const stored = localStorage.getItem('dsa-expanded-subs'); return stored ? new Set(JSON.parse(stored)) : new Set(); }
     catch { return new Set(); }
   });
-
   const [hideSkipped, setHideSkipped] = useState(() => {
     try { return localStorage.getItem('dsa-hide-skipped') === 'true'; }
     catch { return false; }
   });
-
   const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
   const [showProfile, setShowProfile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const [userName, setUserName] = useState(() => localStorage.getItem('dsa-user-name') || '');
-  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('dsa-user-email') || '');
-  const [userId, setUserId] = useState(() => localStorage.getItem('dsa-user-id') || '');
+  // User profile data from Supabase
+  const [userName, setUserName] = useState(profile?.name || '');
+  const [userUsername, setUserUsername] = useState(profile?.username || '');
+  const [userBio, setUserBio] = useState('');
+  const [userLocation, setUserLocation] = useState('');
+  const [userWebsite, setUserWebsite] = useState('');
+
+  // Update profile data when profile changes
+  useEffect(() => {
+    if (profile) {
+      setUserName(profile.name || '');
+      setUserUsername(profile.username || '');
+    }
+  }, [profile]);
+
+  // Load additional profile data
+  useEffect(() => {
+    if (user) {
+      supabase.from('profiles').select('bio, location, website').eq('id', user.id).single().then(({ data, error }) => {
+        if (data) {
+          setUserBio(data.bio || '');
+          setUserLocation(data.location || '');
+          setUserWebsite(data.website || '');
+        }
+      });
+    }
+  }, [user]);
 
   useEffect(() => { localStorage.setItem('dsa-expanded-steps', JSON.stringify([...expandedSteps])); }, [expandedSteps]);
   useEffect(() => { localStorage.setItem('dsa-expanded-subs', JSON.stringify([...expandedSubs])); }, [expandedSubs]);
@@ -464,8 +560,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('dsa-filter', activeFilter); }, [activeFilter]);
   useEffect(() => { localStorage.setItem('dsa-search', search); }, [search]);
   useEffect(() => { localStorage.setItem('dsa-user-name', userName); }, [userName]);
-  useEffect(() => { localStorage.setItem('dsa-user-email', userEmail); }, [userEmail]);
-  useEffect(() => { localStorage.setItem('dsa-user-id', userId); }, [userId]);
+  useEffect(() => { localStorage.setItem('dsa-user-username', userUsername); }, [userUsername]);
 
   const totalProblems = data.steps.reduce((sum, s) => sum + s.subsections.reduce((ss, sub) => ss + sub.problems.length, 0), 0);
   const doneCount = Object.values(progress).filter(s => s === 'done').length;
@@ -629,17 +724,185 @@ export default function App() {
 
   const chipActive = (type) => activeFilter === type ? 'bg-[#6D5BF6] text-white' : 'bg-[#15151B] text-[#8A8A98] hover:text-white';
 
-  if (showProfile) {
+  // Profile page component
+  function ProfilePage() {
     return (
-      <ProfilePage
-        userName={userName} setUserName={setUserName}
-        userEmail={userEmail} setUserEmail={setUserEmail}
-        userId={userId} setUserId={setUserId}
-        dailyStreak={dailyStreak} heatmapData={heatmapData} doneCount={doneCount}
-        exportProgress={exportProgress} importProgress={importProgress}
-        onBack={() => setShowProfile(false)}
-      />
+      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
+        <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+          <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
+            <button onClick={() => setShowProfile(false)} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]">
+              <ChevronDown size={20} className="rotate-90" />
+            </button>
+            <h1 className="font-bold text-xl">My Profile</h1>
+            <div className="flex-1" />
+            <div className="flex items-center gap-3">
+              <button onClick={() => alert('Settings coming soon!')} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]">
+                <Settings size={20} />
+              </button>
+              <button onClick={onSignOut} className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-900/20 transition-colors text-red-400">
+                <LogOut size={20} />
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+          {/* Profile Header */}
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center text-4xl font-bold text-white shadow-lg shadow-[#6D5BF6]/30">
+              {userName.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8EE]">{userName}</h1>
+              <p className="text-[#8A8A98] mt-1">@{userUsername} • {userBio || 'Add a bio to tell us about yourself'}</p>
+              {userLocation && (
+                <div className="flex items-center gap-2 text-[#8A8A98] mt-2 text-sm">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  {userLocation}
+                </div>
+              )}
+              {userWebsite && (
+                <a href={userWebsite} target="_blank" rel="noopener noreferrer" className="text-[#6D5BF6] text-sm mt-1 inline-block hover:underline">
+                  {userWebsite}
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <Calendar size={16} />
+                <span className="text-xs font-medium">Streak</span>
+              </div>
+              <div className="text-2xl font-bold text-[#FF6B35]">{dailyStreak}</div>
+              <div className="text-xs text-[#8A8A98] mt-1">days</div>
+            </div>
+            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <Trophy size={16} />
+                <span className="text-xs font-medium">Rank</span>
+              </div>
+              <div className="text-2xl font-bold text-[#6D5BF6]">Novice</div>
+              <div className="text-xs text-[#8A8A98] mt-1">Beginner tier</div>
+            </div>
+            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <Target size={16} />
+                <span className="text-xs font-medium">Problems</span>
+              </div>
+              <div className="text-2xl font-bold text-[#22A559]">{doneCount}</div>
+              <div className="text-xs text-[#8A8A98] mt-1">Solved</div>
+            </div>
+            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <LogOut size={16} />
+                <span className="text-xs font-medium">Logout</span>
+              </div>
+              <button onClick={onSignOut} className="text-[#6D5BF6] text-sm font-medium mt-1 hover:text-[#8B7CFD] transition-colors">
+                Sign out
+              </button>
+            </div>
+          </div>
+
+          {/* Activity Section */}
+          <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#E8E8EE]">Activity Heatmap</h3>
+              <div className="flex items-center gap-2 text-xs text-[#8A8A98]">
+                <span>Less</span>
+                <div className="flex gap-1">
+                  <div className="w-3 h-3 rounded-sm bg-zinc-800/30" />
+                  <div className="w-3 h-3 rounded-sm bg-emerald-900/40" />
+                  <div className="w-3 h-3 rounded-sm bg-emerald-700/60" />
+                  <div className="w-3 h-3 rounded-sm bg-emerald-500/80" />
+                  <div className="w-3 h-3 rounded-sm bg-emerald-400" />
+                </div>
+                <span>More</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto activity-scroll">
+              <div className="flex gap-2 min-w-max">
+                {heatmapData.map((week, weekIdx) => (
+                  <div key={weekIdx} className="flex flex-col gap-1">
+                    {week.map((day, dayIdx) => {
+                      const intensityColors = [
+                        'bg-zinc-800/30',
+                        'bg-emerald-900/40',
+                        'bg-emerald-700/60',
+                        'bg-emerald-500/80',
+                        'bg-emerald-400',
+                      ];
+                      return (
+                        <div
+                          key={dayIdx}
+                          className={`w-3 h-3 rounded-sm ${intensityColors[day.intensity]} hover:ring-1 hover:ring-white/20 transition-all cursor-pointer`}
+                          title={`${day.date.toLocaleDateString()}: ${day.count} problems`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs text-[#8A8A98]">
+              <span>Last 52 weeks</span>
+              <span>Last updated today</span>
+            </div>
+          </div>
+
+          {/* Backup & Security */}
+          <div className="bg-[#15151B] rounded-2xl border border-[#26262F] divide-y divide-[#26262F]">
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Backup & Data</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={exportProgress}
+                  className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#6D5BF6]/20 flex items-center justify-center text-[#6D5BF6]">
+                      <Download size={20} />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-[#E8E8EE]">Export Progress</div>
+                      <div className="text-xs text-[#8A8A98]">Download your progress as JSON</div>
+                    </div>
+                  </div>
+                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                </button>
+
+                <button
+                  onClick={() => document.getElementById('import-file').click()}
+                  className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#E65100]/20 flex items-center justify-center text-[#E65100]">
+                      <Upload size={20} />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-[#E8E8EE]">Import Progress</div>
+                      <div className="text-xs text-[#8A8A98]">Restore progress from backup</div>
+                    </div>
+                  </div>
+                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                </button>
+
+                <input id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
     );
+  }
+
+  if (showProfile) {
+    return <ProfilePage />;
   }
 
   return (
@@ -716,7 +979,7 @@ export default function App() {
           </div>
         </section>
 
-        <aside className={`hidden lg:block w-72 flex-shrink-0 space-y-3 ${showProfile ? 'hidden' : ''}`}>
+        <aside className={`hidden lg:block w-72 flex-shrink-0 space-y-3`}>
           <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 relative">
             <div className="mb-4">
               <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Overall Progress</h3>
@@ -776,3 +1039,147 @@ export default function App() {
     </div>
   );
 }
+
+// =============================================================================
+// Step and Problem Row Components
+// =============================================================================
+function ProgressBar({ done, total, colorClass = "bg-[#6D5BF6]" }) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  return (
+    <div className="w-full h-[3px] bg-[#26262F] rounded-full overflow-hidden flex-shrink-0" aria-label={`${pct}% complete`}>
+      <div
+        className={`${colorClass} h-full rounded-full transition-all duration-300 ease-out`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+function ProblemRow({ prob, state, onToggle, onSkip }) {
+  const isDone = state === 'done';
+  const isSkip = state === 'skipped';
+
+  return (
+    <div
+      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? 'opacity-50 bg-[#15151B]/40' : 'hover:bg-[#1C1C24]'}`}
+    >
+      <button
+        onClick={() => onToggle(prob.id)}
+        aria-label={isDone ? `Mark ${prob.title} as not done` : `Mark ${prob.title} as done`}
+        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? 'bg-[#22A559] border-[#22A559]' : 'border-[#6D5BF6]/60 bg-transparent hover:border-[#6D5BF6]'}`}
+      >
+        {isDone && (
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
+            <path d="M2 7l3.5 3.5L12 4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
+
+      <button
+        onClick={() => onToggle(prob.id)}
+        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? 'line-through text-[#8A8A98]' : 'text-[#E8E8EE] hover:text-white'}`}
+      >
+        {prob.title}
+      </button>
+
+      <button
+        onClick={() => onSkip(prob.id)}
+        aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
+        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? 'text-[#E65100] bg-[#E65100]/10' : 'text-[#8A8A98] hover:text-[#E65100] hover:bg-[#E65100]/10'}`}
+      >
+        <SkipForward size={13} />
+        <span>Skip</span>
+      </button>
+    </div>
+  );
+}
+
+function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggleProb, onSkipProb, hideSkipped, filter }) {
+  const done = sub.problems.filter(p => progressState(p.id) === 'done').length;
+  const total = sub.problems.length;
+
+  let visible = sub.problems;
+  if (hideSkipped) {
+    visible = visible.filter(p => progressState(p.id) !== 'skipped');
+  }
+
+  if (filter === 'done') {
+    visible = visible.filter(p => progressState(p.id) === 'done');
+  } else if (filter === 'skipped') {
+    visible = visible.filter(p => progressState(p.id) === 'skipped');
+  } else if (filter === 'todo') {
+    visible = visible.filter(p => progressState(p.id) === 'todo');
+  }
+
+  return (
+    <div className="ml-4 pl-3 border-l border-[#26262F]">
+      <button
+        onClick={() => onToggle(sub.id)}
+        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#E8E8EE] transition-colors"
+      >
+        {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="font-medium text-[#E8E8EE]">{sub.title}</span>
+        <div className="flex-1 mx-2"><ProgressBar done={done} total={total} /></div>
+        <span className="text-xs text-[#8A8A98] tabular-nums">{done}/{total}</span>
+      </button>
+
+      {expanded && (
+        <div className="mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
+          {visible.length > 0 ? (
+            visible.map(p => (
+              <ProblemRow
+                key={p.id}
+                prob={p}
+                state={progressState(p.id)}
+                onToggle={onToggleProb}
+                onSkip={onSkipProb}
+              />
+            ))
+          ) : (
+            <div className="py-4 text-center text-xs text-[#8A8A98]">No problems match the filter</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepRow({ step, progressState, expandedSteps, onToggleStep, expandedSubs, onToggleSub, onToggleProb, onSkipProb, hideSkipped, filter }) {
+  const done = step.subsections.reduce((sum, s) => sum + s.problems.filter(p => progressState(p.id) === 'done').length, 0);
+  const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
+
+  return (
+    <div className="rounded-xl bg-[#15151B] border border-[#26262F] overflow-hidden mb-3">
+      <button
+        onClick={() => onToggleStep(step.id)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1C1C24] transition-colors"
+      >
+        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+          {expandedSteps.has(step.id) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </div>
+        <h2 className="font-semibold text-[17px] text-[#E8E8EE] flex-1">{step.title}</h2>
+        <div className="flex-1 mx-3 hidden md:block"><ProgressBar done={done} total={total} /></div>
+        <span className="text-sm text-[#8A8A98] tabular-nums whitespace-nowrap">{done}/{total}</span>
+      </button>
+
+      <div className="px-4 pb-3">
+        {expandedSteps.has(step.id) && step.subsections.map(sub => (
+          <SubSectionRow
+            key={sub.id}
+            sub={sub}
+            stepId={step.id}
+            expanded={expandedSubs.has(sub.id)}
+            onToggle={() => onToggleSub(sub.id)}
+            progressState={progressState}
+            onToggleProb={onToggleProb}
+            onSkipProb={onSkipProb}
+            hideSkipped={hideSkipped}
+            filter={filter}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default App;
