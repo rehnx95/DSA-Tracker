@@ -90,6 +90,19 @@ src/
 - `npm run build` — production build; passes clean
 - `.env` file must contain `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; these variables are also required in the deployment environment
 - No service worker or PWA; standard Vite SPA
+- Vercel uses the repository root, `npm run build`, and `dist`; `vercel.json` rewrites app routes such as `/people` and `/u/<username>` to `index.html`, so they work when opened or refreshed directly.
+
+### Deploy to Vercel
+1. Push the repository to GitHub if it is not already there. Do not commit `.env`; it is ignored by Git.
+2. In Vercel, choose **Add New → Project**, import this repository, and keep the project root as `.`. Select the Vite preset (or set the build command to `npm run build` and output directory to `dist`).
+3. In the Vercel project’s **Settings → Environment Variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production (and Preview/Development if those deployments should work). Use the Supabase project URL and public anon/publishable key only; never add the service-role key.
+4. Deploy once and copy the generated production URL, such as `https://your-project.vercel.app`.
+5. In Supabase **Authentication → URL Configuration**, set the Site URL to the production URL. Add the production URL and any Vercel preview URLs you intend to use to the allowed redirect URLs.
+6. In Google Cloud OAuth credentials, add the production URL (and intended preview origins) as authorized JavaScript origins. Keep the authorized redirect URI set to the Supabase callback URL shown under the Google provider settings; it is not the Vercel URL.
+7. Apply the Supabase SQL migrations in this repository in timestamp order, including the auth/profile, activity, uploaded-sheet, and public-profile-search migrations. Profile search and public profile pages require the public-profile migrations.
+8. Redeploy after changing Vercel environment variables. Test Google sign-in, onboarding, saved progress, TXT upload, `/people`, and a direct `/u/<username>` URL on the production domain.
+
+User and profile search currently require a signed-in account. Vercel’s SPA rewrite makes the profile URLs load directly, but it does not make the profile data public to signed-out visitors.
 
 ## Plan Reference
 - `/home/rehnx/.claude-omniroute/plans/i-want-to-make-quirky-lark.md` — Full backend conversion plan: Supabase Auth + DB, replace `useProgress`, auth guard, schema migrations
