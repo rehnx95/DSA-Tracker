@@ -186,6 +186,7 @@ function App() {
       user={user}
       profile={profile}
       authError={authError}
+      onProfileUpdated={setProfile}
       onSignOut={handleSignOut}
     />
   );
@@ -570,7 +571,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 // =============================================================================
 // Authenticated App Component (Main DSA Tracker)
 // =============================================================================
-function AuthenticatedApp({ user, profile, authError, onSignOut }) {
+function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOut }) {
   const {
     progress,
     activityLog,
@@ -600,6 +601,11 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
   });
   const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
   const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [profileForm, setProfileForm] = useState(null);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileFormError, setProfileFormError] = useState('');
+  const [profileFormSuccess, setProfileFormSuccess] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
@@ -607,6 +613,80 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
   const userBio = profile?.bio || '';
   const userLocation = profile?.location || '';
   const userWebsite = profile?.website || '';
+
+  const openProfileSettings = () => {
+    setProfileForm({
+      name: profile?.name || '',
+      username: profile?.username || '',
+      bio: profile?.bio || '',
+      location: profile?.location || '',
+      website: profile?.website || '',
+    });
+    setProfileFormError('');
+    setProfileFormSuccess('');
+    setShowSettings(true);
+  };
+
+  const saveProfileSettings = async (event) => {
+    event.preventDefault();
+    const values = {
+      name: profileForm.name.trim(),
+      username: profileForm.username.trim().toLowerCase(),
+      bio: profileForm.bio.trim(),
+      location: profileForm.location.trim(),
+      website: profileForm.website.trim(),
+    };
+
+    if (!values.name) {
+      setProfileFormError('Name is required.');
+      return;
+    }
+    if (!/^(?=.*[a-z0-9])[a-z0-9-]{3,30}$/.test(values.username)) {
+      setProfileFormError('Username must be 3–30 characters using lowercase letters, numbers, and hyphens.');
+      return;
+    }
+    if (values.website) {
+      try {
+        const websiteUrl = new URL(values.website);
+        if (!['http:', 'https:'].includes(websiteUrl.protocol)) throw new Error('Invalid URL protocol');
+      } catch {
+        setProfileFormError('Enter a valid website URL starting with http:// or https://.');
+        return;
+      }
+    }
+
+    setIsSavingProfile(true);
+    setProfileFormError('');
+    setProfileFormSuccess('');
+    try {
+      const { data: isAvailable, error: availabilityError } = await supabase.rpc('is_username_available', {
+        candidate_username: values.username,
+      });
+      if (availabilityError) throw availabilityError;
+      if (!isAvailable) {
+        setProfileFormError('That username is already taken.');
+        return;
+      }
+
+      const { data: savedProfile, error } = await supabase
+        .from('profiles')
+        .update({ ...values, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .select('id, name, username, bio, location, website, onboarding_completed')
+        .single();
+      if (error) throw error;
+
+      onProfileUpdated(savedProfile);
+      setProfileFormSuccess('Profile updated successfully.');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      setProfileFormError(error.code === '23505'
+        ? 'That username is already taken.'
+        : 'Could not save your profile. Please check your connection and try again.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   useEffect(() => { localStorage.setItem('dsa-expanded-steps', JSON.stringify([...expandedSteps])); }, [expandedSteps]);
   useEffect(() => { localStorage.setItem('dsa-expanded-subs', JSON.stringify([...expandedSubs])); }, [expandedSubs]);
@@ -670,6 +750,16 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
     return Object.entries(activityLog).reduce((total, [date, count]) => (
       date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today) ? total + count : total
     ), 0);
+  }, [activityLog]);
+
+  const yearlyActiveDays = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const firstDate = new Date(today);
+    firstDate.setDate(firstDate.getDate() - 364);
+    return Object.entries(activityLog).filter(([date, count]) => (
+      count > 0 && date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today)
+    )).length;
   }, [activityLog]);
 
   const heatmapData = useMemo(() => {
@@ -837,7 +927,7 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
             <h1 className="font-bold text-xl">My Profile</h1>
             <div className="flex-1" />
             <div className="flex items-center gap-3">
-              <button onClick={() => alert('Settings coming soon!')} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]">
+              <button onClick={openProfileSettings} aria-label="Edit profile settings" className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]">
                 <Settings size={20} />
               </button>
               <button onClick={onSignOut} className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-900/20 transition-colors text-red-400">
@@ -904,15 +994,6 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
               <div className="text-2xl font-bold text-[#22A559]">{doneCount}</div>
               <div className="text-xs text-[#8A8A98] mt-1">Solved</div>
             </div>
-            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-                <LogOut size={16} />
-                <span className="text-xs font-medium">Logout</span>
-              </div>
-              <button onClick={onSignOut} className="text-[#6D5BF6] text-sm font-medium mt-1 hover:text-[#8B7CFD] transition-colors">
-                Sign out
-              </button>
-            </div>
           </div>
 
           {/* Activity Section */}
@@ -964,7 +1045,7 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
-                  <span>Current streak: {dailyStreak} {dailyStreak === 1 ? 'day' : 'days'}</span>
+                  <span>Total active days: {yearlyActiveDays}</span>
                   <span>Updated live as you mark problems solved</span>
                 </div>
               </div>
@@ -1015,6 +1096,103 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
         </main>
       </div>
     );
+  }
+
+  function ProfileSettingsPage() {
+    return (
+      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+        <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+          <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
+            <button
+              onClick={() => setShowSettings(false)}
+              aria-label="Back to profile"
+              className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors"
+            >
+              <ChevronDown size={20} className="rotate-90" />
+            </button>
+            <h1 className="font-bold text-xl">Edit profile</h1>
+          </div>
+        </header>
+
+        <main className="max-w-3xl mx-auto px-4 md:px-6 py-8">
+          <form onSubmit={saveProfileSettings} className="space-y-5 rounded-2xl border border-[#26262F] bg-[#15151B] p-6 md:p-8">
+            {profileFormError && (
+              <p role="alert" className="rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+                {profileFormError}
+              </p>
+            )}
+            {profileFormSuccess && (
+              <p role="status" className="rounded-lg border border-green-500/30 bg-green-900/20 p-3 text-sm text-green-300">
+                {profileFormSuccess}
+              </p>
+            )}
+
+            {[
+              { name: 'name', label: 'Name', type: 'text', required: true, maxLength: 100 },
+              { name: 'username', label: 'Username', type: 'text', required: true, maxLength: 30 },
+              { name: 'location', label: 'Location', type: 'text', maxLength: 100 },
+              { name: 'website', label: 'Website / URL', type: 'url', placeholder: 'https://example.com', maxLength: 2048 },
+            ].map(field => (
+              <div key={field.name}>
+                <label htmlFor={`profile-${field.name}`} className="mb-2 block text-sm font-medium">
+                  {field.label}
+                </label>
+                <input
+                  id={`profile-${field.name}`}
+                  name={field.name}
+                  type={field.type}
+                  required={field.required}
+                  maxLength={field.maxLength}
+                  placeholder={field.placeholder}
+                  value={profileForm[field.name]}
+                  onChange={event => {
+                    const value = field.name === 'username' ? event.target.value.toLowerCase() : event.target.value;
+                    setProfileForm(current => ({ ...current, [field.name]: value }));
+                    setProfileFormError('');
+                    setProfileFormSuccess('');
+                  }}
+                  className="w-full rounded-lg border border-[#26262F] bg-[#0B0B0F] px-4 py-3 text-[#E8E8EE] placeholder-[#8A8A98] focus:border-[#6D5BF6] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6]"
+                />
+                {field.name === 'username' && (
+                  <p className="mt-1 text-xs text-[#8A8A98]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
+                )}
+              </div>
+            ))}
+
+            <div>
+              <label htmlFor="profile-bio" className="mb-2 block text-sm font-medium">Bio</label>
+              <textarea
+                id="profile-bio"
+                name="bio"
+                rows={4}
+                maxLength={500}
+                value={profileForm.bio}
+                onChange={event => {
+                  setProfileForm(current => ({ ...current, bio: event.target.value }));
+                  setProfileFormError('');
+                  setProfileFormSuccess('');
+                }}
+                placeholder="Tell people about yourself"
+                className="w-full resize-y rounded-lg border border-[#26262F] bg-[#0B0B0F] px-4 py-3 text-[#E8E8EE] placeholder-[#8A8A98] focus:border-[#6D5BF6] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6]"
+              />
+              <p className="mt-1 text-right text-xs text-[#8A8A98]">{profileForm.bio.length}/500</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSavingProfile}
+              className="w-full rounded-lg bg-[#6D5BF6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#5B4AD6] disabled:cursor-wait disabled:opacity-60"
+            >
+              {isSavingProfile ? 'Saving…' : 'Save profile'}
+            </button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
+  if (showSettings) {
+    return <ProfileSettingsPage />;
   }
 
   if (showProfile) {

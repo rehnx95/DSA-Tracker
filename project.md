@@ -24,7 +24,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 - Export/Import JSON backup format: `{ [problemTitle]: { id, state: "done"|"skipped"|"todo" } }`
 - Reset progress button (stats row, not duplicate)
 - Responsive layout: mobile sidebar toggle, overflow-y-auto scrollbars
-- Profile page: full-page profile with info fields (name, email, bio, location, website), stats, streak, heatmap, backup controls
+- Profile page: full-page profile with editable name, username, bio, location, and website settings; stats, streak, heatmap, and backup controls
 - Navigation: avatar click → profile; back button → tracker; sign out clears the Supabase session
 - All progress/activity/user data saved to Supabase; UI state (expanded, filter, search, theme) in localStorage
 
