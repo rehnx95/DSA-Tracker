@@ -852,6 +852,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </div>
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8EE]">{userName}</h1>
+              {user.email && <p className="text-[#8A8A98] mt-1">{user.email}</p>}
               <p className="text-[#8A8A98] mt-1">@{userUsername}</p>
               {userLocation && (
                 <div className="flex items-center gap-2 text-[#8A8A98] mt-2 text-sm">
