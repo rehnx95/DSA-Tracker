@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, Settings, Calendar, Trophy, Target, LogOut } from 'lucide-react';
 import data from './data/sheet.json';
-import { supabase } from './lib/supabase';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useProgress } from './hooks/useProgress';
 
 // =============================================================================
@@ -18,77 +18,104 @@ function App() {
   const [appState, setAppState] = useState(AppState.LOADING);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [authError, setAuthError] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const authEventOccurred = useRef(false);
 
-  // =======================================================================
-  // Authentication State Machine
-  // =======================================================================
   useEffect(() => {
-    // Initialize auth state
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        handleAuthChange(session);
-      } else {
+    if (!isSupabaseConfigured) {
+      setAuthError('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.');
+      setAppState(AppState.UNAUTHENTICATED);
+      return undefined;
+    }
+
+    let active = true;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active || event === 'INITIAL_SESSION') return;
+      if (event === 'TOKEN_REFRESHED') return;
+      authEventOccurred.current = true;
+      setAuthError('');
+      setUser(session?.user ?? null);
+      if (!session) {
+        setProfile(null);
         setAppState(AppState.UNAUTHENTICATED);
       }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleAuthChange(session);
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (!active || authEventOccurred.current) return;
+      if (error) throw error;
+      setUser(session?.user ?? null);
+      if (!session) setAppState(AppState.UNAUTHENTICATED);
+    }).catch((error) => {
+      if (!active || authEventOccurred.current) return;
+      console.error('Failed to restore authentication session:', error);
+      setAuthError('Could not restore your session. Please refresh and try again.');
+      setAppState(AppState.UNAUTHENTICATED);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const handleAuthChange = async (session) => {
-    if (session) {
-      setUser(session.user);
+  useEffect(() => {
+    if (!user || !supabase) return undefined;
 
-      // Fetch user profile to check onboarding status
-      const { data: profileData, error } = await supabase
-        .from('profiles')
-        .select('onboarding_completed')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) {
-        console.error('Failed to fetch profile:', error);
-        setAppState(AppState.UNAUTHENTICATED);
-        return;
-      }
-
-      if (profileData) {
+    let active = true;
+    setAppState(AppState.LOADING);
+    supabase
+      .from('profiles')
+      .select('id, name, username, bio, location, website, onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data: profileData, error }) => {
+        if (!active) return;
+        if (error) throw error;
         setProfile(profileData);
-        if (profileData.onboarding_completed) {
-          setAppState(AppState.AUTHENTICATED);
-        } else {
-          setAppState(AppState.ONBOARDING);
-        }
-      } else {
-        // Profile doesn't exist, create it via trigger
-        setAppState(AppState.ONBOARDING);
-      }
-    } else {
-      setUser(null);
-      setProfile(null);
-      setAppState(AppState.UNAUTHENTICATED);
+        setAppState(profileData?.onboarding_completed ? AppState.AUTHENTICATED : AppState.ONBOARDING);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error('Failed to fetch profile:', error);
+        setAuthError('Could not load your profile. Check the Supabase database setup and try again.');
+        setAppState(AppState.UNAUTHENTICATED);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const handleSignIn = async () => {
+    if (!supabase) return;
+    setIsSigningIn(true);
+    setAuthError('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Google sign-in failed:', error);
+      setAuthError('Google sign-in could not be started. Check the Google provider settings in Supabase and try again.');
+      setIsSigningIn(false);
     }
   };
 
   const handleSignOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
-      // Clear any localStorage user-specific data
-      localStorage.removeItem('dsa-progress');
-      localStorage.removeItem('dsa-activity-log');
-      localStorage.removeItem('dsa-expanded-steps');
-      localStorage.removeItem('dsa-expanded-subs');
-      localStorage.removeItem('dsa-hide-skipped');
-      localStorage.removeItem('dsa-filter');
-      localStorage.removeItem('dsa-search');
-      localStorage.removeItem('theme');
-    } catch (err) {
-      console.error('Sign out error:', err);
+      if (!supabase) return;
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setAuthError('Could not sign out. Please try again.');
     }
   }, []);
 
@@ -97,7 +124,11 @@ function App() {
   // =======================================================================
   if (appState === AppState.UNAUTHENTICATED) {
     return (
-      <UnauthenticatedView onSignIn={handleSignOut} />
+      <UnauthenticatedView
+        onSignIn={handleSignIn}
+        isSigningIn={isSigningIn}
+        error={authError}
+      />
     );
   }
 
@@ -108,7 +139,9 @@ function App() {
     return (
       <OnboardingPage
         user={user}
-        onComplete={() => {
+        profile={profile}
+        onComplete={(savedProfile) => {
+          setProfile(savedProfile);
           setAppState(AppState.AUTHENTICATED);
         }}
         onSignOut={handleSignOut}
@@ -137,6 +170,7 @@ function App() {
     <AuthenticatedApp
       user={user}
       profile={profile}
+      authError={authError}
       onSignOut={handleSignOut}
     />
   );
@@ -145,7 +179,7 @@ function App() {
 // =============================================================================
 // Unauthenticated View Component
 // =============================================================================
-function UnauthenticatedView({ onSignIn }) {
+function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
   return (
     <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center p-4">
       <div className="max-w-md w-full">
@@ -161,9 +195,15 @@ function UnauthenticatedView({ onSignIn }) {
           <h2 className="text-lg font-semibold text-[#E8E8EE] mb-4">Sign in to continue</h2>
           <p className="text-sm text-[#8A8A98] mb-6">Your progress will be saved to the cloud and synced across devices.</p>
 
+          {error && (
+            <p role="alert" className="mb-4 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-400">
+              {error}
+            </p>
+          )}
           <button
             onClick={onSignIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+            disabled={isSigningIn}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100 disabled:cursor-wait disabled:opacity-70 transition-colors"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -171,7 +211,7 @@ function UnauthenticatedView({ onSignIn }) {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {isSigningIn ? 'Connecting to Google…' : 'Continue with Google'}
           </button>
         </div>
 
@@ -188,13 +228,13 @@ function UnauthenticatedView({ onSignIn }) {
 // =============================================================================
 // Onboarding Page Component
 // =============================================================================
-function OnboardingPage({ user, onComplete, onSignOut }) {
+function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   const [formData, setFormData] = useState({
-    name: '',
-    username: '',
-    bio: '',
-    location: '',
-    website: ''
+    name: profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || '',
+    username: profile?.username || '',
+    bio: profile?.bio || '',
+    location: profile?.location || '',
+    website: profile?.website || ''
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -210,44 +250,47 @@ function OnboardingPage({ user, onComplete, onSignOut }) {
       return;
     }
 
+    setUsernameAvailable(null);
+    let active = true;
     const timeoutId = setTimeout(async () => {
       try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', formData.username)
-          .single();
+        const { data, error } = await supabase.rpc('is_username_available', {
+          candidate_username: formData.username,
+        });
+        if (error) throw error;
+        if (!active) return;
 
-        if (data) {
-          setUsernameAvailable(false);
-          setValidationMessage('This username is already taken');
-        } else {
-          setUsernameAvailable(true);
-          setValidationMessage('');
-        }
+        setUsernameAvailable(data);
+        setValidationMessage(data ? '' : 'This username is already taken');
       } catch (error) {
+        console.error('Username availability check failed:', error);
+        if (!active) return;
         setUsernameAvailable(null);
-        setValidationMessage('');
+        setValidationMessage('Could not check username availability. You can still try saving it.');
       }
     }, 500);
 
-    return () => clearTimeout(timeoutId);
-  }, [formData.username]);
+    return () => {
+      active = false;
+      clearTimeout(timeoutId);
+    };
+  }, [formData.username, user.id]);
 
   const validateUsername = (username) => {
     if (username.length < 3) return 'Username must be at least 3 characters';
     if (username.includes(' ')) return 'Username cannot contain spaces';
-    if (!/^[a-z0-9-]+$/.test(username)) return 'Username can only contain lowercase letters, numbers, and hyphens';
+    if (!/^(?=.*[a-z0-9])[a-z0-9-]+$/.test(username)) return 'Username must contain a letter or number and use only lowercase letters, numbers, and hyphens';
     return null;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const nextValue = name === 'username' ? value.toLowerCase().trim() : value;
+    setFormData(prev => ({ ...prev, [name]: nextValue }));
 
     // Auto-generate username from name
     if (name === 'name' && !formData.username) {
-      const generatedUsername = value
+      const generatedUsername = nextValue
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '-')
         .replace(/-+/g, '-')
@@ -269,7 +312,7 @@ function OnboardingPage({ user, onComplete, onSignOut }) {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.bio.trim()) newErrors.bio = 'Bio is required';
-    else if (formData.bio.length < 10) newErrors.bio = 'Bio must be at least 10 characters';
+    else if (formData.bio.trim().length < 10) newErrors.bio = 'Bio must be at least 10 characters';
 
     const usernameError = validateUsername(formData.username);
     if (usernameError) newErrors.username = usernameError;
@@ -284,25 +327,31 @@ function OnboardingPage({ user, onComplete, onSignOut }) {
 
     try {
       // Update profile
-      const { error } = await supabase
+      const { data: savedProfile, error } = await supabase
         .from('profiles')
-        .update({
-          name: formData.name,
-          username: formData.username,
-          bio: formData.bio,
-          location: formData.location,
-          website: formData.website,
+        .upsert({
+          id: user.id,
+          name: formData.name.trim(),
+          username: formData.username.trim().toLowerCase(),
+          bio: formData.bio.trim(),
+          location: formData.location.trim(),
+          website: formData.website.trim(),
           onboarding_completed: true,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' })
+        .select('id, name, username, bio, location, website, onboarding_completed')
+        .single();
 
       if (error) throw error;
 
-      onComplete();
+      onComplete(savedProfile);
     } catch (error) {
       console.error('Onboarding error:', error);
-      setErrors({ submit: 'Failed to save profile. Please try again.' });
+      setErrors({
+        submit: error.code === '23505'
+          ? 'That username was just taken. Please choose another one.'
+          : 'Failed to save your profile. Check your connection and try again.'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -506,8 +555,20 @@ function OnboardingPage({ user, onComplete, onSignOut }) {
 // =============================================================================
 // Authenticated App Component (Main DSA Tracker)
 // =============================================================================
-function AuthenticatedApp({ user, profile, onSignOut }) {
-  const { progress, activityLog, update, bulkUpdate, getState, theme, setTheme, reset, signIn, signOut } = useProgress();
+function AuthenticatedApp({ user, profile, authError, onSignOut }) {
+  const {
+    progress,
+    activityLog,
+    loading: progressLoading,
+    error: progressError,
+    setError: setProgressError,
+    update,
+    bulkUpdate,
+    getState,
+    theme,
+    setTheme,
+    reset,
+  } = useProgress(user);
 
   const [search, setSearch] = useState(() => localStorage.getItem('dsa-search') || '');
   const [expandedSteps, setExpandedSteps] = useState(() => {
@@ -526,42 +587,17 @@ function AuthenticatedApp({ user, profile, onSignOut }) {
   const [showProfile, setShowProfile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // User profile data from Supabase
-  const [userName, setUserName] = useState(profile?.name || '');
-  const [userUsername, setUserUsername] = useState(profile?.username || '');
-  const [userBio, setUserBio] = useState('');
-  const [userLocation, setUserLocation] = useState('');
-  const [userWebsite, setUserWebsite] = useState('');
-
-  // Update profile data when profile changes
-  useEffect(() => {
-    if (profile) {
-      setUserName(profile.name || '');
-      setUserUsername(profile.username || '');
-    }
-  }, [profile]);
-
-  // Load additional profile data
-  useEffect(() => {
-    if (user) {
-      supabase.from('profiles').select('bio, location, website').eq('id', user.id).single().then(({ data, error }) => {
-        if (data) {
-          setUserBio(data.bio || '');
-          setUserLocation(data.location || '');
-          setUserWebsite(data.website || '');
-        }
-      });
-    }
-  }, [user]);
+  const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
+  const userUsername = profile?.username || '';
+  const userBio = profile?.bio || '';
+  const userLocation = profile?.location || '';
+  const userWebsite = profile?.website || '';
 
   useEffect(() => { localStorage.setItem('dsa-expanded-steps', JSON.stringify([...expandedSteps])); }, [expandedSteps]);
   useEffect(() => { localStorage.setItem('dsa-expanded-subs', JSON.stringify([...expandedSubs])); }, [expandedSubs]);
   useEffect(() => { localStorage.setItem('dsa-hide-skipped', String(hideSkipped)); }, [hideSkipped]);
   useEffect(() => { localStorage.setItem('dsa-filter', activeFilter); }, [activeFilter]);
   useEffect(() => { localStorage.setItem('dsa-search', search); }, [search]);
-  useEffect(() => { localStorage.setItem('dsa-user-name', userName); }, [userName]);
-  useEffect(() => { localStorage.setItem('dsa-user-username', userUsername); }, [userUsername]);
-
   const totalProblems = data.steps.reduce((sum, s) => sum + s.subsections.reduce((ss, sub) => ss + sub.problems.length, 0), 0);
   const doneCount = Object.values(progress).filter(s => s === 'done').length;
   const skippedCount = Object.values(progress).filter(s => s === 'skipped').length;
@@ -724,6 +760,14 @@ function AuthenticatedApp({ user, profile, onSignOut }) {
 
   const chipActive = (type) => activeFilter === type ? 'bg-[#6D5BF6] text-white' : 'bg-[#15151B] text-[#8A8A98] hover:text-white';
 
+  if (progressLoading) {
+    return (
+      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
+        <p className="text-[#8A8A98]">Syncing your saved progress…</p>
+      </div>
+    );
+  }
+
   // Profile page component
   function ProfilePage() {
     return (
@@ -747,6 +791,11 @@ function AuthenticatedApp({ user, profile, onSignOut }) {
         </header>
 
         <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+          {(authError || progressError) && (
+            <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+              {authError || progressError}
+            </div>
+          )}
           {/* Profile Header */}
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center text-4xl font-bold text-white shadow-lg shadow-[#6D5BF6]/30">
@@ -937,6 +986,23 @@ function AuthenticatedApp({ user, profile, onSignOut }) {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 flex gap-8 min-h-0">
+        {progressError && (
+          <div role="alert" className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl">
+            <div className="flex items-start gap-3">
+              <p>{progressError}</p>
+              <button onClick={() => setProgressError('')} aria-label="Dismiss sync error" className="text-red-200 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        {authError && (
+          <div role="alert" className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl">
+            <div className="flex items-start gap-3">
+              <p>{authError}</p>
+            </div>
+          </div>
+        )}
         <section className="flex-1 min-w-0 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 120px)'}}>
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             {['all', 'done', 'skipped', 'todo'].map(type => (
