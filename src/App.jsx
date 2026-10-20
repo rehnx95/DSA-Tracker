@@ -302,7 +302,7 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
             <div className="brand-mark auth-mobile-mark">
               <CheckSquare size={20} className="text-white" />
             </div>
-            <span className="section-kicker">DSA TRACKER</span>
+            <span className="section-kicker">TRACK SHEET</span>
             <h2>Sign in to continue</h2>
             <p className="auth-panel-description">
               Sign in to access your sheets and saved progress.
@@ -519,7 +519,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
         <div className="onboarding-panel bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">
-              Welcome to DSA Sheet Tracker
+              Welcome to Track Sheet
             </h2>
             <p className="text-[#8A8A98]">
               Let's set up your profile to get started with tracking your coding
@@ -1615,7 +1615,7 @@ function AuthenticatedApp({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6D5BF6]">
                 <CheckSquare size={16} className="text-white" />
               </div>
-              <span className="font-bold tracking-tight">DSA TRACKER</span>
+              <span className="font-bold tracking-tight">Track Sheet</span>
             </div>
             <div className="flex-1" />
             <span className="text-sm font-medium text-[#A1A1AA]">Search</span>
@@ -2737,9 +2737,14 @@ function AuthenticatedApp({
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-md shadow-[#6D5BF6]/20 flex-shrink-0">
               <CheckSquare size={16} className="text-white" />
             </div>
-            <h1 className="font-bold text-lg tracking-tight truncate">
-              {selectedSheet?.title || "DSA Sheet"}
-            </h1>
+            <div className="min-w-0">
+              <h1 className="font-bold text-lg tracking-tight truncate">
+                Track Sheet
+              </h1>
+              <p className="hidden truncate text-[10px] leading-tight text-[#8A8A98] sm:block">
+                {selectedSheet?.title || "DSA Sheet"}
+              </p>
+            </div>
           </div>
           <div className="flex-1" />
           <div className="relative hidden sm:block">

@@ -1,6 +1,6 @@
-# DSA Sheet Tracker
+# Track Sheet
 
-Full-stack DSA (Data Structures & Algorithms) problem tracker web application with Supabase backend. Dark-first responsive UI, multi-user via Google OAuth + PostgreSQL.
+Track Sheet is a full-stack DSA (Data Structures & Algorithms) problem tracker web application with Supabase backend. Dark-first responsive UI, multi-user via Google OAuth + PostgreSQL.
 
 ## What it is
 - Tracks 518 LeetCode-style problems across 18 steps
