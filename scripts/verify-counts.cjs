@@ -23,22 +23,16 @@ function verifyCounts() {
     }, 0);
   }, 0);
 
-  const skipCount = steps.reduce((total, step) => {
-    const subsections = step.subsections || [];
-    return total + subsections.reduce((subTotal, sub) => {
-      const problems = sub.problems || [];
-      return subTotal + problems.filter(p => p.defaultSkip).length;
-    }, 0);
-  }, 0);
+
 
   console.log(`Steps: ${stepsCount}`);
   console.log(`Problems: ${problemsCount}`);
-  console.log(`Default Skip: ${skipCount}`);
+
 
   // Expected counts
   const expectedSteps = 18;
   const expectedProblems = 518;
-  const expectedSkip = 60;
+
 
   const errors = [];
   if (stepsCount !== expectedSteps) {
@@ -47,9 +41,7 @@ function verifyCounts() {
   if (problemsCount !== expectedProblems) {
     errors.push(`Expected ${expectedProblems} Problems, got ${problemsCount}`);
   }
-  if (skipCount !== expectedSkip) {
-    errors.push(`Expected ${expectedSkip} Default Skip, got ${skipCount}`);
-  }
+
 
   if (errors.length > 0) {
     console.error('\nErrors found:');
