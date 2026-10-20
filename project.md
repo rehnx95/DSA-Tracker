@@ -18,8 +18,8 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 - State hook: src/hooks/useProgress.js (loads and saves each authenticated user's data to Supabase)
 
 ## Key Features
-- Progress tracking per problem: todo → done / skipped; only increments on transition to done, decrements only on done → todo
-- Daily streak counter with fire emoji; 52-week GitHub-style activity heatmap
+- Progress tracking per problem: todo → done / skipped; solved dates are stored in the user's local calendar and activity counts follow that date
+- Current and longest daily streaks; year-view contribution heatmap with weekday/month alignment and daily solved counts
 - Filter system: All / Done / Skipped / To Do; hide skipped toggle; search by title
 - Export/Import JSON backup format: `{ [problemTitle]: { id, state: "done"|"skipped"|"todo" } }`
 - Reset progress button (stats row, not duplicate)
@@ -68,7 +68,7 @@ src/
 ## Supabase Backend
 - Auth: Google OAuth via Supabase Auth; the app restores the session and loads the matching profile before showing the tracker.
 - Database: `profiles`, `progress`, and `activity_log` are scoped to the signed-in user's ID. First-time users complete onboarding before entering the tracker.
-- Latest schema migration: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`. It is additive and preserves existing profile/progress records.
+- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql` and `supabase/migrations/20261020170900_activity_calendar_streaks.sql`. They are additive; the activity migration repairs tracker-generated activity counts from the current solved problems.
 - The browser uses only the Supabase project URL and public anon key. Never put a service-role key in frontend environment variables.
 
 ### Google sign-in setup

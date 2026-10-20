@@ -14,6 +14,21 @@ const AppState = {
   AUTHENTICATED: 'AUTHENTICATED',
 };
 
+function getLocalDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getActivityLevel(count) {
+  if (count <= 0) return 0;
+  if (count === 1) return 1;
+  if (count <= 3) return 2;
+  if (count <= 6) return 3;
+  return 4;
+}
+
 function App() {
   const [appState, setAppState] = useState(AppState.LOADING);
   const [user, setUser] = useState(null);
@@ -607,9 +622,11 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
     let streak = 0;
     let currentDate = new Date();
     currentDate.setHours(0, 0, 0, 0);
+    if (!activityLog[getLocalDateKey(currentDate)]) {
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
     while (true) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      if (activityLog[dateStr] && activityLog[dateStr] > 0) {
+      if (activityLog[getLocalDateKey(currentDate)] > 0) {
         streak++;
         currentDate.setDate(currentDate.getDate() - 1);
       } else {
@@ -619,33 +636,73 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
     return streak;
   }, [activityLog]);
 
+  const longestStreak = useMemo(() => {
+    const activeDates = Object.entries(activityLog)
+      .filter(([, count]) => count > 0)
+      .map(([date]) => date)
+      .sort();
+    let longest = 0;
+    let current = 0;
+    let previousDate = null;
+
+    for (const dateKey of activeDates) {
+      const [year, month, day] = dateKey.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      if (previousDate) {
+        const expected = new Date(previousDate);
+        expected.setDate(expected.getDate() + 1);
+        if (getLocalDateKey(expected) === dateKey) current++;
+        else current = 1;
+      } else {
+        current = 1;
+      }
+      previousDate = date;
+      longest = Math.max(longest, current);
+    }
+    return longest;
+  }, [activityLog]);
+
+  const yearlyActivityTotal = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const firstDate = new Date(today);
+    firstDate.setDate(firstDate.getDate() - 364);
+    return Object.entries(activityLog).reduce((total, [date, count]) => (
+      date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today) ? total + count : total
+    ), 0);
+  }, [activityLog]);
+
   const heatmapData = useMemo(() => {
     const weeks = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - (52 * 7));
-    let currentDate = new Date(startDate);
-    let weekArray = [];
+    startDate.setDate(startDate.getDate() - startDate.getDay() - (52 * 7));
 
-    while (currentDate <= today) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      const count = activityLog[dateStr] || 0;
-      weekArray.push({
-        date: new Date(currentDate),
-        count: count,
-        intensity: count === 0 ? 0 : Math.min(4, Math.floor((count / 5) * 4) + 1)
-      });
-      if (weekArray.length === 7) {
-        weeks.push([...weekArray]);
-        weekArray = [];
+    for (let weekIndex = 0; weekIndex < 53; weekIndex++) {
+      const week = [];
+      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + weekIndex * 7 + dayIndex);
+        const dateKey = getLocalDateKey(date);
+        const count = date <= today ? (activityLog[dateKey] || 0) : 0;
+        week.push({
+          date,
+          dateKey,
+          count,
+          future: date > today,
+          intensity: getActivityLevel(count),
+        });
       }
-      currentDate.setDate(currentDate.getDate() + 1);
+      weeks.push(week);
     }
-    if (weekArray.length > 0) {
-      weeks.push(weekArray);
-    }
-    return weeks;
+    const monthLabels = weeks.map(week => {
+      const firstOfMonth = week.find(day => !day.future && day.date.getDate() === 1);
+      return firstOfMonth
+        ? firstOfMonth.date.toLocaleDateString(undefined, { month: 'short' })
+        : '';
+    });
+    return { weeks, monthLabels };
   }, [activityLog]);
 
   const progressState = useCallback((id) => {
@@ -826,18 +883,18 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
             <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
                 <Calendar size={16} />
-                <span className="text-xs font-medium">Streak</span>
+                <span className="text-xs font-medium">Current streak</span>
               </div>
               <div className="text-2xl font-bold text-[#FF6B35]">{dailyStreak}</div>
-              <div className="text-xs text-[#8A8A98] mt-1">days</div>
+              <div className="text-xs text-[#8A8A98] mt-1">current days</div>
             </div>
             <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
                 <Trophy size={16} />
-                <span className="text-xs font-medium">Rank</span>
+                <span className="text-xs font-medium">Best streak</span>
               </div>
-              <div className="text-2xl font-bold text-[#6D5BF6]">Novice</div>
-              <div className="text-xs text-[#8A8A98] mt-1">Beginner tier</div>
+              <div className="text-2xl font-bold text-[#6D5BF6]">{longestStreak}</div>
+              <div className="text-xs text-[#8A8A98] mt-1">longest streak</div>
             </div>
             <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
@@ -860,47 +917,57 @@ function AuthenticatedApp({ user, profile, authError, onSignOut }) {
 
           {/* Activity Section */}
           <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-[#E8E8EE]">Activity Heatmap</h3>
-              <div className="flex items-center gap-2 text-xs text-[#8A8A98]">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <h3 className="text-lg font-semibold text-[#E8E8EE]">
+                {yearlyActivityTotal.toLocaleString()} problems solved in the past year
+              </h3>
+              <div className="flex items-center gap-2 text-xs text-[#8A8A98]" aria-label="Activity scale: less to more">
                 <span>Less</span>
                 <div className="flex gap-1">
-                  <div className="w-3 h-3 rounded-sm bg-zinc-800/30" />
-                  <div className="w-3 h-3 rounded-sm bg-emerald-900/40" />
-                  <div className="w-3 h-3 rounded-sm bg-emerald-700/60" />
-                  <div className="w-3 h-3 rounded-sm bg-emerald-500/80" />
-                  <div className="w-3 h-3 rounded-sm bg-emerald-400" />
+                  {['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'].map(color => (
+                    <span key={color} className="w-3 h-3 rounded-sm border border-white/5" style={{ backgroundColor: color }} />
+                  ))}
                 </div>
                 <span>More</span>
               </div>
             </div>
-            <div className="overflow-x-auto activity-scroll">
-              <div className="flex gap-2 min-w-max">
-                {heatmapData.map((week, weekIdx) => (
-                  <div key={weekIdx} className="flex flex-col gap-1">
-                    {week.map((day, dayIdx) => {
-                      const intensityColors = [
-                        'bg-zinc-800/30',
-                        'bg-emerald-900/40',
-                        'bg-emerald-700/60',
-                        'bg-emerald-500/80',
-                        'bg-emerald-400',
-                      ];
-                      return (
-                        <div
-                          key={dayIdx}
-                          className={`w-3 h-3 rounded-sm ${intensityColors[day.intensity]} hover:ring-1 hover:ring-white/20 transition-all cursor-pointer`}
-                          title={`${day.date.toLocaleDateString()}: ${day.count} problems`}
-                        />
-                      );
-                    })}
+            <div className="overflow-x-auto activity-scroll pb-2">
+              <div className="min-w-[740px]">
+                <div className="ml-8 grid grid-cols-[repeat(53,minmax(10px,1fr))] gap-x-1 mb-2 text-[10px] text-[#8A8A98]">
+                  {heatmapData.monthLabels.map((month, index) => (
+                    <span key={index} className="whitespace-nowrap">{month}</span>
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  <div className="flex w-7 flex-shrink-0 flex-col gap-1 text-[9px] leading-[11px] text-[#8A8A98]">
+                    {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((label, index) => (
+                      <span key={`weekday-${index}`} className="h-[11px]">{label}</span>
+                    ))}
                   </div>
-                ))}
+                  <div className="grid flex-1 grid-cols-[repeat(53,minmax(10px,1fr))] gap-x-1">
+                    {heatmapData.weeks.map((week, weekIndex) => (
+                      <div key={weekIndex} className="flex flex-col gap-1">
+                        {week.map(day => (
+                          <span
+                            key={day.dateKey}
+                            aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
+                            title={`${day.count} ${day.count === 1 ? 'problem' : 'problems'} solved on ${day.date.toLocaleDateString()}`}
+                            className="block h-[11px] w-[11px] rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
+                            style={{
+                              backgroundColor: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'][day.intensity],
+                              visibility: day.future ? 'hidden' : 'visible',
+                            }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                  <span>Current streak: {dailyStreak} {dailyStreak === 1 ? 'day' : 'days'}</span>
+                  <span>Updated live as you mark problems solved</span>
+                </div>
               </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-[#8A8A98]">
-              <span>Last 52 weeks</span>
-              <span>Last updated today</span>
             </div>
           </div>
 

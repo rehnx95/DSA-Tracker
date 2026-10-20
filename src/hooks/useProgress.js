@@ -1,9 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function useProgress(user) {
   const [progress, setProgress] = useState({});
   const progressRef = useRef(progress);
+  const completedOnRef = useRef({});
   const [activityLog, setActivityLog] = useState({});
   const activityRef = useRef(activityLog);
   const [loading, setLoading] = useState(Boolean(user));
@@ -34,6 +42,7 @@ export function useProgress(user) {
     if (!user || !supabase) {
       replaceProgress({});
       replaceActivity({});
+      completedOnRef.current = {};
       setLoading(false);
       return undefined;
     }
@@ -43,9 +52,10 @@ export function useProgress(user) {
     setError('');
     replaceProgress({});
     replaceActivity({});
+    completedOnRef.current = {};
 
     Promise.all([
-      supabase.from('progress').select('problem_id, state').eq('user_id', user.id),
+      supabase.from('progress').select('problem_id, state, completed_on').eq('user_id', user.id),
       supabase.from('activity_log').select('date, count').eq('user_id', user.id),
     ]).then(([progressResult, activityResult]) => {
       if (progressResult.error) throw progressResult.error;
@@ -53,8 +63,12 @@ export function useProgress(user) {
       if (!active) return;
 
       const progressMap = {};
+      const completedOnMap = {};
       for (const item of progressResult.data) {
         progressMap[item.problem_id] = item.state;
+        if (item.state === 'done' && item.completed_on) {
+          completedOnMap[item.problem_id] = item.completed_on;
+        }
       }
 
       const activityMap = {};
@@ -64,6 +78,7 @@ export function useProgress(user) {
 
       replaceProgress(progressMap);
       replaceActivity(activityMap);
+      completedOnRef.current = completedOnMap;
     }).catch((loadError) => {
       if (!active) return;
       console.error('Failed to load user data from Supabase:', loadError);
@@ -106,16 +121,32 @@ export function useProgress(user) {
     if (!user || !supabase) return;
 
     const currentState = progressRef.current[id];
+    const currentCompletedOn = completedOnRef.current[id];
+    const today = getLocalDateKey();
     const nextProgress = { ...progressRef.current, [id]: state };
+    const nextCompletedOn = { ...completedOnRef.current };
+    if (state === 'done') nextCompletedOn[id] = currentState === 'done' ? currentCompletedOn || today : today;
+    else delete nextCompletedOn[id];
     replaceProgress(nextProgress);
+    completedOnRef.current = nextCompletedOn;
 
-    const today = new Date().toISOString().split('T')[0];
-    const activityDelta = (state === 'done' ? 1 : 0) - (currentState === 'done' ? 1 : 0);
-    if (activityDelta !== 0) {
+    const deltas = {};
+    if (currentState === 'done') {
+      const date = currentCompletedOn || today;
+      deltas[date] = (deltas[date] || 0) - 1;
+    }
+    if (state === 'done') {
+      const date = nextCompletedOn[id];
+      deltas[date] = (deltas[date] || 0) + 1;
+    }
+    const changedDates = Object.keys(deltas).filter(date => deltas[date] !== 0);
+    if (changedDates.length > 0) {
       const nextActivity = { ...activityRef.current };
-      const nextCount = Math.max(0, (nextActivity[today] || 0) + activityDelta);
-      if (nextCount > 0) nextActivity[today] = nextCount;
-      else delete nextActivity[today];
+      for (const date of changedDates) {
+        const count = Math.max(0, (nextActivity[date] || 0) + deltas[date]);
+        if (count > 0) nextActivity[date] = count;
+        else delete nextActivity[date];
+      }
       replaceActivity(nextActivity);
     }
 
@@ -123,11 +154,11 @@ export function useProgress(user) {
       const { error: progressError } = await supabase
         .from('progress')
         .upsert(
-          { user_id: user.id, problem_id: id, state },
+          { user_id: user.id, problem_id: id, state, completed_on: state === 'done' ? nextCompletedOn[id] : null },
           { onConflict: 'user_id,problem_id' }
         );
       if (progressError) throw progressError;
-      if (activityDelta !== 0) await persistActivity(user.id, today);
+      for (const date of changedDates) await persistActivity(user.id, date);
     });
   }, [user, replaceActivity, replaceProgress, save]);
 
@@ -135,23 +166,40 @@ export function useProgress(user) {
     if (!user || !supabase) return;
 
     const previousProgress = progressRef.current;
-    const today = new Date().toISOString().split('T')[0];
-    const todayDelta = Object.entries(newProgress).reduce((delta, [id, state]) => (
-      delta + (state === 'done' ? 1 : 0) - (previousProgress[id] === 'done' ? 1 : 0)
-    ), 0);
+    const previousCompletedOn = completedOnRef.current;
+    const today = getLocalDateKey();
+    const nextCompletedOn = { ...previousCompletedOn };
+    const dateDeltas = {};
+    for (const [id, state] of Object.entries(newProgress)) {
+      const currentState = previousProgress[id];
+      const oldDate = previousCompletedOn[id] || today;
+      if (currentState === 'done') dateDeltas[oldDate] = (dateDeltas[oldDate] || 0) - 1;
+      if (state === 'done') {
+        nextCompletedOn[id] = currentState === 'done' ? oldDate : today;
+        const newDate = nextCompletedOn[id];
+        dateDeltas[newDate] = (dateDeltas[newDate] || 0) + 1;
+      } else {
+        delete nextCompletedOn[id];
+      }
+    }
+    const changedDates = Object.keys(dateDeltas).filter(date => dateDeltas[date] !== 0);
     const mergedProgress = { ...progressRef.current, ...newProgress };
     const entries = Object.entries(newProgress).map(([problem_id, state]) => ({
       user_id: user.id,
       problem_id,
       state,
+      completed_on: state === 'done' ? nextCompletedOn[problem_id] : null,
     }));
     replaceProgress(mergedProgress);
+    completedOnRef.current = nextCompletedOn;
 
-    if (todayDelta !== 0) {
+    if (changedDates.length > 0) {
       const nextActivity = { ...activityRef.current };
-      const nextCount = Math.max(0, (nextActivity[today] || 0) + todayDelta);
-      if (nextCount > 0) nextActivity[today] = nextCount;
-      else delete nextActivity[today];
+      for (const date of changedDates) {
+        const count = Math.max(0, (nextActivity[date] || 0) + dateDeltas[date]);
+        if (count > 0) nextActivity[date] = count;
+        else delete nextActivity[date];
+      }
       replaceActivity(nextActivity);
     }
 
@@ -162,7 +210,7 @@ export function useProgress(user) {
           .upsert(entries, { onConflict: 'user_id,problem_id' });
         if (progressError) throw progressError;
       }
-      if (todayDelta !== 0) await persistActivity(user.id, today);
+      for (const date of changedDates) await persistActivity(user.id, date);
     });
   }, [user, replaceActivity, replaceProgress, save]);
 
@@ -176,6 +224,7 @@ export function useProgress(user) {
     if (!user || !supabase) return;
     replaceProgress({});
     replaceActivity({});
+    completedOnRef.current = {};
 
     await save(async () => {
       const { error: progressError } = await supabase.from('progress').delete().match({ user_id: user.id });
