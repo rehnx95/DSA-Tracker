@@ -5,6 +5,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 ## What it is
 - Tracks 518 LeetCode-style problems across 18 steps
 - Supports multiple problem sheets, selectable from the collapsible sheets sidebar
+- Users can upload `.txt` sheets; the browser converts them and stores them privately in Supabase
 - User accounts with Google OAuth login (Supabase Auth)
 - Cloud database (Supabase PostgreSQL) stores progress, activity, profiles
 - Dark-first responsive UI with light theme toggle
@@ -64,20 +65,21 @@ src/
 - `progressRef` holds current progress object for synchronous reads during state updates; fixes double-count in activity tracking
 - Activity tracking rules: increment only on `todo` → `done`; decrement only on `done` → `todo`; skipped changes do not affect count
 - Backup import: reads JSON file, calls `bulkUpdate` to apply `{title: {id, state}}` format; export writes same format
-- Sheet conversion: add a `.txt` source under `source/`, run `npm run convert-sheet`, select the source file, and the converter writes a same-named JSON file under `src/data/`; the app discovers converted sheets from that folder. The default DSA source is `dsa.txt` (`dsa.json`), and `backend.txt` converts to `backend.json`.
+- Built-in sheet conversion: developers can add a `.txt` source under `source/`, run `npm run convert-sheet`, and check in the generated JSON under `src/data/`.
+- User-uploaded sheets: signed-in users open the sheets sidebar and select **Upload a TXT sheet**. The app converts the TXT in the browser and stores the resulting data in `user_sheets`; each account can only read its own uploaded sheets. The SQL migration must be applied to the Supabase project first. Uploads accept files up to 2 MB, with `Step 1 — Title` headings and sequential numbered problem lines (optional `(LC 123)` and `(Skip)` markers are supported).
 - `App.jsx` rebuilt clean from `.backup` after corruption; build passes with Vite
 
 ## Supabase Backend
 - Auth: Google OAuth via Supabase Auth; the app restores the session and loads the matching profile before showing the tracker.
 - Database: `profiles`, `progress`, and `activity_log` are scoped to the signed-in user's ID. First-time users complete onboarding before entering the tracker.
-- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, and `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`. They are additive; the activity migration repairs tracker-generated activity counts, the signup migrations avoid optional-table and removed-bio dependencies, and the latest migration keeps account creation compatible with profiles tables that do not have a `bio` column.
+- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`, and `supabase/migrations/20261021003000_user_uploaded_sheets.sql`. They are additive; the user-sheets migration creates private per-account storage protected by row-level security.
 - The browser uses only the Supabase project URL and public anon key. Never put a service-role key in frontend environment variables.
 
 ### Google sign-in setup
 1. In Supabase, enable the Google provider under **Authentication → Sign In / Providers** and configure the OAuth client ID and secret from your Google Cloud OAuth credentials.
 2. Add the Supabase callback URL shown in the provider settings to the Google OAuth client's authorized redirect URIs.
 3. In **Authentication → URL Configuration**, set the production site URL and allow the local development URL (for example `http://localhost:5173`) and every deployed app origin.
-4. Apply the latest SQL migration in the Supabase SQL Editor (or through the project's migration workflow).
+4. Apply all SQL migrations in the Supabase SQL Editor (or through the project's migration workflow), including the user-uploaded-sheets migration.
 5. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the local `.env` and deployment environment, then restart/redeploy the frontend.
 
 ## Build / Deploy

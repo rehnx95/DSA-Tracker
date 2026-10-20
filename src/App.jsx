@@ -1,38 +1,79 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, Settings, Calendar, Trophy, Target, LogOut, BookOpen } from 'lucide-react';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { useProgress } from './hooks/useProgress';
-import ProfileSettings from './components/ProfileSettings';
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Sun,
+  Moon,
+  User,
+  CheckSquare,
+  SkipForward,
+  X,
+  Download,
+  Upload,
+  RefreshCcw,
+  Menu,
+  Settings,
+  Calendar,
+  Trophy,
+  Target,
+  LogOut,
+  BookOpen,
+} from "lucide-react";
+import { supabase, isSupabaseConfigured } from "./lib/supabase";
+import { useProgress } from "./hooks/useProgress";
+import ProfileSettings from "./components/ProfileSettings";
+import { countSheetProblems, parseSheet } from "./utils/parseSheet";
 
-const sheetModules = import.meta.glob('./data/*.json', { eager: true, import: 'default' });
-const availableSheets = Object.entries(sheetModules)
+const sheetModules = import.meta.glob("./data/*.json", {
+  eager: true,
+  import: "default",
+});
+const builtInSheets = Object.entries(sheetModules)
   .filter(([, sheet]) => Array.isArray(sheet?.steps))
   .map(([filePath, sheet]) => {
-    const id = filePath.split('/').pop().replace(/\.json$/i, '');
+    const id = filePath
+      .split("/")
+      .pop()
+      .replace(/\.json$/i, "");
     return {
       id,
-      title: id === 'dsa' ? 'DSA Sheet' : id.replace(/[_-]+/g, ' ').replace(/\b\w/g, character => character.toUpperCase()),
+      title:
+        id === "dsa"
+          ? "DSA Sheet"
+          : id
+              .replace(/[_-]+/g, " ")
+              .replace(/\b\w/g, (character) => character.toUpperCase()),
       sheet,
-      problemCount: sheet.steps.reduce((total, step) => total + step.subsections.reduce((subTotal, subsection) => subTotal + subsection.problems.length, 0), 0),
+      problemCount: sheet.steps.reduce(
+        (total, step) =>
+          total +
+          step.subsections.reduce(
+            (subTotal, subsection) => subTotal + subsection.problems.length,
+            0,
+          ),
+        0,
+      ),
     };
   })
   .sort((a, b) => a.title.localeCompare(b.title));
-const defaultSheetId = availableSheets.find(sheet => sheet.id === 'dsa')?.id || availableSheets[0]?.id;
+const defaultSheetId =
+  builtInSheets.find((sheet) => sheet.id === "dsa")?.id || builtInSheets[0]?.id;
 
 // =============================================================================
 // Authentication Routing State Machine
 // =============================================================================
 const AppState = {
-  LOADING: 'LOADING',
-  UNAUTHENTICATED: 'UNAUTHENTICATED',
-  ONBOARDING: 'ONBOARDING',
-  AUTHENTICATED: 'AUTHENTICATED',
+  LOADING: "LOADING",
+  UNAUTHENTICATED: "UNAUTHENTICATED",
+  ONBOARDING: "ONBOARDING",
+  AUTHENTICATED: "AUTHENTICATED",
 };
 
 function getLocalDateKey(date) {
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -48,30 +89,36 @@ function App() {
   const [appState, setAppState] = useState(AppState.LOADING);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [authError, setAuthError] = useState('');
+  const [authError, setAuthError] = useState("");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const authEventOccurred = useRef(false);
 
   useEffect(() => {
-    const oauthError = new URLSearchParams(window.location.search).get('error');
+    const oauthError = new URLSearchParams(window.location.search).get("error");
     if (oauthError) {
-      setAuthError(oauthError === 'server_error'
-        ? 'Google sign-in failed while creating your account. Please apply the latest Supabase database migration and try again.'
-        : 'Google sign-in could not be completed. Please try again.');
+      setAuthError(
+        oauthError === "server_error"
+          ? "Google sign-in failed while creating your account. Please apply the latest Supabase database migration and try again."
+          : "Google sign-in could not be completed. Please try again.",
+      );
     }
 
     if (!isSupabaseConfigured) {
-      setAuthError('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.');
+      setAuthError(
+        "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.",
+      );
       setAppState(AppState.UNAUTHENTICATED);
       return undefined;
     }
 
     let active = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!active || event === 'INITIAL_SESSION') return;
-      if (event === 'TOKEN_REFRESHED') return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active || event === "INITIAL_SESSION") return;
+      if (event === "TOKEN_REFRESHED") return;
       authEventOccurred.current = true;
-      setAuthError('');
+      setAuthError("");
       setUser(session?.user ?? null);
       if (!session) {
         setProfile(null);
@@ -79,17 +126,22 @@ function App() {
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (!active || authEventOccurred.current) return;
-      if (error) throw error;
-      setUser(session?.user ?? null);
-      if (!session) setAppState(AppState.UNAUTHENTICATED);
-    }).catch((error) => {
-      if (!active || authEventOccurred.current) return;
-      console.error('Failed to restore authentication session:', error);
-      setAuthError('Could not restore your session. Please refresh and try again.');
-      setAppState(AppState.UNAUTHENTICATED);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session }, error }) => {
+        if (!active || authEventOccurred.current) return;
+        if (error) throw error;
+        setUser(session?.user ?? null);
+        if (!session) setAppState(AppState.UNAUTHENTICATED);
+      })
+      .catch((error) => {
+        if (!active || authEventOccurred.current) return;
+        console.error("Failed to restore authentication session:", error);
+        setAuthError(
+          "Could not restore your session. Please refresh and try again.",
+        );
+        setAppState(AppState.UNAUTHENTICATED);
+      });
 
     return () => {
       active = false;
@@ -103,20 +155,26 @@ function App() {
     let active = true;
     setAppState(AppState.LOADING);
     supabase
-      .from('profiles')
-      .select('id, name, username, location, website, onboarding_completed')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("id, name, username, location, website, onboarding_completed")
+      .eq("id", user.id)
       .maybeSingle()
       .then(({ data: profileData, error }) => {
         if (!active) return;
         if (error) throw error;
         setProfile(profileData);
-        setAppState(profileData?.onboarding_completed ? AppState.AUTHENTICATED : AppState.ONBOARDING);
+        setAppState(
+          profileData?.onboarding_completed
+            ? AppState.AUTHENTICATED
+            : AppState.ONBOARDING,
+        );
       })
       .catch((error) => {
         if (!active) return;
-        console.error('Failed to fetch profile:', error);
-        setAuthError('Could not load your profile. Check the Supabase database setup and try again.');
+        console.error("Failed to fetch profile:", error);
+        setAuthError(
+          "Could not load your profile. Check the Supabase database setup and try again.",
+        );
         setAppState(AppState.UNAUTHENTICATED);
       });
 
@@ -128,19 +186,21 @@ function App() {
   const handleSignIn = async () => {
     if (!supabase) return;
     setIsSigningIn(true);
-    setAuthError('');
+    setAuthError("");
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: window.location.origin,
-          queryParams: { prompt: 'select_account' },
+          queryParams: { prompt: "select_account" },
         },
       });
       if (error) throw error;
     } catch (error) {
-      console.error('Google sign-in failed:', error);
-      setAuthError('Google sign-in could not be started. Check the Google provider settings in Supabase and try again.');
+      console.error("Google sign-in failed:", error);
+      setAuthError(
+        "Google sign-in could not be started. Check the Google provider settings in Supabase and try again.",
+      );
       setIsSigningIn(false);
     }
   };
@@ -151,8 +211,8 @@ function App() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {
-      console.error('Sign out error:', error);
-      setAuthError('Could not sign out. Please try again.');
+      console.error("Sign out error:", error);
+      setAuthError("Could not sign out. Please try again.");
     }
   }, []);
 
@@ -228,9 +288,14 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
             </div>
             <span className="section-kicker">DSA TRACKER</span>
             <h2>Sign in to continue</h2>
-            <p className="auth-panel-description">Sign in to access your sheets and saved progress.</p>
+            <p className="auth-panel-description">
+              Sign in to access your sheets and saved progress.
+            </p>
             {error && (
-              <p role="alert" className="mb-5 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+              <p
+                role="alert"
+                className="mb-5 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300"
+              >
                 {error}
               </p>
             )}
@@ -240,16 +305,32 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
               className="google-signin-button"
             >
               <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
               </svg>
-              {isSigningIn ? 'Connecting to Google…' : 'Continue with Google'}
+              {isSigningIn ? "Connecting to Google…" : "Continue with Google"}
               {!isSigningIn && <ChevronRight size={17} />}
             </button>
-            <div className="auth-divider"><span>SECURE ACCOUNT ACCESS</span></div>
-            <p className="auth-legal">Your account securely syncs your profile and progress.</p>
+            <div className="auth-divider">
+              <span>SECURE ACCOUNT ACCESS</span>
+            </div>
+            <p className="auth-legal">
+              Your account securely syncs your profile and progress.
+            </p>
           </div>
         </section>
       </div>
@@ -262,22 +343,26 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
 // =============================================================================
 function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   const [formData, setFormData] = useState({
-    name: profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || '',
-    username: profile?.username || '',
-    location: profile?.location || '',
-    website: profile?.website || ''
+    name:
+      profile?.name ||
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      "",
+    username: profile?.username || "",
+    location: profile?.location || "",
+    website: profile?.website || "",
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [usernameAvailable, setUsernameAvailable] = useState(null);
-  const [validationMessage, setValidationMessage] = useState('');
+  const [validationMessage, setValidationMessage] = useState("");
 
   // Check username availability in real-time
   useEffect(() => {
     if (!formData.username || formData.username.length < 3) {
       setUsernameAvailable(null);
-      setValidationMessage('');
+      setValidationMessage("");
       return;
     }
 
@@ -285,19 +370,21 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
     let active = true;
     const timeoutId = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.rpc('is_username_available', {
+        const { data, error } = await supabase.rpc("is_username_available", {
           candidate_username: formData.username,
         });
         if (error) throw error;
         if (!active) return;
 
         setUsernameAvailable(data);
-        setValidationMessage(data ? '' : 'This username is already taken');
+        setValidationMessage(data ? "" : "This username is already taken");
       } catch (error) {
-        console.error('Username availability check failed:', error);
+        console.error("Username availability check failed:", error);
         if (!active) return;
         setUsernameAvailable(null);
-        setValidationMessage('Could not check username availability. You can still try saving it.');
+        setValidationMessage(
+          "Could not check username availability. You can still try saving it.",
+        );
       }
     }, 500);
 
@@ -308,32 +395,33 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   }, [formData.username, user.id]);
 
   const validateUsername = (username) => {
-    if (username.length < 3) return 'Username must be at least 3 characters';
-    if (username.includes(' ')) return 'Username cannot contain spaces';
-    if (!/^(?=.*[a-z0-9])[a-z0-9-]+$/.test(username)) return 'Username must contain a letter or number and use only lowercase letters, numbers, and hyphens';
+    if (username.length < 3) return "Username must be at least 3 characters";
+    if (username.includes(" ")) return "Username cannot contain spaces";
+    if (!/^(?=.*[a-z0-9])[a-z0-9-]+$/.test(username))
+      return "Username must contain a letter or number and use only lowercase letters, numbers, and hyphens";
     return null;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const nextValue = name === 'username' ? value.toLowerCase().trim() : value;
-    setFormData(prev => ({ ...prev, [name]: nextValue }));
+    const nextValue = name === "username" ? value.toLowerCase().trim() : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
 
     // Auto-generate username from name
-    if (name === 'name' && !formData.username) {
+    if (name === "name" && !formData.username) {
       const generatedUsername = nextValue
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+        .replace(/[^a-z0-9]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
       if (generatedUsername) {
-        setFormData(prev => ({ ...prev, username: generatedUsername }));
+        setFormData((prev) => ({ ...prev, username: generatedUsername }));
       }
     }
 
     // Clear errors
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -341,10 +429,11 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
     e.preventDefault();
 
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name.trim()) newErrors.name = "Name is required";
     const usernameError = validateUsername(formData.username);
     if (usernameError) newErrors.username = usernameError;
-    else if (usernameAvailable === false) newErrors.username = 'Username is already taken';
+    else if (usernameAvailable === false)
+      newErrors.username = "Username is already taken";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -356,28 +445,32 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
     try {
       // Update profile
       const { data: savedProfile, error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          name: formData.name.trim(),
-          username: formData.username.trim().toLowerCase(),
-          location: formData.location.trim(),
-          website: formData.website.trim(),
-          onboarding_completed: true,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'id' })
-        .select('id, name, username, location, website, onboarding_completed')
+        .from("profiles")
+        .upsert(
+          {
+            id: user.id,
+            name: formData.name.trim(),
+            username: formData.username.trim().toLowerCase(),
+            location: formData.location.trim(),
+            website: formData.website.trim(),
+            onboarding_completed: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" },
+        )
+        .select("id, name, username, location, website, onboarding_completed")
         .single();
 
       if (error) throw error;
 
       onComplete(savedProfile);
     } catch (error) {
-      console.error('Onboarding error:', error);
+      console.error("Onboarding error:", error);
       setErrors({
-        submit: error.code === '23505'
-          ? 'That username was just taken. Please choose another one.'
-          : 'Failed to save your profile. Check your connection and try again.'
+        submit:
+          error.code === "23505"
+            ? "That username was just taken. Please choose another one."
+            : "Failed to save your profile. Check your connection and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -395,7 +488,10 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
             </div>
             <h1 className="font-bold text-lg">Complete Your Profile</h1>
           </div>
-          <button onClick={onSignOut} className="text-[#8A8A98] hover:text-[#E8E8EE] flex items-center gap-2 text-sm">
+          <button
+            onClick={onSignOut}
+            className="text-[#8A8A98] hover:text-[#E8E8EE] flex items-center gap-2 text-sm"
+          >
             <LogOut size={14} />
             Sign out
           </button>
@@ -406,8 +502,13 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
       <main className="flex-1 max-w-2xl mx-auto px-4 md:px-6 py-8">
         <div className="onboarding-panel bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-2">Welcome to DSA Sheet Tracker</h2>
-            <p className="text-[#8A8A98]">Let's set up your profile to get started with tracking your coding journey.</p>
+            <h2 className="text-2xl font-bold mb-2">
+              Welcome to DSA Sheet Tracker
+            </h2>
+            <p className="text-[#8A8A98]">
+              Let's set up your profile to get started with tracking your coding
+              journey.
+            </p>
           </div>
 
           {errors.submit && (
@@ -423,7 +524,10 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                 Full Name <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]" />
+                <User
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                />
                 <input
                   type="text"
                   name="name"
@@ -433,7 +537,9 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
                 />
               </div>
-              {errors.name && <p className="text-red-400 text-sm mt-1">{errors.name}</p>}
+              {errors.name && (
+                <p className="text-red-400 text-sm mt-1">{errors.name}</p>
+              )}
             </div>
 
             {/* Username Field */}
@@ -442,7 +548,10 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                 Username (Handle) <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <User size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]" />
+                <User
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                />
                 <input
                   type="text"
                   name="username"
@@ -450,9 +559,11 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   onChange={handleChange}
                   placeholder="johndoe"
                   className={`w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 transition-all ${
-                    usernameAvailable === true ? 'border-green-500 focus:ring-green-500' :
-                    usernameAvailable === false ? 'border-red-500 focus:ring-red-500' :
-                    'border-[#26262F] focus:ring-[#6D5BF6]'
+                    usernameAvailable === true
+                      ? "border-green-500 focus:ring-green-500"
+                      : usernameAvailable === false
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-[#26262F] focus:ring-[#6D5BF6]"
                   }`}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -473,7 +584,9 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
               <p className="text-xs text-[#8A8A98] mt-1">
                 3+ characters, lowercase letters, numbers, and hyphens only
               </p>
-              <p className={`text-sm mt-1 ${validationMessage ? 'text-red-400' : 'text-[#8A8A98]'}`}>
+              <p
+                className={`text-sm mt-1 ${validationMessage ? "text-red-400" : "text-[#8A8A98]"}`}
+              >
                 {validationMessage}
               </p>
             </div>
@@ -484,7 +597,15 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                 Location
               </label>
               <div className="relative">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                >
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
@@ -505,7 +626,15 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                 Website / Portfolio
               </label>
               <div className="relative">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                >
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
@@ -530,16 +659,39 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
               >
                 {isLoading ? (
                   <>
-                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     <span>Creating Profile...</span>
                   </>
                 ) : (
                   <>
                     <span>Complete Setup</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
                   </>
@@ -556,7 +708,13 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 // =============================================================================
 // Authenticated App Component (Main DSA Tracker)
 // =============================================================================
-function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOut }) {
+function AuthenticatedApp({
+  user,
+  profile,
+  authError,
+  onProfileUpdated,
+  onSignOut,
+}) {
   const {
     progress,
     activityLog,
@@ -573,42 +731,113 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     reset,
   } = useProgress(user);
 
+  const [customSheets, setCustomSheets] = useState([]);
+  const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
+  const [uploadingSheet, setUploadingSheet] = useState(false);
+  const [sheetError, setSheetError] = useState("");
+  const uploadSheetInput = useRef(null);
+  const availableSheets = useMemo(
+    () =>
+      [...builtInSheets, ...customSheets].sort((a, b) =>
+        a.title.localeCompare(b.title),
+      ),
+    [customSheets],
+  );
+  const savedSheetIdRef = useRef(localStorage.getItem("dsa-active-sheet"));
   const [selectedSheetId, setSelectedSheetId] = useState(() => {
-    const savedSheetId = localStorage.getItem('dsa-active-sheet');
-    return availableSheets.some(sheet => sheet.id === savedSheetId) ? savedSheetId : defaultSheetId;
+    const savedSheetId = savedSheetIdRef.current;
+    return builtInSheets.some((sheet) => sheet.id === savedSheetId)
+      ? savedSheetId
+      : defaultSheetId;
   });
   const [sheetSidebarOpen, setSheetSidebarOpen] = useState(false);
-  const [search, setSearch] = useState(() => localStorage.getItem('dsa-search') || '');
+  const [search, setSearch] = useState(
+    () => localStorage.getItem("dsa-search") || "",
+  );
   const [expandedSteps, setExpandedSteps] = useState(() => {
-    try { const stored = localStorage.getItem('dsa-expanded-steps'); return stored ? new Set(JSON.parse(stored)) : new Set(); }
-    catch { return new Set(); }
+    try {
+      const stored = localStorage.getItem("dsa-expanded-steps");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
   });
   const [expandedSubs, setExpandedSubs] = useState(() => {
-    try { const stored = localStorage.getItem('dsa-expanded-subs'); return stored ? new Set(JSON.parse(stored)) : new Set(); }
-    catch { return new Set(); }
+    try {
+      const stored = localStorage.getItem("dsa-expanded-subs");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
   });
   const [hideSkipped, setHideSkipped] = useState(() => {
-    try { return localStorage.getItem('dsa-hide-skipped') === 'true'; }
-    catch { return false; }
+    try {
+      return localStorage.getItem("dsa-hide-skipped") === "true";
+    } catch {
+      return false;
+    }
   });
-  const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
+  const [activeFilter, setActiveFilter] = useState(
+    () => localStorage.getItem("dsa-filter") || "all",
+  );
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [backupAction, setBackupAction] = useState('');
+  const [backupAction, setBackupAction] = useState("");
   const importSheetId = useRef(null);
   const importFileInput = useRef(null);
-  const selectedSheet = availableSheets.find(sheet => sheet.id === selectedSheetId) || availableSheets[0];
+  useEffect(() => {
+    let active = true;
+    supabase
+      .from("user_sheets")
+      .select("id, title, source_name, sheet_data, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!active) return;
+        const loadedSheets = data.map((row) => ({
+          id: `custom-${row.id}`,
+          customId: row.id,
+          title: row.title,
+          sourceName: row.source_name,
+          sheet: row.sheet_data,
+          problemCount: countSheetProblems(row.sheet_data),
+        }));
+        setCustomSheets(loadedSheets);
+        const savedSheetId = savedSheetIdRef.current;
+        if (loadedSheets.some((sheet) => sheet.id === savedSheetId))
+          setSelectedSheetId(savedSheetId);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load uploaded sheets:", error);
+        setSheetError(
+          "Could not load your uploaded sheets. Check that the user_sheets migration is applied.",
+        );
+      })
+      .finally(() => {
+        if (active) setCustomSheetsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user.id]);
+
+  const selectedSheet =
+    availableSheets.find((sheet) => sheet.id === selectedSheetId) ||
+    availableSheets[0];
   const data = useMemo(() => {
     if (!selectedSheet) return { steps: [] };
-    const problemIdPrefix = selectedSheet.id === 'dsa' ? '' : `${selectedSheet.id}::`;
+    const problemIdPrefix =
+      selectedSheet.id === "dsa" ? "" : `${selectedSheet.id}::`;
     return {
-      steps: selectedSheet.sheet.steps.map(step => ({
+      steps: selectedSheet.sheet.steps.map((step) => ({
         ...step,
         id: `${selectedSheet.id}::${step.id}`,
-        subsections: step.subsections.map(subsection => ({
+        subsections: step.subsections.map((subsection) => ({
           ...subsection,
           id: `${selectedSheet.id}::${subsection.id}`,
-          problems: subsection.problems.map(problem => ({
+          problems: subsection.problems.map((problem) => ({
             ...problem,
             id: `${problemIdPrefix}${problem.id}`,
           })),
@@ -617,64 +846,187 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     };
   }, [selectedSheet]);
 
-  const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
-  const userUsername = profile?.username || '';
-  const userLocation = profile?.location || '';
-  const userWebsite = profile?.website || '';
+  const userName =
+    profile?.name ||
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    "User";
+  const userUsername = profile?.username || "";
+  const userLocation = profile?.location || "";
+  const userWebsite = profile?.website || "";
 
   const openProfileSettings = () => {
     setShowSettings(true);
   };
 
-  useEffect(() => { localStorage.setItem('dsa-expanded-steps', JSON.stringify([...expandedSteps])); }, [expandedSteps]);
-  useEffect(() => { localStorage.setItem('dsa-expanded-subs', JSON.stringify([...expandedSubs])); }, [expandedSubs]);
-  useEffect(() => { localStorage.setItem('dsa-hide-skipped', String(hideSkipped)); }, [hideSkipped]);
-  useEffect(() => { localStorage.setItem('dsa-filter', activeFilter); }, [activeFilter]);
-  useEffect(() => { localStorage.setItem('dsa-search', search); }, [search]);
-  useEffect(() => {
-    if (selectedSheet) localStorage.setItem('dsa-active-sheet', selectedSheet.id);
-  }, [selectedSheet]);
-  const totalProblems = data.steps.reduce((sum, s) => sum + s.subsections.reduce((ss, sub) => ss + sub.problems.length, 0), 0);
-  const sheetProblems = data.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
-  const doneCount = sheetProblems.filter(problem => progress[problem.id] === 'done').length;
-  const skippedCount = sheetProblems.filter(problem => progress[problem.id] === 'skipped').length;
-  const todoCount = totalProblems - doneCount - skippedCount;
-  const profileSheetStats = useMemo(() => availableSheets.map(sheet => {
-    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
-    const problems = sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
-    const solved = problems.filter(problem => progress[`${idPrefix}${problem.id}`] === 'done').length;
-    const skipped = problems.filter(problem => progress[`${idPrefix}${problem.id}`] === 'skipped' || (!progress[`${idPrefix}${problem.id}`] && problem.defaultSkip)).length;
-    return { id: sheet.id, title: sheet.title, solved, skipped, total: problems.length };
-  }), [progress]);
-  const profileProblemsTotal = profileSheetStats.reduce((total, sheet) => total + sheet.total, 0);
-  const profileProblemsSolved = profileSheetStats.reduce((total, sheet) => total + sheet.solved, 0);
-  const recentAccepted = useMemo(() => availableSheets.flatMap(sheet => {
-    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
-    return sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => (
-      subsection.problems.flatMap(problem => {
-        const id = `${idPrefix}${problem.id}`;
-        const acceptedOn = completedOn[id];
-        if (progress[id] !== 'done') return [];
-        return [{
-          id,
-          title: problem.title,
-          sheetTitle: sheet.title,
-          acceptedOn: acceptedOn || null,
-          completedAt: completedAt[id] || null,
-        }];
-      })
-    )));
-  }).sort((first, second) => {
-    if (first.completedAt && second.completedAt) {
-      return second.completedAt.localeCompare(first.completedAt);
+  const handleUploadSheet = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setSheetError("");
+    setUploadingSheet(true);
+    try {
+      if (!file.name.toLowerCase().endsWith(".txt")) {
+        throw new Error("Choose a .txt file to upload.");
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        throw new Error("The TXT file must be smaller than 2 MB.");
+      }
+      const sheetData = parseSheet(await file.text());
+      const fileBaseName = file.name.replace(/\.txt$/i, "").trim();
+      const title = fileBaseName
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/\b\w/g, (character) => character.toUpperCase())
+        .slice(0, 80);
+      if (!title)
+        throw new Error("The file needs a name to use as its sheet title.");
+
+      const { data: savedSheet, error } = await supabase
+        .from("user_sheets")
+        .insert({
+          user_id: user.id,
+          title,
+          source_name: file.name,
+          sheet_data: sheetData,
+        })
+        .select("id, title, source_name, sheet_data")
+        .single();
+      if (error) throw error;
+
+      const nextSheet = {
+        id: `custom-${savedSheet.id}`,
+        customId: savedSheet.id,
+        title: savedSheet.title,
+        sourceName: savedSheet.source_name,
+        sheet: savedSheet.sheet_data,
+        problemCount: countSheetProblems(savedSheet.sheet_data),
+      };
+      setCustomSheets((current) => [...current, nextSheet]);
+      setSelectedSheetId(nextSheet.id);
+      localStorage.setItem("dsa-active-sheet", nextSheet.id);
+      setSheetSidebarOpen(false);
+    } catch (error) {
+      console.error("Failed to upload sheet:", error);
+      setSheetError(
+        error.message || "Could not upload this sheet. Please try again.",
+      );
+    } finally {
+      setUploadingSheet(false);
     }
-    if (first.completedAt) return -1;
-    if (second.completedAt) return 1;
-    if (!first.acceptedOn && !second.acceptedOn) return 0;
-    if (!first.acceptedOn) return 1;
-    if (!second.acceptedOn) return -1;
-    return second.acceptedOn.localeCompare(first.acceptedOn);
-  }).slice(0, 8), [completedAt, completedOn, progress]);
+  };
+
+  useEffect(() => {
+    localStorage.setItem(
+      "dsa-expanded-steps",
+      JSON.stringify([...expandedSteps]),
+    );
+  }, [expandedSteps]);
+  useEffect(() => {
+    localStorage.setItem(
+      "dsa-expanded-subs",
+      JSON.stringify([...expandedSubs]),
+    );
+  }, [expandedSubs]);
+  useEffect(() => {
+    localStorage.setItem("dsa-hide-skipped", String(hideSkipped));
+  }, [hideSkipped]);
+  useEffect(() => {
+    localStorage.setItem("dsa-filter", activeFilter);
+  }, [activeFilter]);
+  useEffect(() => {
+    localStorage.setItem("dsa-search", search);
+  }, [search]);
+  useEffect(() => {
+    if (selectedSheet)
+      localStorage.setItem("dsa-active-sheet", selectedSheet.id);
+  }, [selectedSheet]);
+  const totalProblems = data.steps.reduce(
+    (sum, s) =>
+      sum + s.subsections.reduce((ss, sub) => ss + sub.problems.length, 0),
+    0,
+  );
+  const sheetProblems = data.steps.flatMap((step) =>
+    step.subsections.flatMap((subsection) => subsection.problems),
+  );
+  const doneCount = sheetProblems.filter(
+    (problem) => progress[problem.id] === "done",
+  ).length;
+  const skippedCount = sheetProblems.filter(
+    (problem) => progress[problem.id] === "skipped",
+  ).length;
+  const todoCount = totalProblems - doneCount - skippedCount;
+  const profileSheetStats = useMemo(
+    () =>
+      availableSheets.map((sheet) => {
+        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+        const problems = sheet.sheet.steps.flatMap((step) =>
+          step.subsections.flatMap((subsection) => subsection.problems),
+        );
+        const solved = problems.filter(
+          (problem) => progress[`${idPrefix}${problem.id}`] === "done",
+        ).length;
+        const skipped = problems.filter(
+          (problem) =>
+            progress[`${idPrefix}${problem.id}`] === "skipped" ||
+            (!progress[`${idPrefix}${problem.id}`] && problem.defaultSkip),
+        ).length;
+        return {
+          id: sheet.id,
+          title: sheet.title,
+          solved,
+          skipped,
+          total: problems.length,
+        };
+      }),
+    [availableSheets, progress],
+  );
+  const profileProblemsTotal = profileSheetStats.reduce(
+    (total, sheet) => total + sheet.total,
+    0,
+  );
+  const profileProblemsSolved = profileSheetStats.reduce(
+    (total, sheet) => total + sheet.solved,
+    0,
+  );
+  const recentAccepted = useMemo(
+    () =>
+      availableSheets
+        .flatMap((sheet) => {
+          const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+          return sheet.sheet.steps.flatMap((step) =>
+            step.subsections.flatMap((subsection) =>
+              subsection.problems.flatMap((problem) => {
+                const id = `${idPrefix}${problem.id}`;
+                const acceptedOn = completedOn[id];
+                if (progress[id] !== "done") return [];
+                return [
+                  {
+                    id,
+                    title: problem.title,
+                    sheetTitle: sheet.title,
+                    acceptedOn: acceptedOn || null,
+                    completedAt: completedAt[id] || null,
+                  },
+                ];
+              }),
+            ),
+          );
+        })
+        .sort((first, second) => {
+          if (first.completedAt && second.completedAt) {
+            return second.completedAt.localeCompare(first.completedAt);
+          }
+          if (first.completedAt) return -1;
+          if (second.completedAt) return 1;
+          if (!first.acceptedOn && !second.acceptedOn) return 0;
+          if (!first.acceptedOn) return 1;
+          if (!second.acceptedOn) return -1;
+          return second.acceptedOn.localeCompare(first.acceptedOn);
+        })
+        .slice(0, 8),
+    [availableSheets, completedAt, completedOn, progress],
+  );
 
   const dailyStreak = useMemo(() => {
     let streak = 0;
@@ -704,7 +1056,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     let previousDate = null;
 
     for (const dateKey of activeDates) {
-      const [year, month, day] = dateKey.split('-').map(Number);
+      const [year, month, day] = dateKey.split("-").map(Number);
       const date = new Date(year, month - 1, day);
       if (previousDate) {
         const expected = new Date(previousDate);
@@ -725,9 +1077,13 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     today.setHours(0, 0, 0, 0);
     const firstDate = new Date(today);
     firstDate.setDate(firstDate.getDate() - 364);
-    return Object.entries(activityLog).reduce((total, [date, count]) => (
-      date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today) ? total + count : total
-    ), 0);
+    return Object.entries(activityLog).reduce(
+      (total, [date, count]) =>
+        date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today)
+          ? total + count
+          : total,
+      0,
+    );
   }, [activityLog]);
 
   const yearlyActiveDays = useMemo(() => {
@@ -735,9 +1091,12 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     today.setHours(0, 0, 0, 0);
     const firstDate = new Date(today);
     firstDate.setDate(firstDate.getDate() - 364);
-    return Object.entries(activityLog).filter(([date, count]) => (
-      count > 0 && date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today)
-    )).length;
+    return Object.entries(activityLog).filter(
+      ([date, count]) =>
+        count > 0 &&
+        date >= getLocalDateKey(firstDate) &&
+        date <= getLocalDateKey(today),
+    ).length;
   }, [activityLog]);
 
   const heatmapData = useMemo(() => {
@@ -745,7 +1104,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - startDate.getDay() - (52 * 7));
+    startDate.setDate(startDate.getDate() - startDate.getDay() - 52 * 7);
 
     for (let weekIndex = 0; weekIndex < 53; weekIndex++) {
       const week = [];
@@ -753,7 +1112,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + weekIndex * 7 + dayIndex);
         const dateKey = getLocalDateKey(date);
-        const count = date <= today ? (activityLog[dateKey] || 0) : 0;
+        const count = date <= today ? activityLog[dateKey] || 0 : 0;
         week.push({
           date,
           dateKey,
@@ -764,42 +1123,67 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
       }
       weeks.push(week);
     }
-    const monthLabels = weeks.map(week => {
-      const firstOfMonth = week.find(day => !day.future && day.date.getDate() === 1);
+    const monthLabels = weeks.map((week) => {
+      const firstOfMonth = week.find(
+        (day) => !day.future && day.date.getDate() === 1,
+      );
       return firstOfMonth
-        ? firstOfMonth.date.toLocaleDateString(undefined, { month: 'short' })
-        : '';
+        ? firstOfMonth.date.toLocaleDateString(undefined, { month: "short" })
+        : "";
     });
     return { weeks, monthLabels };
   }, [activityLog]);
 
-  const progressState = useCallback((id) => {
-    const prob = data.steps.flatMap(s => s.subsections.flatMap(sub => sub.problems)).find(p => p.id === id);
-    if (!prob) return 'todo';
-    return getState(id, prob.defaultSkip);
-  }, [data, getState]);
+  const progressState = useCallback(
+    (id) => {
+      const prob = data.steps
+        .flatMap((s) => s.subsections.flatMap((sub) => sub.problems))
+        .find((p) => p.id === id);
+      if (!prob) return "todo";
+      return getState(id, prob.defaultSkip);
+    },
+    [data, getState],
+  );
 
-  const handleToggle = useCallback((id) => {
-    const current = progressState(id);
-    update(id, current === 'done' ? 'todo' : 'done');
-  }, [progressState, update]);
+  const handleToggle = useCallback(
+    (id) => {
+      const current = progressState(id);
+      update(id, current === "done" ? "todo" : "done");
+    },
+    [progressState, update],
+  );
 
-  const handleSkip = useCallback((id) => {
-    const current = progressState(id);
-    update(id, current === 'skipped' ? 'todo' : 'skipped');
-  }, [progressState, update]);
+  const handleSkip = useCallback(
+    (id) => {
+      const current = progressState(id);
+      update(id, current === "skipped" ? "todo" : "skipped");
+    },
+    [progressState, update],
+  );
 
   const toggleStep = useCallback((id) => {
-    setExpandedSteps(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    setExpandedSteps((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   }, []);
 
   const toggleSub = useCallback((id) => {
-    setExpandedSubs(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+    setExpandedSubs((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   }, []);
 
   const expandAll = useCallback(() => {
-    const allSteps = new Set(data.steps.map(s => s.id));
-    const allSubs = new Set(data.steps.flatMap(s => s.subsections.map(sub => sub.id)));
+    const allSteps = new Set(data.steps.map((s) => s.id));
+    const allSubs = new Set(
+      data.steps.flatMap((s) => s.subsections.map((sub) => sub.id)),
+    );
     setExpandedSteps(allSteps);
     setExpandedSubs(allSubs);
   }, [data]);
@@ -813,36 +1197,46 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     let result = data.steps;
     if (search.trim()) {
       const q = search.toLowerCase();
-      result = result.map(step => {
-        const filteredSubs = step.subsections.map(sub => {
-          const filteredProbs = sub.problems.filter(p => p.title.toLowerCase().includes(q));
-          return { ...sub, problems: filteredProbs };
-        }).filter(sub => sub.problems.length > 0);
-        return { ...step, subsections: filteredSubs };
-      }).filter(step => step.subsections.length > 0);
+      result = result
+        .map((step) => {
+          const filteredSubs = step.subsections
+            .map((sub) => {
+              const filteredProbs = sub.problems.filter((p) =>
+                p.title.toLowerCase().includes(q),
+              );
+              return { ...sub, problems: filteredProbs };
+            })
+            .filter((sub) => sub.problems.length > 0);
+          return { ...step, subsections: filteredSubs };
+        })
+        .filter((step) => step.subsections.length > 0);
     }
     return result;
   }, [search, data]);
 
   const exportProgress = (sheet) => {
-    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
-    const allProblems = sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
+    const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+    const allProblems = sheet.sheet.steps.flatMap((step) =>
+      step.subsections.flatMap((subsection) => subsection.problems),
+    );
     const exportData = {};
-    allProblems.forEach(problem => {
+    allProblems.forEach((problem) => {
       const id = `${idPrefix}${problem.id}`;
       const state = progress[id];
-      if (state === 'done' || state === 'skipped') {
+      if (state === "done" || state === "skipped") {
         exportData[problem.title] = { id, state };
       }
     });
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `${sheet.id}-progress.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setBackupAction('');
+    setBackupAction("");
   };
 
   const importProgress = (e) => {
@@ -853,57 +1247,84 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
       try {
         const fileContent = loadEvent.target.result;
         const imported = JSON.parse(fileContent);
-        if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
-          alert('Invalid backup file format. Choose a progress backup JSON exported from your profile.');
+        if (
+          !imported ||
+          typeof imported !== "object" ||
+          Array.isArray(imported)
+        ) {
+          alert(
+            "Invalid backup file format. Choose a progress backup JSON exported from your profile.",
+          );
           return;
         }
         const targetSheetId = importSheetId.current;
-        const targetSheet = availableSheets.find(sheet => sheet.id === targetSheetId);
+        const targetSheet = availableSheets.find(
+          (sheet) => sheet.id === targetSheetId,
+        );
         if (!targetSheet) {
-          alert('Select a valid sheet before importing progress.');
+          alert("Select a valid sheet before importing progress.");
           return;
         }
-        const idPrefix = targetSheet.id === 'dsa' ? '' : `${targetSheet.id}::`;
-        const validProblemIds = new Set(targetSheet.sheet.steps.flatMap(step => (
-          step.subsections.flatMap(subsection => subsection.problems.map(problem => `${idPrefix}${problem.id}`))
-        )));
+        const idPrefix = targetSheet.id === "dsa" ? "" : `${targetSheet.id}::`;
+        const validProblemIds = new Set(
+          targetSheet.sheet.steps.flatMap((step) =>
+            step.subsections.flatMap((subsection) =>
+              subsection.problems.map((problem) => `${idPrefix}${problem.id}`),
+            ),
+          ),
+        );
         const newProgress = {};
         let importedCount = 0;
         for (const [title, value] of Object.entries(imported)) {
-          if (value && typeof value === 'object' && value.id && value.state) {
+          if (value && typeof value === "object" && value.id && value.state) {
             const sourceId = String(value.id);
-            const id = targetSheet.id === 'dsa'
-              ? sourceId.replace(/^dsa::/, '')
-              : sourceId.startsWith(idPrefix) ? sourceId : `${idPrefix}${sourceId}`;
+            const id =
+              targetSheet.id === "dsa"
+                ? sourceId.replace(/^dsa::/, "")
+                : sourceId.startsWith(idPrefix)
+                  ? sourceId
+                  : `${idPrefix}${sourceId}`;
             const state = value.state;
-            if (validProblemIds.has(id) && (state === 'done' || state === 'skipped')) {
+            if (
+              validProblemIds.has(id) &&
+              (state === "done" || state === "skipped")
+            ) {
               newProgress[id] = state;
               importedCount++;
             }
           }
         }
         if (importedCount === 0) {
-          alert(`No matching problem states were found for ${targetSheet.title}. Choose a progress backup that contains problem IDs from this sheet.`);
+          alert(
+            `No matching problem states were found for ${targetSheet.title}. Choose a progress backup that contains problem IDs from this sheet.`,
+          );
           return;
         }
         const saved = await bulkUpdate(newProgress);
         if (!saved) {
-          alert('The backup was read, but progress could not be saved to your account. Check the sync error and try again.');
+          alert(
+            "The backup was read, but progress could not be saved to your account. Check the sync error and try again.",
+          );
           return;
         }
-        alert(`Successfully imported ${importedCount} problem states into ${targetSheet.title}.`);
+        alert(
+          `Successfully imported ${importedCount} problem states into ${targetSheet.title}.`,
+        );
       } catch (err) {
-        console.error('Import error details:', err);
+        console.error("Import error details:", err);
         alert(`Failed to import backup file: ${err.message}`);
       }
     };
-    reader.onerror = () => alert('Failed to read backup file');
+    reader.onerror = () => alert("Failed to read backup file");
     reader.readAsText(file);
-    e.target.value = '';
-    setBackupAction('');
+    e.target.value = "";
+    setBackupAction("");
   };
 
-  const chipActive = (type) => activeFilter === type ? 'bg-[#6D5BF6] text-white' : 'bg-[#15151B] text-[#8A8A98] hover:text-white';
+  const chipActive = (type) =>
+    activeFilter === type
+      ? "bg-[#6D5BF6] text-white"
+      : "bg-[#15151B] text-[#8A8A98] hover:text-white";
 
   if (progressLoading) {
     return (
@@ -919,16 +1340,26 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
       <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
-            <button onClick={() => setShowProfile(false)} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]">
+            <button
+              onClick={() => setShowProfile(false)}
+              className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]"
+            >
               <ChevronDown size={20} className="rotate-90" />
             </button>
             <h1 className="font-bold text-xl">My Profile</h1>
             <div className="flex-1" />
             <div className="flex items-center gap-3">
-              <button onClick={openProfileSettings} aria-label="Edit profile settings" className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]">
+              <button
+                onClick={openProfileSettings}
+                aria-label="Edit profile settings"
+                className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]"
+              >
                 <Settings size={20} />
               </button>
-              <button onClick={onSignOut} className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-900/20 transition-colors text-red-400">
+              <button
+                onClick={onSignOut}
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-900/20 transition-colors text-red-400"
+              >
                 <LogOut size={20} />
               </button>
             </div>
@@ -937,7 +1368,10 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
 
         <main className="max-w-[1440px] mx-auto px-4 md:px-6 py-8">
           {(authError || progressError) && (
-            <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+            <div
+              role="alert"
+              className="mb-6 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300"
+            >
               {authError || progressError}
             </div>
           )}
@@ -945,15 +1379,28 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             <aside className="profile-sidebar">
               <section className="profile-hero">
                 <div className="profile-avatar">
-                  {userName.charAt(0).toUpperCase() || 'U'}
+                  {userName.charAt(0).toUpperCase() || "U"}
                 </div>
                 <div className="profile-user-details">
-                  <h1 className="text-2xl font-bold text-[#E8E8EE]">{userName}</h1>
-                  {user.email && <p className="mt-1 break-all text-sm text-[#8A8A98]">{user.email}</p>}
+                  <h1 className="text-2xl font-bold text-[#E8E8EE]">
+                    {userName}
+                  </h1>
+                  {user.email && (
+                    <p className="mt-1 break-all text-sm text-[#8A8A98]">
+                      {user.email}
+                    </p>
+                  )}
                   <p className="mt-1 text-sm text-[#8A8A98]">@{userUsername}</p>
                   {userLocation && (
                     <div className="mt-3 flex items-center gap-2 text-sm text-[#8A8A98]">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                         <circle cx="12" cy="10" r="3" />
                       </svg>
@@ -961,7 +1408,12 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                     </div>
                   )}
                   {userWebsite && (
-                    <a href={userWebsite} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline">
+                    <a
+                      href={userWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline"
+                    >
                       {userWebsite}
                     </a>
                   )}
@@ -970,10 +1422,12 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
 
               <section className="surface-card rounded-2xl border border-[#26262F] bg-[#15151B] divide-y divide-[#26262F]">
                 <div className="p-4">
-                  <h2 className="mb-4 text-lg font-semibold text-[#E8E8EE]">Progress &amp; Data Management</h2>
+                  <h2 className="mb-4 text-lg font-semibold text-[#E8E8EE]">
+                    Progress &amp; Data Management
+                  </h2>
                   <div className="space-y-3">
                     <button
-                      onClick={() => setBackupAction('export')}
+                      onClick={() => setBackupAction("export")}
                       className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
                     >
                       <div className="flex items-center gap-3">
@@ -981,15 +1435,22 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                           <Download size={20} />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-medium text-[#E8E8EE]">Export Progress</div>
-                          <div className="text-xs text-[#8A8A98]">Download your progress as JSON</div>
+                          <div className="text-sm font-medium text-[#E8E8EE]">
+                            Export Progress
+                          </div>
+                          <div className="text-xs text-[#8A8A98]">
+                            Download your progress as JSON
+                          </div>
                         </div>
                       </div>
-                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                      <ChevronDown
+                        size={16}
+                        className="rotate-90 text-[#8A8A98]"
+                      />
                     </button>
 
                     <button
-                      onClick={() => setBackupAction('import')}
+                      onClick={() => setBackupAction("import")}
                       className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
                     >
                       <div className="flex items-center gap-3">
@@ -997,16 +1458,28 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                           <Upload size={20} />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-medium text-[#E8E8EE]">Import Progress</div>
-                          <div className="text-xs text-[#8A8A98]">Restore progress from backup</div>
+                          <div className="text-sm font-medium text-[#E8E8EE]">
+                            Import Progress
+                          </div>
+                          <div className="text-xs text-[#8A8A98]">
+                            Restore progress from backup
+                          </div>
                         </div>
                       </div>
-                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                      <ChevronDown
+                        size={16}
+                        className="rotate-90 text-[#8A8A98]"
+                      />
                     </button>
 
                     <button
                       onClick={() => {
-                        if (confirm('Reset all progress across every sheet? This cannot be undone.')) reset();
+                        if (
+                          confirm(
+                            "Reset all progress across every sheet? This cannot be undone.",
+                          )
+                        )
+                          reset();
                       }}
                       className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-900/20"
                     >
@@ -1015,11 +1488,18 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                           <RefreshCcw size={20} />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-medium text-red-300">Reset All Sheets</div>
-                          <div className="text-xs text-[#8A8A98]">Clear all progress and activity</div>
+                          <div className="text-sm font-medium text-red-300">
+                            Reset All Sheets
+                          </div>
+                          <div className="text-xs text-[#8A8A98]">
+                            Clear all progress and activity
+                          </div>
                         </div>
                       </div>
-                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                      <ChevronDown
+                        size={16}
+                        className="rotate-90 text-[#8A8A98]"
+                      />
                     </button>
 
                     <input
@@ -1037,162 +1517,242 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </aside>
 
             <div className="profile-main">
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-8 md:grid-cols-3">
-            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-                <Calendar size={16} />
-                <span className="text-xs font-medium">Current streak</span>
-              </div>
-              <div className="text-2xl font-bold text-[#FF6B35]">{dailyStreak}</div>
-              <div className="text-xs text-[#8A8A98] mt-1">current days</div>
-            </div>
-            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-                <Trophy size={16} />
-                <span className="text-xs font-medium">Best streak</span>
-              </div>
-              <div className="text-2xl font-bold text-[#6D5BF6]">{longestStreak}</div>
-              <div className="text-xs text-[#8A8A98] mt-1">longest streak</div>
-            </div>
-            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-              <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
-                <Target size={16} />
-                <span className="text-xs font-medium">Problems</span>
-              </div>
-              <div className="text-2xl font-bold text-[#22A559]">{profileProblemsSolved}</div>
-              <div className="text-xs text-[#8A8A98] mt-1">of {profileProblemsTotal} across all sheets</div>
-            </div>
-          </div>
-
-          <section className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6" aria-labelledby="profile-sheet-progress">
-            <h2 id="profile-sheet-progress" className="mb-4 text-lg font-semibold text-[#E8E8EE]">Sheet progress</h2>
-            <div className="space-y-4">
-              {profileSheetStats.map(sheet => {
-                const percentage = sheet.total ? Math.round((sheet.solved / sheet.total) * 100) : 0;
-                return (
-                  <div key={sheet.id}>
-                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
-                      <span className="truncate font-medium text-[#E8E8EE]">{sheet.title}</span>
-                      <span className="shrink-0 tabular-nums text-[#8A8A98]">
-                        <span className="text-[#22A559]">{sheet.solved} solved</span>
-                        <span className="mx-2 text-[#52525B]">·</span>
-                        <span className="text-[#E65100]">{sheet.skipped} skipped</span>
-                        <span className="mx-2 text-[#52525B]">·</span>
-                        {sheet.total} total
-                      </span>
-                    </div>
-                    <div
-                      className="h-2 overflow-hidden rounded-full bg-[#26262F]"
-                      role="progressbar"
-                      aria-label={`${sheet.title} progress`}
-                      aria-valuemin={0}
-                      aria-valuemax={sheet.total}
-                      aria-valuenow={sheet.solved}
-                    >
-                      <div className="h-full rounded-full bg-[#6D5BF6] transition-all" style={{ width: `${percentage}%` }} />
-                    </div>
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4 mb-8 md:grid-cols-3">
+                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                    <Calendar size={16} />
+                    <span className="text-xs font-medium">Current streak</span>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Activity Section */}
-          <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <h3 className="text-lg font-semibold text-[#E8E8EE]">
-                {yearlyActivityTotal.toLocaleString()} problems solved in the past year
-              </h3>
-              <div className="flex items-center gap-2 text-xs text-[#8A8A98]" aria-label="Activity scale: less to more">
-                <span>Less</span>
-                <div className="flex gap-1">
-                  {['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'].map(color => (
-                    <span key={color} className="w-3 h-3 rounded-sm border border-white/5" style={{ backgroundColor: color }} />
-                  ))}
-                </div>
-                <span>More</span>
-              </div>
-            </div>
-            <div className="activity-scroll pb-2">
-              <div>
-                <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
-                  {heatmapData.monthLabels.map((month, index) => (
-                    <span key={index} className="whitespace-nowrap">{month}</span>
-                  ))}
-                </div>
-                <div className="activity-heatmap">
-                  <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
-                    {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((label, index) => (
-                      <span key={`weekday-${index}`}>{label}</span>
-                    ))}
+                  <div className="text-2xl font-bold text-[#FF6B35]">
+                    {dailyStreak}
                   </div>
-                  <div className="activity-weeks">
-                    {heatmapData.weeks.map((week, weekIndex) => (
-                      <div key={weekIndex} className="activity-week">
-                        {week.map(day => (
-                          <span
-                            key={day.dateKey}
-                            aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
-                            title={`${day.count} ${day.count === 1 ? 'problem' : 'problems'} solved on ${day.date.toLocaleDateString()}`}
-                            className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
-                            style={{
-                              backgroundColor: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'][day.intensity],
-                              visibility: day.future ? 'hidden' : 'visible',
-                            }}
+                  <div className="text-xs text-[#8A8A98] mt-1">
+                    current days
+                  </div>
+                </div>
+                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                    <Trophy size={16} />
+                    <span className="text-xs font-medium">Best streak</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#6D5BF6]">
+                    {longestStreak}
+                  </div>
+                  <div className="text-xs text-[#8A8A98] mt-1">
+                    longest streak
+                  </div>
+                </div>
+                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                    <Target size={16} />
+                    <span className="text-xs font-medium">Problems</span>
+                  </div>
+                  <div className="text-2xl font-bold text-[#22A559]">
+                    {profileProblemsSolved}
+                  </div>
+                  <div className="text-xs text-[#8A8A98] mt-1">
+                    of {profileProblemsTotal} across all sheets
+                  </div>
+                </div>
+              </div>
+
+              <section
+                className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6"
+                aria-labelledby="profile-sheet-progress"
+              >
+                <h2
+                  id="profile-sheet-progress"
+                  className="mb-4 text-lg font-semibold text-[#E8E8EE]"
+                >
+                  Sheet progress
+                </h2>
+                <div className="space-y-4">
+                  {profileSheetStats.map((sheet) => {
+                    const percentage = sheet.total
+                      ? Math.round((sheet.solved / sheet.total) * 100)
+                      : 0;
+                    return (
+                      <div key={sheet.id}>
+                        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
+                          <span className="truncate font-medium text-[#E8E8EE]">
+                            {sheet.title}
+                          </span>
+                          <span className="shrink-0 tabular-nums text-[#8A8A98]">
+                            <span className="text-[#22A559]">
+                              {sheet.solved} solved
+                            </span>
+                            <span className="mx-2 text-[#52525B]">·</span>
+                            <span className="text-[#E65100]">
+                              {sheet.skipped} skipped
+                            </span>
+                            <span className="mx-2 text-[#52525B]">·</span>
+                            {sheet.total} total
+                          </span>
+                        </div>
+                        <div
+                          className="h-2 overflow-hidden rounded-full bg-[#26262F]"
+                          role="progressbar"
+                          aria-label={`${sheet.title} progress`}
+                          aria-valuemin={0}
+                          aria-valuemax={sheet.total}
+                          aria-valuenow={sheet.solved}
+                        >
+                          <div
+                            className="h-full rounded-full bg-[#6D5BF6] transition-all"
+                            style={{ width: `${percentage}%` }}
                           />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Activity Section */}
+              <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <h3 className="text-lg font-semibold text-[#E8E8EE]">
+                    {yearlyActivityTotal.toLocaleString()} problems solved in
+                    the past year
+                  </h3>
+                  <div
+                    className="flex items-center gap-2 text-xs text-[#8A8A98]"
+                    aria-label="Activity scale: less to more"
+                  >
+                    <span>Less</span>
+                    <div className="flex gap-1">
+                      {[
+                        "#161b22",
+                        "#0e4429",
+                        "#006d32",
+                        "#26a641",
+                        "#39d353",
+                      ].map((color) => (
+                        <span
+                          key={color}
+                          className="w-3 h-3 rounded-sm border border-white/5"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    <span>More</span>
+                  </div>
+                </div>
+                <div className="activity-scroll pb-2">
+                  <div>
+                    <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
+                      {heatmapData.monthLabels.map((month, index) => (
+                        <span key={index} className="whitespace-nowrap">
+                          {month}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="activity-heatmap">
+                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
+                        {["", "Mon", "", "Wed", "", "Fri", ""].map(
+                          (label, index) => (
+                            <span key={`weekday-${index}`}>{label}</span>
+                          ),
+                        )}
+                      </div>
+                      <div className="activity-weeks">
+                        {heatmapData.weeks.map((week, weekIndex) => (
+                          <div key={weekIndex} className="activity-week">
+                            {week.map((day) => (
+                              <span
+                                key={day.dateKey}
+                                aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
+                                title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}`}
+                                className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
+                                style={{
+                                  backgroundColor: [
+                                    "#161b22",
+                                    "#0e4429",
+                                    "#006d32",
+                                    "#26a641",
+                                    "#39d353",
+                                  ][day.intensity],
+                                  visibility: day.future ? "hidden" : "visible",
+                                }}
+                              />
+                            ))}
+                          </div>
                         ))}
                       </div>
-                    ))}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                      <span>Total active days: {yearlyActiveDays}</span>
+                      <span>Updated live as you mark problems solved</span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
-                  <span>Total active days: {yearlyActiveDays}</span>
-                  <span>Updated live as you mark problems solved</span>
-                </div>
               </div>
-            </div>
-          </div>
 
-          <section className="recent-ac-card surface-card" aria-labelledby="recent-ac-heading">
-            <div className="recent-ac-heading">
-              <div>
-                <h2 id="recent-ac-heading">Recent AC</h2>
-                <p>Your latest accepted problems</p>
-              </div>
-              <span className="recent-ac-count">{recentAccepted.length}</span>
-            </div>
-            {recentAccepted.length > 0 ? (
-              <ul className="recent-ac-list">
-                {recentAccepted.map(problem => (
-                  <li key={problem.id} className="recent-ac-item">
-                    <div className="recent-ac-check" aria-hidden="true">✓</div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[#E8E8EE]" title={problem.title}>{problem.title}</p>
-                      <p className="mt-1 truncate text-xs text-[#858585]">{problem.sheetTitle}</p>
-                    </div>
-                    {problem.acceptedOn ? (
-                      <time className="recent-ac-date" dateTime={problem.acceptedOn}>
-                        {new Date(`${problem.acceptedOn}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </time>
-                    ) : (
-                      <span className="recent-ac-date">Date unavailable</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="recent-ac-empty">Accepted problems will show here as you solve them.</p>
-            )}
-          </section>
+              <section
+                className="recent-ac-card surface-card"
+                aria-labelledby="recent-ac-heading"
+              >
+                <div className="recent-ac-heading">
+                  <div>
+                    <h2 id="recent-ac-heading">Recent AC</h2>
+                    <p>Your latest accepted problems</p>
+                  </div>
+                  <span className="recent-ac-count">
+                    {recentAccepted.length}
+                  </span>
+                </div>
+                {recentAccepted.length > 0 ? (
+                  <ul className="recent-ac-list">
+                    {recentAccepted.map((problem) => (
+                      <li key={problem.id} className="recent-ac-item">
+                        <div className="recent-ac-check" aria-hidden="true">
+                          ✓
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className="truncate text-sm font-medium text-[#E8E8EE]"
+                            title={problem.title}
+                          >
+                            {problem.title}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-[#858585]">
+                            {problem.sheetTitle}
+                          </p>
+                        </div>
+                        {problem.acceptedOn ? (
+                          <time
+                            className="recent-ac-date"
+                            dateTime={problem.acceptedOn}
+                          >
+                            {new Date(
+                              `${problem.acceptedOn}T00:00:00`,
+                            ).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </time>
+                        ) : (
+                          <span className="recent-ac-date">
+                            Date unavailable
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="recent-ac-empty">
+                    Accepted problems will show here as you solve them.
+                  </p>
+                )}
+              </section>
             </div>
           </div>
           {backupAction && (
             <div
               className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
-              onMouseDown={event => {
-                if (event.target === event.currentTarget) setBackupAction('');
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setBackupAction("");
               }}
             >
               <section
@@ -1201,39 +1761,52 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 aria-labelledby="backup-sheet-title"
                 className="w-full max-w-md rounded-2xl border border-[#26262F] bg-[#15151B] p-5 shadow-2xl"
               >
-                <h2 id="backup-sheet-title" className="text-lg font-semibold text-[#E8E8EE]">
-                  {backupAction === 'export' ? 'Choose a sheet to export' : 'Choose a sheet to import into'}
+                <h2
+                  id="backup-sheet-title"
+                  className="text-lg font-semibold text-[#E8E8EE]"
+                >
+                  {backupAction === "export"
+                    ? "Choose a sheet to export"
+                    : "Choose a sheet to import into"}
                 </h2>
                 <p className="mb-4 mt-1 text-sm text-[#8A8A98]">
-                  {backupAction === 'export'
-                    ? 'Download progress for one sheet.'
-                    : 'Choose the sheet you want to restore, then select its progress backup file. This dialog stays open if you cancel the file picker.'}
+                  {backupAction === "export"
+                    ? "Download progress for one sheet."
+                    : "Choose the sheet you want to restore, then select its progress backup file. This dialog stays open if you cancel the file picker."}
                 </p>
-                {backupAction === 'import' && (
+                {backupAction === "import" && (
                   <div className="mb-4 rounded-lg border border-[#6D5BF6]/25 bg-[#6D5BF6]/10 p-3 text-sm text-[#C4BDFE]">
                     <p className="font-medium">How to import</p>
                     <ol className="mt-1 list-inside list-decimal space-y-1 text-xs leading-relaxed text-[#AFA8E8]">
                       <li>Select the destination sheet below.</li>
                       <li>Choose the matching progress backup JSON file.</li>
-                      <li>Only problem IDs belonging to that sheet will be imported.</li>
+                      <li>
+                        Only problem IDs belonging to that sheet will be
+                        imported.
+                      </li>
                     </ol>
-                    <p className="mt-2 text-xs text-[#AFA8E8]">Create a backup with Profile → Export Progress if you don’t have one yet.</p>
+                    <p className="mt-2 text-xs text-[#AFA8E8]">
+                      Create a backup with Profile → Export Progress if you
+                      don’t have one yet.
+                    </p>
                   </div>
                 )}
                 <div className="max-h-72 space-y-1 overflow-y-auto">
-                  {availableSheets.map(sheet => (
+                  {availableSheets.map((sheet) => (
                     <button
                       key={sheet.id}
                       type="button"
                       onClick={() => {
-                        if (backupAction === 'export') {
+                        if (backupAction === "export") {
                           exportProgress(sheet);
                           return;
                         }
                         importSheetId.current = sheet.id;
                         const input = importFileInput.current;
                         if (!input) {
-                          alert('Could not open the file picker. Please try Import again.');
+                          alert(
+                            "Could not open the file picker. Please try Import again.",
+                          );
                           return;
                         }
                         input.click();
@@ -1241,13 +1814,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                       className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#E8E8EE] transition-colors hover:bg-[#26262F]"
                     >
                       <span>{sheet.title}</span>
-                      <span className="text-xs text-[#8A8A98]">{sheet.problemCount} problems</span>
+                      <span className="text-xs text-[#8A8A98]">
+                        {sheet.problemCount} problems
+                      </span>
                     </button>
                   ))}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setBackupAction('')}
+                  onClick={() => setBackupAction("")}
                   className="mt-4 w-full rounded-lg border border-[#34343F] px-4 py-2 text-sm text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
                 >
                   Cancel
@@ -1276,13 +1851,18 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   }
 
   return (
-    <div className={`dashboard-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`} data-theme={theme === 'light' ? 'light' : undefined}>
+    <div
+      className={`dashboard-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`}
+      data-theme={theme === "light" ? "light" : undefined}
+    >
       <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
-            onClick={() => setSheetSidebarOpen(open => !open)}
+            onClick={() => setSheetSidebarOpen((open) => !open)}
             className="p-1.5 -ml-1 text-[#E8E8EE]"
-            aria-label={sheetSidebarOpen ? 'Hide sheets sidebar' : 'Show sheets sidebar'}
+            aria-label={
+              sheetSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
+            }
             aria-expanded={sheetSidebarOpen}
           >
             <Menu size={22} />
@@ -1291,23 +1871,43 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-md shadow-[#6D5BF6]/20 flex-shrink-0">
               <CheckSquare size={16} className="text-white" />
             </div>
-            <h1 className="font-bold text-lg tracking-tight truncate">{selectedSheet?.title || 'DSA Sheet'}</h1>
+            <h1 className="font-bold text-lg tracking-tight truncate">
+              {selectedSheet?.title || "DSA Sheet"}
+            </h1>
           </div>
           <div className="flex-1" />
           <div className="relative hidden sm:block">
-            <Search size={15} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8A8A98]" />
+            <Search
+              size={15}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+            />
             <input
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search problems..."
               className="pl-8 pr-8 py-1.5 w-48 lg:w-72 bg-[#15151B] border border-[#26262F] rounded-lg text-sm text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:border-[#6D5BF6] transition-colors"
             />
-            {search && <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8A8A98] hover:text-white"><X size={14} /></button>}
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8A8A98] hover:text-white"
+              >
+                <X size={14} />
+              </button>
+            )}
           </div>
-          <button onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme" className="p-1.5 rounded-lg hover:bg-[#1C1C24] text-[#8A8A98] hover:text-[#E8E8EE] transition-colors">
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          <button
+            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+            aria-label="Toggle theme"
+            className="p-1.5 rounded-lg hover:bg-[#1C1C24] text-[#8A8A98] hover:text-[#E8E8EE] transition-colors"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={() => setShowProfile(true)} aria-label="Profile" className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5BF6]/20 to-[#8B7CFD]/30 border border-[#6D5BF6]/30 flex items-center justify-center hover:border-[#6D5BF6] transition-colors">
+          <button
+            onClick={() => setShowProfile(true)}
+            aria-label="Profile"
+            className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5BF6]/20 to-[#8B7CFD]/30 border border-[#6D5BF6]/30 flex items-center justify-center hover:border-[#6D5BF6] transition-colors"
+          >
             <User size={14} className="text-[#6D5BF6]" />
           </button>
         </div>
@@ -1315,17 +1915,27 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
 
       <main className="dashboard-main max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0">
         {progressError && (
-          <div role="alert" className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl">
+          <div
+            role="alert"
+            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl"
+          >
             <div className="flex items-start gap-3">
               <p>{progressError}</p>
-              <button onClick={() => setProgressError('')} aria-label="Dismiss sync error" className="text-red-200 hover:text-white">
+              <button
+                onClick={() => setProgressError("")}
+                aria-label="Dismiss sync error"
+                className="text-red-200 hover:text-white"
+              >
                 <X size={16} />
               </button>
             </div>
           </div>
         )}
         {authError && (
-          <div role="alert" className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl">
+          <div
+            role="alert"
+            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl"
+          >
             <div className="flex items-start gap-3">
               <p>{authError}</p>
             </div>
@@ -1334,7 +1944,9 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         {sheetSidebarOpen && (
           <aside className="surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none">
             <div className="mb-3 flex items-center justify-between px-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">Your sheets</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">
+                Your sheets
+              </h2>
               <button
                 onClick={() => setSheetSidebarOpen(false)}
                 className="rounded p-1 text-[#8A8A98] hover:bg-[#1C1C24] hover:text-white lg:hidden"
@@ -1343,58 +1955,126 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 <X size={16} />
               </button>
             </div>
+            <div className="mb-3 px-1">
+              <button
+                type="button"
+                onClick={() => uploadSheetInput.current?.click()}
+                disabled={uploadingSheet}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#34343F] px-3 py-2 text-sm text-[#E8E8EE] transition-colors hover:border-[#6D5BF6]/60 hover:bg-[#1C1C24] disabled:cursor-wait disabled:opacity-60"
+              >
+                <Upload size={15} />
+                {uploadingSheet
+                  ? "Converting and saving…"
+                  : "Upload a TXT sheet"}
+              </button>
+              <p className="px-1 pt-2 text-[11px] leading-relaxed text-[#8A8A98]">
+                Uses “Step 1 — Title” headings and numbered problem lines. Your
+                sheets are private to your account.
+              </p>
+              <input
+                ref={uploadSheetInput}
+                type="file"
+                accept=".txt,text/plain"
+                aria-label="Upload a problem sheet TXT file"
+                className="hidden"
+                onChange={handleUploadSheet}
+              />
+              {sheetError && (
+                <p
+                  role="alert"
+                  className="mt-2 rounded-lg border border-red-500/30 bg-red-900/20 p-2 text-xs leading-relaxed text-red-300"
+                >
+                  {sheetError}
+                </p>
+              )}
+            </div>
             <nav className="space-y-1" aria-label="Problem sheets">
-              {availableSheets.map(sheet => (
+              {availableSheets.map((sheet) => (
                 <button
                   key={sheet.id}
                   onClick={() => {
                     setSelectedSheetId(sheet.id);
                     setSheetSidebarOpen(false);
                   }}
-                  aria-current={selectedSheet?.id === sheet.id ? 'page' : undefined}
+                  aria-current={
+                    selectedSheet?.id === sheet.id ? "page" : undefined
+                  }
                   className={`sheet-nav-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                     selectedSheet?.id === sheet.id
-                      ? 'bg-[#6D5BF6]/20 text-white'
-                      : 'text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white'
+                      ? "bg-[#6D5BF6]/20 text-white"
+                      : "text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
                   }`}
                 >
                   <BookOpen size={16} className="shrink-0" />
                   <span className="min-w-0 flex-1 truncate">{sheet.title}</span>
-                  <span className="text-xs text-[#8A8A98]">{sheet.problemCount}</span>
+                  <span className="text-xs text-[#8A8A98]">
+                    {sheet.problemCount}
+                  </span>
                 </button>
               ))}
               {availableSheets.length === 0 && (
-                <p className="px-3 py-2 text-sm text-[#8A8A98]">No converted sheets found.</p>
+                <p className="px-3 py-2 text-sm text-[#8A8A98]">
+                  No converted sheets found.
+                </p>
+              )}
+              {customSheetsLoading && (
+                <p className="px-3 py-2 text-xs text-[#8A8A98]">
+                  Loading your uploaded sheets…
+                </p>
               )}
             </nav>
           </aside>
         )}
 
-        <section className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 120px)'}}>
+        <section
+          className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2"
+          style={{ maxHeight: "calc(100vh - 120px)" }}
+        >
           <div className="tracker-toolbar flex items-center gap-2 mb-4 flex-wrap">
-            {['all', 'done', 'skipped', 'todo'].map(type => (
+            {["all", "done", "skipped", "todo"].map((type) => (
               <button
                 key={type}
                 onClick={() => setActiveFilter(type)}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${chipActive(type)}`}
               >
-                {type === 'all' ? 'All' : type === 'done' ? 'Done' : type === 'skipped' ? 'Skipped' : 'To do'}
+                {type === "all"
+                  ? "All"
+                  : type === "done"
+                    ? "Done"
+                    : type === "skipped"
+                      ? "Skipped"
+                      : "To do"}
               </button>
             ))}
             <label className="flex items-center gap-1.5 text-xs text-[#8A8A98] ml-2 cursor-pointer select-none">
-              <input type="checkbox" checked={hideSkipped} onChange={e => setHideSkipped(e.target.checked)} className="w-3.5 h-3.5 rounded border-[#26262F] bg-[#15151B] accent-[#6D5BF6]" />
+              <input
+                type="checkbox"
+                checked={hideSkipped}
+                onChange={(e) => setHideSkipped(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-[#26262F] bg-[#15151B] accent-[#6D5BF6]"
+              />
               Hide skipped
             </label>
           </div>
 
           <div className="flex items-center gap-2 mb-4 text-xs text-[#8A8A98]">
-            <button onClick={expandAll} className="hover:text-white transition-colors">Expand all</button>
+            <button
+              onClick={expandAll}
+              className="hover:text-white transition-colors"
+            >
+              Expand all
+            </button>
             <span>·</span>
-            <button onClick={collapseAll} className="hover:text-white transition-colors">Collapse all</button>
+            <button
+              onClick={collapseAll}
+              className="hover:text-white transition-colors"
+            >
+              Collapse all
+            </button>
           </div>
 
           <div>
-            {filteredSteps.map(step => (
+            {filteredSteps.map((step) => (
               <StepRow
                 key={step.id}
                 step={step}
@@ -1415,25 +2095,42 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         <aside className={`hidden lg:block w-72 flex-shrink-0 space-y-3`}>
           <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 relative">
             <div className="mb-4">
-              <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Overall Progress</h3>
+              <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
+                Overall Progress
+              </h3>
             </div>
             <div className="mb-2">
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl font-bold text-white tabular-nums">
-                  {totalProblems > 0 ? Math.round((doneCount / totalProblems) * 100) : 0}%
+                  {totalProblems > 0
+                    ? Math.round((doneCount / totalProblems) * 100)
+                    : 0}
+                  %
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 mt-1">{doneCount} / {totalProblems} problems solved</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                {doneCount} / {totalProblems} problems solved
+              </p>
             </div>
             <div className="relative mt-4">
               <div className="h-2 bg-zinc-800 rounded-full overflow-visible relative">
                 <div
                   className="h-full bg-[#6D5BF6] rounded-full transition-all duration-500 ease-out relative"
-                  style={{ width: `${totalProblems > 0 ? (doneCount / totalProblems) * 100 : 0}%` }}
+                  style={{
+                    width: `${totalProblems > 0 ? (doneCount / totalProblems) * 100 : 0}%`,
+                  }}
                 >
                   {doneCount > 0 && (
                     <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-5 bg-zinc-300 rounded-full flex items-center justify-center shadow-lg">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-700">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        className="text-zinc-700"
+                      >
                         <path d="M12 15l-3 5 3-1 3 1-3-5z" />
                         <circle cx="12" cy="8" r="6" />
                       </svg>
@@ -1445,22 +2142,38 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             <div className="mt-5 pt-4 border-t border-zinc-800/50">
               <div className="grid grid-cols-3 gap-3 mb-3">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-white tabular-nums">{doneCount}</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Done</div>
+                  <div className="text-lg font-bold text-white tabular-nums">
+                    {doneCount}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">
+                    Done
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-[#E65100] tabular-nums">{skippedCount}</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Skipped</div>
+                  <div className="text-lg font-bold text-[#E65100] tabular-nums">
+                    {skippedCount}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">
+                    Skipped
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-white tabular-nums">{todoCount}</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">To Do</div>
+                  <div className="text-lg font-bold text-white tabular-nums">
+                    {todoCount}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">
+                    To Do
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => {
-                  if (confirm(`Reset progress for ${selectedSheet?.title || 'this sheet'} only? Other sheets will not be affected.`)) {
-                    reset(sheetProblems.map(problem => problem.id));
+                  if (
+                    confirm(
+                      `Reset progress for ${selectedSheet?.title || "this sheet"} only? Other sheets will not be affected.`,
+                    )
+                  ) {
+                    reset(sheetProblems.map((problem) => problem.id));
                   }
                 }}
                 className="w-full text-xs py-1.5 bg-[#1C1C24] hover:bg-red-900/30 text-[#8A8A98] hover:text-red-400 rounded-md transition-colors flex items-center justify-center gap-1"
@@ -1472,7 +2185,13 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         </aside>
       </main>
 
-      <input id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
+      <input
+        id="import-file"
+        type="file"
+        accept=".json"
+        className="hidden"
+        onChange={importProgress}
+      />
     </div>
   );
 }
@@ -1483,7 +2202,10 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
 function ProgressBar({ done, total, colorClass = "bg-[#6D5BF6]" }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
-    <div className="w-full h-[3px] bg-[#26262F] rounded-full overflow-hidden flex-shrink-0" aria-label={`${pct}% complete`}>
+    <div
+      className="w-full h-[3px] bg-[#26262F] rounded-full overflow-hidden flex-shrink-0"
+      aria-label={`${pct}% complete`}
+    >
       <div
         className={`${colorClass} h-full rounded-full transition-all duration-300 ease-out`}
         style={{ width: `${pct}%` }}
@@ -1493,28 +2215,44 @@ function ProgressBar({ done, total, colorClass = "bg-[#6D5BF6]" }) {
 }
 
 function ProblemRow({ prob, state, onToggle, onSkip }) {
-  const isDone = state === 'done';
-  const isSkip = state === 'skipped';
+  const isDone = state === "done";
+  const isSkip = state === "skipped";
 
   return (
     <div
-      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? 'opacity-50 bg-[#15151B]/40' : 'hover:bg-[#1C1C24]'}`}
+      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? "opacity-50 bg-[#15151B]/40" : "hover:bg-[#1C1C24]"}`}
     >
       <button
         onClick={() => onToggle(prob.id)}
-        aria-label={isDone ? `Mark ${prob.title} as not done` : `Mark ${prob.title} as done`}
-        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? 'bg-[#22A559] border-[#22A559]' : 'border-[#6D5BF6]/60 bg-transparent hover:border-[#6D5BF6]'}`}
+        aria-label={
+          isDone
+            ? `Mark ${prob.title} as not done`
+            : `Mark ${prob.title} as done`
+        }
+        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#22A559] border-[#22A559]" : "border-[#6D5BF6]/60 bg-transparent hover:border-[#6D5BF6]"}`}
       >
         {isDone && (
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-white">
-            <path d="M2 7l3.5 3.5L12 4.5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            className="text-white"
+          >
+            <path
+              d="M2 7l3.5 3.5L12 4.5"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
       </button>
 
       <button
         onClick={() => onToggle(prob.id)}
-        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? 'line-through text-[#8A8A98]' : 'text-[#E8E8EE] hover:text-white'}`}
+        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#8A8A98]" : "text-[#E8E8EE] hover:text-white"}`}
       >
         {prob.title}
       </button>
@@ -1522,7 +2260,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
       <button
         onClick={() => onSkip(prob.id)}
         aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
-        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? 'text-[#E65100] bg-[#E65100]/10' : 'text-[#8A8A98] hover:text-[#E65100] hover:bg-[#E65100]/10'}`}
+        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#E65100] bg-[#E65100]/10" : "text-[#8A8A98] hover:text-[#E65100] hover:bg-[#E65100]/10"}`}
       >
         <SkipForward size={13} />
         <span>Skip</span>
@@ -1531,21 +2269,33 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
   );
 }
 
-function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggleProb, onSkipProb, hideSkipped, filter }) {
-  const done = sub.problems.filter(p => progressState(p.id) === 'done').length;
+function SubSectionRow({
+  sub,
+  stepId,
+  expanded,
+  onToggle,
+  progressState,
+  onToggleProb,
+  onSkipProb,
+  hideSkipped,
+  filter,
+}) {
+  const done = sub.problems.filter(
+    (p) => progressState(p.id) === "done",
+  ).length;
   const total = sub.problems.length;
 
   let visible = sub.problems;
   if (hideSkipped) {
-    visible = visible.filter(p => progressState(p.id) !== 'skipped');
+    visible = visible.filter((p) => progressState(p.id) !== "skipped");
   }
 
-  if (filter === 'done') {
-    visible = visible.filter(p => progressState(p.id) === 'done');
-  } else if (filter === 'skipped') {
-    visible = visible.filter(p => progressState(p.id) === 'skipped');
-  } else if (filter === 'todo') {
-    visible = visible.filter(p => progressState(p.id) === 'todo');
+  if (filter === "done") {
+    visible = visible.filter((p) => progressState(p.id) === "done");
+  } else if (filter === "skipped") {
+    visible = visible.filter((p) => progressState(p.id) === "skipped");
+  } else if (filter === "todo") {
+    visible = visible.filter((p) => progressState(p.id) === "todo");
   }
 
   return (
@@ -1556,14 +2306,18 @@ function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggl
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         <span className="font-medium text-[#E8E8EE]">{sub.title}</span>
-        <div className="flex-1 mx-2"><ProgressBar done={done} total={total} /></div>
-        <span className="text-xs text-[#8A8A98] tabular-nums">{done}/{total}</span>
+        <div className="flex-1 mx-2">
+          <ProgressBar done={done} total={total} />
+        </div>
+        <span className="text-xs text-[#8A8A98] tabular-nums">
+          {done}/{total}
+        </span>
       </button>
 
       {expanded && (
         <div className="surface-card mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
           {visible.length > 0 ? (
-            visible.map(p => (
+            visible.map((p) => (
               <ProblemRow
                 key={p.id}
                 prob={p}
@@ -1573,7 +2327,9 @@ function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggl
               />
             ))
           ) : (
-            <div className="py-4 text-center text-xs text-[#8A8A98]">No problems match the filter</div>
+            <div className="py-4 text-center text-xs text-[#8A8A98]">
+              No problems match the filter
+            </div>
           )}
         </div>
       )}
@@ -1581,8 +2337,23 @@ function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggl
   );
 }
 
-function StepRow({ step, progressState, expandedSteps, onToggleStep, expandedSubs, onToggleSub, onToggleProb, onSkipProb, hideSkipped, filter }) {
-  const done = step.subsections.reduce((sum, s) => sum + s.problems.filter(p => progressState(p.id) === 'done').length, 0);
+function StepRow({
+  step,
+  progressState,
+  expandedSteps,
+  onToggleStep,
+  expandedSubs,
+  onToggleSub,
+  onToggleProb,
+  onSkipProb,
+  hideSkipped,
+  filter,
+}) {
+  const done = step.subsections.reduce(
+    (sum, s) =>
+      sum + s.problems.filter((p) => progressState(p.id) === "done").length,
+    0,
+  );
   const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
 
   return (
@@ -1592,28 +2363,39 @@ function StepRow({ step, progressState, expandedSteps, onToggleStep, expandedSub
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1C1C24] transition-colors"
       >
         <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-          {expandedSteps.has(step.id) ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {expandedSteps.has(step.id) ? (
+            <ChevronDown size={16} />
+          ) : (
+            <ChevronRight size={16} />
+          )}
         </div>
-        <h2 className="font-semibold text-[17px] text-[#E8E8EE] flex-1">{step.title}</h2>
-        <div className="flex-1 mx-3 hidden md:block"><ProgressBar done={done} total={total} /></div>
-        <span className="text-sm text-[#8A8A98] tabular-nums whitespace-nowrap">{done}/{total}</span>
+        <h2 className="font-semibold text-[17px] text-[#E8E8EE] flex-1">
+          {step.title}
+        </h2>
+        <div className="flex-1 mx-3 hidden md:block">
+          <ProgressBar done={done} total={total} />
+        </div>
+        <span className="text-sm text-[#8A8A98] tabular-nums whitespace-nowrap">
+          {done}/{total}
+        </span>
       </button>
 
       <div className="px-4 pb-3">
-        {expandedSteps.has(step.id) && step.subsections.map(sub => (
-          <SubSectionRow
-            key={sub.id}
-            sub={sub}
-            stepId={step.id}
-            expanded={expandedSubs.has(sub.id)}
-            onToggle={() => onToggleSub(sub.id)}
-            progressState={progressState}
-            onToggleProb={onToggleProb}
-            onSkipProb={onSkipProb}
-            hideSkipped={hideSkipped}
-            filter={filter}
-          />
-        ))}
+        {expandedSteps.has(step.id) &&
+          step.subsections.map((sub) => (
+            <SubSectionRow
+              key={sub.id}
+              sub={sub}
+              stepId={step.id}
+              expanded={expandedSubs.has(sub.id)}
+              onToggle={() => onToggleSub(sub.id)}
+              progressState={progressState}
+              onToggleProb={onToggleProb}
+              onSkipProb={onSkipProb}
+              hideSkipped={hideSkipped}
+              filter={filter}
+            />
+          ))}
       </div>
     </div>
   );
