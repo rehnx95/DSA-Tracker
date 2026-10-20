@@ -735,6 +735,9 @@ function AuthenticatedApp({
   const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
   const [uploadingSheet, setUploadingSheet] = useState(false);
   const [sheetError, setSheetError] = useState("");
+  const [todayDateKey, setTodayDateKey] = useState(() =>
+    getLocalDateKey(new Date()),
+  );
   const uploadSheetInput = useRef(null);
   const availableSheets = useMemo(
     () =>
@@ -785,6 +788,16 @@ function AuthenticatedApp({
   const [backupAction, setBackupAction] = useState("");
   const importSheetId = useRef(null);
   const importFileInput = useRef(null);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setTodayDateKey(current => {
+        const today = getLocalDateKey(new Date());
+        return current === today ? current : today;
+      });
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     let active = true;
     supabase
