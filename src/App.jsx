@@ -647,7 +647,8 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
     const problems = sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
     const solved = problems.filter(problem => progress[`${idPrefix}${problem.id}`] === 'done').length;
-    return { id: sheet.id, title: sheet.title, solved, total: problems.length };
+    const skipped = problems.filter(problem => progress[`${idPrefix}${problem.id}`] === 'skipped' || (!progress[`${idPrefix}${problem.id}`] && problem.defaultSkip)).length;
+    return { id: sheet.id, title: sheet.title, solved, skipped, total: problems.length };
   }), [progress]);
   const profileProblemsTotal = profileSheetStats.reduce((total, sheet) => total + sheet.total, 0);
   const profileProblemsSolved = profileSheetStats.reduce((total, sheet) => total + sheet.solved, 0);
@@ -978,9 +979,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 const percentage = sheet.total ? Math.round((sheet.solved / sheet.total) * 100) : 0;
                 return (
                   <div key={sheet.id}>
-                    <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
                       <span className="truncate font-medium text-[#E8E8EE]">{sheet.title}</span>
-                      <span className="shrink-0 tabular-nums text-[#8A8A98]">{sheet.solved} / {sheet.total} solved</span>
+                      <span className="shrink-0 tabular-nums text-[#8A8A98]">
+                        <span className="text-[#22A559]">{sheet.solved} solved</span>
+                        <span className="mx-2 text-[#52525B]">·</span>
+                        <span className="text-[#E65100]">{sheet.skipped} skipped</span>
+                        <span className="mx-2 text-[#52525B]">·</span>
+                        {sheet.total} total
+                      </span>
                     </div>
                     <div
                       className="h-2 overflow-hidden rounded-full bg-[#26262F]"
@@ -1057,7 +1064,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           {/* Backup & Security */}
           <div className="bg-[#15151B] rounded-2xl border border-[#26262F] divide-y divide-[#26262F]">
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Backup & Data</h3>
+              <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Progress & Data Management</h3>
               <div className="space-y-3">
                 <button
                   onClick={() => setBackupAction('export')}
