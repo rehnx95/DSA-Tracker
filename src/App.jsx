@@ -46,7 +46,7 @@ const builtInSheets = Object.entries(sheetModules)
       id,
       title:
         id === "dsa"
-          ? "DSA Sheet"
+          ? "DSA"
           : id
               .replace(/[_-]+/g, " ")
               .replace(/\b\w/g, (character) => character.toUpperCase()),
@@ -2742,7 +2742,7 @@ function AuthenticatedApp({
                 Track Sheet
               </h1>
               <p className="hidden truncate text-[10px] leading-tight text-[#8A8A98] sm:block">
-                {selectedSheet?.title || "DSA Sheet"}
+                {selectedSheet?.title || "DSA"}
               </p>
             </div>
           </div>
