@@ -32,10 +32,11 @@ WITH RECURSIVE target_profile AS (
   LIMIT 1
 ),
 active_dates AS (
-  SELECT DISTINCT a.date
-  FROM public.activity_log AS a
-  JOIN target_profile AS p ON p.id = a.user_id
-  WHERE a.count > 0
+  SELECT DISTINCT progress_row.completed_on AS date
+  FROM public.progress AS progress_row
+  JOIN target_profile AS p ON p.id = progress_row.user_id
+  WHERE progress_row.state = 'done'
+    AND progress_row.completed_on IS NOT NULL
 ),
 streak_groups AS (
   SELECT date, date - ROW_NUMBER() OVER (ORDER BY date)::INTEGER AS group_id
@@ -86,7 +87,6 @@ custom_sheet_summaries AS (
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'id', 'custom-' || sheet.id::TEXT,
         'title', sheet.title,
         'total', jsonb_array_length(sheet.problems),
         'solved', (
@@ -125,7 +125,6 @@ custom_recent AS (
   SELECT COALESCE(
     jsonb_agg(
       jsonb_build_object(
-        'id', recent.problem_id,
         'title', recent.problem_title,
         'sheet_title', recent.sheet_title,
         'accepted_on', recent.completed_on,
@@ -158,16 +157,21 @@ SELECT
   target.website,
   (
     SELECT COUNT(*)::BIGINT
-    FROM public.progress AS row
-    WHERE row.user_id = target.id AND row.state = 'done'
+    FROM public.progress AS progress_row
+    WHERE progress_row.user_id = target.id
+      AND progress_row.state = 'done'
   ) AS total_solved,
   COALESCE(
     (
       SELECT jsonb_object_agg(activity.date::TEXT, activity.count)
-      FROM public.activity_log AS activity
-      WHERE activity.user_id = target.id
-        AND activity.count > 0
-        AND activity.date BETWEEN CURRENT_DATE - 370 AND CURRENT_DATE
+      FROM (
+        SELECT progress_row.completed_on AS date, COUNT(*)::INTEGER AS count
+        FROM public.progress AS progress_row
+        WHERE progress_row.user_id = target.id
+          AND progress_row.state = 'done'
+          AND progress_row.completed_on BETWEEN CURRENT_DATE - 370 AND CURRENT_DATE
+        GROUP BY progress_row.completed_on
+      ) AS activity
     ),
     '{}'::JSONB
   ) AS activity,
@@ -177,14 +181,16 @@ SELECT
     (
       SELECT jsonb_agg(
         jsonb_build_object(
-          'problem_id', row.problem_id,
-          'state', row.state,
-          'completed_on', row.completed_on,
-          'updated_at', row.updated_at
-        ) ORDER BY row.updated_at DESC
+          'problem_id', progress_row.problem_id,
+          'state', progress_row.state,
+          'completed_on', progress_row.completed_on,
+          'updated_at', progress_row.updated_at
+        ) ORDER BY progress_row.updated_at DESC
       )
-      FROM public.progress AS row
-      WHERE row.user_id = target.id AND row.state IN ('done', 'skipped')
+      FROM public.progress AS progress_row
+      WHERE progress_row.user_id = target.id
+        AND progress_row.state IN ('done', 'skipped')
+        AND progress_row.problem_id NOT LIKE 'custom-%'
     ),
     '[]'::JSONB
   ) AS progress,

@@ -19,7 +19,6 @@ import {
   Target,
   LogOut,
   BookOpen,
-  Users,
   Link2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
@@ -908,35 +907,52 @@ function AuthenticatedApp({
     }
 
     let active = true;
+    let requestInFlight = false;
     setPublicProfile(null);
     setPublicProfileLoading(true);
     setPublicProfileError("");
-    supabase
-      .rpc("get_public_profile", {
-        requested_username: selectedPublicUsername,
-      })
-      .then(({ data, error }) => {
+    const refreshPublicProfile = async () => {
+      if (!active || requestInFlight) return;
+      requestInFlight = true;
+      try {
+        const { data, error } = await supabase.rpc("get_public_profile", {
+          requested_username: selectedPublicUsername,
+          requested_today: getLocalDateKey(new Date()),
+        });
         if (error) throw error;
         if (!active) return;
         const profileData = data?.[0];
-        if (!profileData) throw new Error("Profile not found.");
+        if (!profileData) {
+          setPublicProfile(null);
+          setPublicProfileError("This profile could not be found.");
+          return;
+        }
         setPublicProfile(profileData);
-      })
-      .catch((error) => {
+        setPublicProfileError("");
+      } catch (error) {
         if (!active) return;
         console.error("Failed to load public profile:", error);
         setPublicProfileError(
-          error.message === "Profile not found."
-            ? "This profile could not be found."
-            : "Could not load this profile. Apply the public profile search migration and try again.",
+          "Could not load this profile. Apply the latest public profile migrations and try again.",
         );
-      })
-      .finally(() => {
+      } finally {
+        requestInFlight = false;
         if (active) setPublicProfileLoading(false);
-      });
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshPublicProfile();
+    };
+    refreshPublicProfile();
+    const refreshTimer = window.setInterval(refreshWhenVisible, 15_000);
+    window.addEventListener("focus", refreshPublicProfile);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshPublicProfile);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [selectedPublicUsername]);
 
@@ -1601,30 +1617,12 @@ function AuthenticatedApp({
               <span className="font-bold tracking-tight">DSA TRACKER</span>
             </div>
             <div className="flex-1" />
-            <span className="flex items-center gap-2 text-sm font-medium text-violet-300">
-              <Users size={17} />
-              <span className="hidden sm:inline">Community</span>
-            </span>
+            <span className="text-sm font-medium text-[#A1A1AA]">Search</span>
           </div>
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-10 md:px-6 md:py-14">
-          <div className="mb-8">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
-              DSA Tracker Community
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Find people
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#A1A1AA]">
-              Look up a username to explore a solver’s public profile and
-              activity.
-            </p>
-          </div>
-
-          <label className="mb-2 block text-sm font-medium text-[#E8E8EE]" htmlFor="people-search">
-            Search by username
-          </label>
+          <h1 className="mb-6 text-2xl font-bold tracking-tight">Find people</h1>
           <div className="relative">
             <Search
               size={18}
@@ -1632,6 +1630,7 @@ function AuthenticatedApp({
             />
             <input
               id="people-search"
+              aria-label="Search by username"
               autoFocus
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
@@ -1640,7 +1639,7 @@ function AuthenticatedApp({
                 if (event.key === "Enter" && results[0])
                   onSelectProfile(results[0].username);
               }}
-              placeholder="Try a username, e.g. alex-codes"
+              placeholder="Search by username"
               aria-autocomplete="list"
               aria-controls="people-search-results"
               className="h-12 w-full rounded-xl border border-[#34343F] bg-[#111111] pl-11 pr-4 text-sm text-[#E8E8EE] placeholder-[#8A8A98] outline-none transition-colors focus:border-[#765cf6]"
@@ -1697,18 +1696,7 @@ function AuthenticatedApp({
               </div>
             )}
           </div>
-          <p className="mt-2 text-xs text-[#8A8A98]">
-            Enter at least 3 characters. Search matches the start of a
-            username.
-          </p>
-
-          <section className="surface-card mt-8 rounded-xl border p-6">
-            <h2 className="font-semibold">Public profiles</h2>
-            <p className="mt-2 text-sm text-[#8A8A98]">
-              Search by username to see matching profiles. Profile pages include
-              public details, solved totals, and activity.
-            </p>
-          </section>
+          <p className="mt-2 text-xs text-[#8A8A98]">3 characters minimum.</p>
         </main>
       </div>
     );
@@ -1798,8 +1786,8 @@ function AuthenticatedApp({
           total: problems.length,
         };
       });
-      const uploadedStats = customSheets.map((sheet) => ({
-        id: sheet.id,
+      const uploadedStats = customSheets.map((sheet, index) => ({
+        id: `${sheet.title}-${index}`,
         title: sheet.title,
         solved: Number(sheet.solved || 0),
         skipped: Number(sheet.skipped || 0),
@@ -1830,8 +1818,8 @@ function AuthenticatedApp({
         );
       });
       const uploadedAccepted = (profile?.custom_recent_accepted || []).map(
-        (problem) => ({
-          id: problem.id,
+        (problem, index) => ({
+          id: `custom-${index}:${problem.sheet_title}:${problem.title}`,
           title: problem.title,
           sheetTitle: problem.sheet_title,
           acceptedOn: problem.accepted_on,
@@ -2138,7 +2126,7 @@ function AuthenticatedApp({
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
                     <span>Total active days: {activeDays}</span>
-                    <span>Updated live as problems are marked solved</span>
+                    <span>Refreshes automatically while this profile is open</span>
                   </div>
                 </section>
 
