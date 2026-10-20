@@ -1947,7 +1947,7 @@ function AuthenticatedApp({
           <button
             onClick={() => setShowProfile(true)}
             aria-label="Profile"
-            className="w-7 h-7 rounded-full bg-gradient-to-br from-[#6D5BF6]/20 to-[#8B7CFD]/30 border border-[#6D5BF6]/30 flex items-center justify-center hover:border-[#6D5BF6] transition-colors"
+            className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
           >
             <User size={14} className="text-[#6D5BF6]" />
           </button>
@@ -2080,6 +2080,7 @@ function AuthenticatedApp({
               <button
                 key={type}
                 onClick={() => setActiveFilter(type)}
+                aria-pressed={activeFilter === type}
                 className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${chipActive(type)}`}
               >
                 {type === "all"
