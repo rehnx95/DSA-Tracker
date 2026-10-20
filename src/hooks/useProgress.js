@@ -12,6 +12,9 @@ export function useProgress(user) {
   const [progress, setProgress] = useState({});
   const progressRef = useRef(progress);
   const completedOnRef = useRef({});
+  const [completedOn, setCompletedOn] = useState({});
+  const completedAtRef = useRef({});
+  const [completedAt, setCompletedAt] = useState({});
   const [activityLog, setActivityLog] = useState({});
   const activityRef = useRef(activityLog);
   const [loading, setLoading] = useState(Boolean(user));
@@ -29,6 +32,16 @@ export function useProgress(user) {
     setActivityLog(nextActivity);
   }, []);
 
+  const replaceCompletedOn = useCallback((nextCompletedOn) => {
+    completedOnRef.current = nextCompletedOn;
+    setCompletedOn(nextCompletedOn);
+  }, []);
+
+  const replaceCompletedAt = useCallback((nextCompletedAt) => {
+    completedAtRef.current = nextCompletedAt;
+    setCompletedAt(nextCompletedAt);
+  }, []);
+
   const save = useCallback((operation) => {
     const write = writeQueue.current.then(operation);
     writeQueue.current = write.catch((saveError) => {
@@ -42,7 +55,8 @@ export function useProgress(user) {
     if (!user || !supabase) {
       replaceProgress({});
       replaceActivity({});
-      completedOnRef.current = {};
+      replaceCompletedOn({});
+      replaceCompletedAt({});
       setLoading(false);
       return undefined;
     }
@@ -52,10 +66,11 @@ export function useProgress(user) {
     setError('');
     replaceProgress({});
     replaceActivity({});
-    completedOnRef.current = {};
+    replaceCompletedOn({});
+    replaceCompletedAt({});
 
     Promise.all([
-      supabase.from('progress').select('problem_id, state, completed_on').eq('user_id', user.id),
+      supabase.from('progress').select('problem_id, state, completed_on, updated_at').eq('user_id', user.id),
       supabase.from('activity_log').select('date, count').eq('user_id', user.id),
     ]).then(([progressResult, activityResult]) => {
       if (progressResult.error) throw progressResult.error;
@@ -64,10 +79,14 @@ export function useProgress(user) {
 
       const progressMap = {};
       const completedOnMap = {};
+      const completedAtMap = {};
       for (const item of progressResult.data) {
         progressMap[item.problem_id] = item.state;
         if (item.state === 'done' && item.completed_on) {
           completedOnMap[item.problem_id] = item.completed_on;
+        }
+        if (item.state === 'done' && item.updated_at) {
+          completedAtMap[item.problem_id] = item.updated_at;
         }
       }
 
@@ -78,7 +97,8 @@ export function useProgress(user) {
 
       replaceProgress(progressMap);
       replaceActivity(activityMap);
-      completedOnRef.current = completedOnMap;
+      replaceCompletedOn(completedOnMap);
+      replaceCompletedAt(completedAtMap);
     }).catch((loadError) => {
       if (!active) return;
       console.error('Failed to load user data from Supabase:', loadError);
@@ -90,7 +110,7 @@ export function useProgress(user) {
     return () => {
       active = false;
     };
-  }, [user, replaceActivity, replaceProgress]);
+  }, [user, replaceActivity, replaceCompletedAt, replaceCompletedOn, replaceProgress]);
 
   useEffect(() => {
     localStorage.setItem('theme', theme);
@@ -122,13 +142,19 @@ export function useProgress(user) {
 
     const currentState = progressRef.current[id];
     const currentCompletedOn = completedOnRef.current[id];
+    const currentCompletedAt = completedAtRef.current[id];
     const today = getLocalDateKey();
+    const now = new Date().toISOString();
     const nextProgress = { ...progressRef.current, [id]: state };
     const nextCompletedOn = { ...completedOnRef.current };
+    const nextCompletedAt = { ...completedAtRef.current };
     if (state === 'done') nextCompletedOn[id] = currentState === 'done' ? currentCompletedOn || today : today;
     else delete nextCompletedOn[id];
+    if (state === 'done') nextCompletedAt[id] = currentState === 'done' ? currentCompletedAt || now : now;
+    else delete nextCompletedAt[id];
     replaceProgress(nextProgress);
-    completedOnRef.current = nextCompletedOn;
+    replaceCompletedOn(nextCompletedOn);
+    replaceCompletedAt(nextCompletedAt);
 
     const deltas = {};
     if (currentState === 'done') {
@@ -154,21 +180,30 @@ export function useProgress(user) {
       const { error: progressError } = await supabase
         .from('progress')
         .upsert(
-          { user_id: user.id, problem_id: id, state, completed_on: state === 'done' ? nextCompletedOn[id] : null },
+          {
+            user_id: user.id,
+            problem_id: id,
+            state,
+            completed_on: state === 'done' ? nextCompletedOn[id] : null,
+            updated_at: state === 'done' ? nextCompletedAt[id] : now,
+          },
           { onConflict: 'user_id,problem_id' }
         );
       if (progressError) throw progressError;
       for (const date of changedDates) await persistActivity(user.id, date);
     });
-  }, [user, replaceActivity, replaceProgress, save]);
+  }, [user, replaceActivity, replaceCompletedAt, replaceCompletedOn, replaceProgress, save]);
 
   const bulkUpdate = useCallback(async (newProgress) => {
     if (!user || !supabase) return;
 
     const previousProgress = progressRef.current;
     const previousCompletedOn = completedOnRef.current;
+    const previousCompletedAt = completedAtRef.current;
     const today = getLocalDateKey();
+    const now = new Date().toISOString();
     const nextCompletedOn = { ...previousCompletedOn };
+    const nextCompletedAt = { ...previousCompletedAt };
     const dateDeltas = {};
     for (const [id, state] of Object.entries(newProgress)) {
       const currentState = previousProgress[id];
@@ -176,10 +211,12 @@ export function useProgress(user) {
       if (currentState === 'done') dateDeltas[oldDate] = (dateDeltas[oldDate] || 0) - 1;
       if (state === 'done') {
         nextCompletedOn[id] = currentState === 'done' ? oldDate : today;
+        nextCompletedAt[id] = currentState === 'done' ? previousCompletedAt[id] || now : now;
         const newDate = nextCompletedOn[id];
         dateDeltas[newDate] = (dateDeltas[newDate] || 0) + 1;
       } else {
         delete nextCompletedOn[id];
+        delete nextCompletedAt[id];
       }
     }
     const changedDates = Object.keys(dateDeltas).filter(date => dateDeltas[date] !== 0);
@@ -189,9 +226,11 @@ export function useProgress(user) {
       problem_id,
       state,
       completed_on: state === 'done' ? nextCompletedOn[problem_id] : null,
+      updated_at: state === 'done' ? nextCompletedAt[problem_id] : now,
     }));
     replaceProgress(mergedProgress);
-    completedOnRef.current = nextCompletedOn;
+    replaceCompletedOn(nextCompletedOn);
+    replaceCompletedAt(nextCompletedAt);
 
     if (changedDates.length > 0) {
       const nextActivity = { ...activityRef.current };
@@ -212,7 +251,7 @@ export function useProgress(user) {
       }
       for (const date of changedDates) await persistActivity(user.id, date);
     });
-  }, [user, replaceActivity, replaceProgress, save]);
+  }, [user, replaceActivity, replaceCompletedAt, replaceCompletedOn, replaceProgress, save]);
 
   const getState = useCallback((id, defaultSkip) => {
     if (progress[id]) return progress[id];
@@ -229,6 +268,7 @@ export function useProgress(user) {
 
       const nextProgress = { ...progressRef.current };
       const nextCompletedOn = { ...completedOnRef.current };
+      const nextCompletedAt = { ...completedAtRef.current };
       const dateDeltas = {};
       for (const id of idsToReset) {
         if (nextProgress[id] === 'done') {
@@ -237,6 +277,7 @@ export function useProgress(user) {
         }
         delete nextProgress[id];
         delete nextCompletedOn[id];
+        delete nextCompletedAt[id];
       }
 
       const changedDates = Object.keys(dateDeltas).filter(date => dateDeltas[date] !== 0);
@@ -248,7 +289,8 @@ export function useProgress(user) {
       }
 
       replaceProgress(nextProgress);
-      completedOnRef.current = nextCompletedOn;
+      replaceCompletedOn(nextCompletedOn);
+      replaceCompletedAt(nextCompletedAt);
       if (changedDates.length > 0) replaceActivity(nextActivity);
 
       await save(async () => {
@@ -265,7 +307,8 @@ export function useProgress(user) {
 
     replaceProgress({});
     replaceActivity({});
-    completedOnRef.current = {};
+    replaceCompletedOn({});
+    replaceCompletedAt({});
 
     await save(async () => {
       const { error: progressError } = await supabase.from('progress').delete().match({ user_id: user.id });
@@ -273,11 +316,13 @@ export function useProgress(user) {
       const { error: activityError } = await supabase.from('activity_log').delete().match({ user_id: user.id });
       if (activityError) throw activityError;
     });
-  }, [user, replaceActivity, replaceProgress, save]);
+  }, [user, replaceActivity, replaceCompletedAt, replaceCompletedOn, replaceProgress, save]);
 
   return {
     progress,
     activityLog,
+    completedOn,
+    completedAt,
     loading,
     error,
     setError,

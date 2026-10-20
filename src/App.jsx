@@ -219,45 +219,39 @@ function App() {
 // =============================================================================
 function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-lg shadow-[#6D5BF6]/30 mb-4">
-            <CheckSquare size={32} className="text-white" />
+    <div className="auth-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+      <div className="auth-layout">
+        <section className="auth-panel-wrap">
+          <div className="auth-panel">
+            <div className="brand-mark auth-mobile-mark">
+              <CheckSquare size={20} className="text-white" />
+            </div>
+            <span className="section-kicker">DSA TRACKER</span>
+            <h2>Sign in to continue</h2>
+            <p className="auth-panel-description">Sign in to access your sheets and saved progress.</p>
+            {error && (
+              <p role="alert" className="mb-5 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+            <button
+              onClick={onSignIn}
+              disabled={isSigningIn}
+              className="google-signin-button"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              {isSigningIn ? 'Connecting to Google…' : 'Continue with Google'}
+              {!isSigningIn && <ChevronRight size={17} />}
+            </button>
+            <div className="auth-divider"><span>SECURE ACCOUNT ACCESS</span></div>
+            <p className="auth-legal">Your account securely syncs your profile and progress.</p>
           </div>
-          <h1 className="text-3xl font-bold text-[#E8E8EE] mb-2">DSA Sheet Tracker</h1>
-          <p className="text-[#8A8A98]">Track your LeetCode progress across 518 problems</p>
-        </div>
-
-        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
-          <h2 className="text-lg font-semibold text-[#E8E8EE] mb-4">Sign in to continue</h2>
-          <p className="text-sm text-[#8A8A98] mb-6">Your progress will be saved to the cloud and synced across devices.</p>
-
-          {error && (
-            <p role="alert" className="mb-4 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-400">
-              {error}
-            </p>
-          )}
-          <button
-            onClick={onSignIn}
-            disabled={isSigningIn}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100 disabled:cursor-wait disabled:opacity-70 transition-colors"
-          >
-            <svg viewBox="0 0 24 24" className="w-5 h-5">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            {isSigningIn ? 'Connecting to Google…' : 'Continue with Google'}
-          </button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-[#8A8A98]">
-            By signing in, you agree to our Terms of Service and Privacy Policy
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );
@@ -391,9 +385,9 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex flex-col">
+    <div className="profile-settings-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex flex-col">
       {/* Header */}
-      <header className="bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+      <header className="dashboard-header bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center">
@@ -410,7 +404,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 
       {/* Main Content */}
       <main className="flex-1 max-w-2xl mx-auto px-4 md:px-6 py-8">
-        <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
+        <div className="onboarding-panel bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">Welcome to DSA Sheet Tracker</h2>
             <p className="text-[#8A8A98]">Let's set up your profile to get started with tracking your coding journey.</p>
@@ -566,6 +560,8 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   const {
     progress,
     activityLog,
+    completedOn,
+    completedAt,
     loading: progressLoading,
     error: progressError,
     setError: setProgressError,
@@ -652,6 +648,33 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   }), [progress]);
   const profileProblemsTotal = profileSheetStats.reduce((total, sheet) => total + sheet.total, 0);
   const profileProblemsSolved = profileSheetStats.reduce((total, sheet) => total + sheet.solved, 0);
+  const recentAccepted = useMemo(() => availableSheets.flatMap(sheet => {
+    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
+    return sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => (
+      subsection.problems.flatMap(problem => {
+        const id = `${idPrefix}${problem.id}`;
+        const acceptedOn = completedOn[id];
+        if (progress[id] !== 'done') return [];
+        return [{
+          id,
+          title: problem.title,
+          sheetTitle: sheet.title,
+          acceptedOn: acceptedOn || null,
+          completedAt: completedAt[id] || null,
+        }];
+      })
+    )));
+  }).sort((first, second) => {
+    if (first.completedAt && second.completedAt) {
+      return second.completedAt.localeCompare(first.completedAt);
+    }
+    if (first.completedAt) return -1;
+    if (second.completedAt) return 1;
+    if (!first.acceptedOn && !second.acceptedOn) return 0;
+    if (!first.acceptedOn) return 1;
+    if (!second.acceptedOn) return -1;
+    return second.acceptedOn.localeCompare(first.acceptedOn);
+  }).slice(0, 8), [completedAt, completedOn, progress]);
 
   const dailyStreak = useMemo(() => {
     let streak = 0;
@@ -893,9 +916,9 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   // Profile page component
   function ProfilePage() {
     return (
-      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
-        <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
-          <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
+      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
+        <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+          <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
             <button onClick={() => setShowProfile(false)} className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]">
               <ChevronDown size={20} className="rotate-90" />
             </button>
@@ -912,41 +935,112 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-4 md:px-6 py-8">
+        <main className="max-w-[1440px] mx-auto px-4 md:px-6 py-8">
           {(authError || progressError) && (
             <div role="alert" className="mb-6 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
               {authError || progressError}
             </div>
           )}
-          {/* Profile Header */}
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
-            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center text-4xl font-bold text-white shadow-lg shadow-[#6D5BF6]/30">
-              {userName.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8EE]">{userName}</h1>
-              {user.email && <p className="text-[#8A8A98] mt-1">{user.email}</p>}
-              <p className="text-[#8A8A98] mt-1">@{userUsername}</p>
-              {userLocation && (
-                <div className="flex items-center gap-2 text-[#8A8A98] mt-2 text-sm">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  {userLocation}
+          <div className="profile-layout">
+            <aside className="profile-sidebar">
+              <section className="profile-hero">
+                <div className="profile-avatar">
+                  {userName.charAt(0).toUpperCase() || 'U'}
                 </div>
-              )}
-              {userWebsite && (
-                <a href={userWebsite} target="_blank" rel="noopener noreferrer" className="text-[#6D5BF6] text-sm mt-1 inline-block hover:underline">
-                  {userWebsite}
-                </a>
-              )}
-            </div>
-          </div>
+                <div className="profile-user-details">
+                  <h1 className="text-2xl font-bold text-[#E8E8EE]">{userName}</h1>
+                  {user.email && <p className="mt-1 break-all text-sm text-[#8A8A98]">{user.email}</p>}
+                  <p className="mt-1 text-sm text-[#8A8A98]">@{userUsername}</p>
+                  {userLocation && (
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[#8A8A98]">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      {userLocation}
+                    </div>
+                  )}
+                  {userWebsite && (
+                    <a href={userWebsite} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline">
+                      {userWebsite}
+                    </a>
+                  )}
+                </div>
+              </section>
+
+              <section className="surface-card rounded-2xl border border-[#26262F] bg-[#15151B] divide-y divide-[#26262F]">
+                <div className="p-4">
+                  <h2 className="mb-4 text-lg font-semibold text-[#E8E8EE]">Progress &amp; Data Management</h2>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setBackupAction('export')}
+                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#6D5BF6]/20 flex items-center justify-center text-[#6D5BF6]">
+                          <Download size={20} />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-medium text-[#E8E8EE]">Export Progress</div>
+                          <div className="text-xs text-[#8A8A98]">Download your progress as JSON</div>
+                        </div>
+                      </div>
+                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                    </button>
+
+                    <button
+                      onClick={() => setBackupAction('import')}
+                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#E65100]/20 flex items-center justify-center text-[#E65100]">
+                          <Upload size={20} />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-medium text-[#E8E8EE]">Import Progress</div>
+                          <div className="text-xs text-[#8A8A98]">Restore progress from backup</div>
+                        </div>
+                      </div>
+                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (confirm('Reset all progress across every sheet? This cannot be undone.')) reset();
+                      }}
+                      className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-900/20"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                          <RefreshCcw size={20} />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-sm font-medium text-red-300">Reset All Sheets</div>
+                          <div className="text-xs text-[#8A8A98]">Clear all progress and activity</div>
+                        </div>
+                      </div>
+                      <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                    </button>
+
+                    <input
+                      ref={importFileInput}
+                      id="import-file"
+                      type="file"
+                      accept=".json,application/json"
+                      aria-label="Choose a progress backup JSON file"
+                      className="fixed left-0 top-0 h-px w-px opacity-0"
+                      onChange={importProgress}
+                    />
+                  </div>
+                </div>
+              </section>
+            </aside>
+
+            <div className="profile-main">
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+          <div className="grid grid-cols-2 gap-4 mb-8 md:grid-cols-3">
+            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
                 <Calendar size={16} />
                 <span className="text-xs font-medium">Current streak</span>
@@ -954,7 +1048,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
               <div className="text-2xl font-bold text-[#FF6B35]">{dailyStreak}</div>
               <div className="text-xs text-[#8A8A98] mt-1">current days</div>
             </div>
-            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
                 <Trophy size={16} />
                 <span className="text-xs font-medium">Best streak</span>
@@ -962,7 +1056,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
               <div className="text-2xl font-bold text-[#6D5BF6]">{longestStreak}</div>
               <div className="text-xs text-[#8A8A98] mt-1">longest streak</div>
             </div>
-            <div className="bg-[#15151B] rounded-xl border border-[#26262F] p-4">
+            <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
               <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
                 <Target size={16} />
                 <span className="text-xs font-medium">Problems</span>
@@ -972,7 +1066,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </div>
           </div>
 
-          <section className="mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6" aria-labelledby="profile-sheet-progress">
+          <section className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6" aria-labelledby="profile-sheet-progress">
             <h2 id="profile-sheet-progress" className="mb-4 text-lg font-semibold text-[#E8E8EE]">Sheet progress</h2>
             <div className="space-y-4">
               {profileSheetStats.map(sheet => {
@@ -1006,7 +1100,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           </section>
 
           {/* Activity Section */}
-          <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
+          <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <h3 className="text-lg font-semibold text-[#E8E8EE]">
                 {yearlyActivityTotal.toLocaleString()} problems solved in the past year
@@ -1021,28 +1115,28 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 <span>More</span>
               </div>
             </div>
-            <div className="overflow-x-auto activity-scroll pb-2">
-              <div className="min-w-[740px]">
-                <div className="ml-8 grid grid-cols-[repeat(53,minmax(10px,1fr))] gap-x-1 mb-2 text-[10px] text-[#8A8A98]">
+            <div className="activity-scroll pb-2">
+              <div>
+                <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
                   {heatmapData.monthLabels.map((month, index) => (
                     <span key={index} className="whitespace-nowrap">{month}</span>
                   ))}
                 </div>
-                <div className="flex gap-1">
-                  <div className="flex w-7 flex-shrink-0 flex-col gap-1 text-[9px] leading-[11px] text-[#8A8A98]">
+                <div className="activity-heatmap">
+                  <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
                     {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((label, index) => (
-                      <span key={`weekday-${index}`} className="h-[11px]">{label}</span>
+                      <span key={`weekday-${index}`}>{label}</span>
                     ))}
                   </div>
-                  <div className="grid flex-1 grid-cols-[repeat(53,minmax(10px,1fr))] gap-x-1">
+                  <div className="activity-weeks">
                     {heatmapData.weeks.map((week, weekIndex) => (
-                      <div key={weekIndex} className="flex flex-col gap-1">
+                      <div key={weekIndex} className="activity-week">
                         {week.map(day => (
                           <span
                             key={day.dateKey}
                             aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
                             title={`${day.count} ${day.count === 1 ? 'problem' : 'problems'} solved on ${day.date.toLocaleDateString()}`}
-                            className="block h-[11px] w-[11px] rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
+                            className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
                             style={{
                               backgroundColor: ['#161b22', '#0e4429', '#006d32', '#26a641', '#39d353'][day.intensity],
                               visibility: day.future ? 'hidden' : 'visible',
@@ -1061,71 +1155,37 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </div>
           </div>
 
-          {/* Backup & Security */}
-          <div className="bg-[#15151B] rounded-2xl border border-[#26262F] divide-y divide-[#26262F]">
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Progress & Data Management</h3>
-              <div className="space-y-3">
-                <button
-                  onClick={() => setBackupAction('export')}
-                  className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#6D5BF6]/20 flex items-center justify-center text-[#6D5BF6]">
-                      <Download size={20} />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-[#E8E8EE]">Export Progress</div>
-                      <div className="text-xs text-[#8A8A98]">Download your progress as JSON</div>
-                    </div>
-                  </div>
-                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
-                </button>
-
-                <button
-                  onClick={() => setBackupAction('import')}
-                  className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#E65100]/20 flex items-center justify-center text-[#E65100]">
-                      <Upload size={20} />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-[#E8E8EE]">Import Progress</div>
-                      <div className="text-xs text-[#8A8A98]">Restore progress from backup</div>
-                    </div>
-                  </div>
-                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (confirm('Reset all progress across every sheet? This cannot be undone.')) reset();
-                  }}
-                  className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-900/20"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
-                      <RefreshCcw size={20} />
-                    </div>
-                    <div className="text-left">
-                      <div className="text-sm font-medium text-red-300">Reset All Sheets</div>
-                      <div className="text-xs text-[#8A8A98]">Clear all progress and activity</div>
-                    </div>
-                  </div>
-                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
-                </button>
-
-                <input
-                  ref={importFileInput}
-                  id="import-file"
-                  type="file"
-                  accept=".json,application/json"
-                  aria-label="Choose a progress backup JSON file"
-                  className="fixed left-0 top-0 h-px w-px opacity-0"
-                  onChange={importProgress}
-                />
+          <section className="recent-ac-card surface-card" aria-labelledby="recent-ac-heading">
+            <div className="recent-ac-heading">
+              <div>
+                <h2 id="recent-ac-heading">Recent AC</h2>
+                <p>Your latest accepted problems</p>
               </div>
+              <span className="recent-ac-count">{recentAccepted.length}</span>
+            </div>
+            {recentAccepted.length > 0 ? (
+              <ul className="recent-ac-list">
+                {recentAccepted.map(problem => (
+                  <li key={problem.id} className="recent-ac-item">
+                    <div className="recent-ac-check" aria-hidden="true">✓</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-[#E8E8EE]" title={problem.title}>{problem.title}</p>
+                      <p className="mt-1 truncate text-xs text-[#858585]">{problem.sheetTitle}</p>
+                    </div>
+                    {problem.acceptedOn ? (
+                      <time className="recent-ac-date" dateTime={problem.acceptedOn}>
+                        {new Date(`${problem.acceptedOn}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      </time>
+                    ) : (
+                      <span className="recent-ac-date">Date unavailable</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="recent-ac-empty">Accepted problems will show here as you solve them.</p>
+            )}
+          </section>
             </div>
           </div>
           {backupAction && (
@@ -1216,8 +1276,8 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   }
 
   return (
-    <div className={`min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`} data-theme={theme === 'light' ? 'light' : undefined}>
-      <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+    <div className={`dashboard-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`} data-theme={theme === 'light' ? 'light' : undefined}>
+      <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
             onClick={() => setSheetSidebarOpen(open => !open)}
@@ -1253,7 +1313,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-6 flex gap-8 min-h-0">
+      <main className="dashboard-main max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0">
         {progressError && (
           <div role="alert" className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl">
             <div className="flex items-start gap-3">
@@ -1272,7 +1332,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           </div>
         )}
         {sheetSidebarOpen && (
-          <aside className="fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none">
+          <aside className="surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none">
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">Your sheets</h2>
               <button
@@ -1292,7 +1352,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                     setSheetSidebarOpen(false);
                   }}
                   aria-current={selectedSheet?.id === sheet.id ? 'page' : undefined}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                  className={`sheet-nav-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                     selectedSheet?.id === sheet.id
                       ? 'bg-[#6D5BF6]/20 text-white'
                       : 'text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white'
@@ -1310,8 +1370,8 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           </aside>
         )}
 
-        <section className="flex-1 min-w-0 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 120px)'}}>
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <section className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 120px)'}}>
+          <div className="tracker-toolbar flex items-center gap-2 mb-4 flex-wrap">
             {['all', 'done', 'skipped', 'todo'].map(type => (
               <button
                 key={type}
@@ -1353,7 +1413,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         </section>
 
         <aside className={`hidden lg:block w-72 flex-shrink-0 space-y-3`}>
-          <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 relative">
+          <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 relative">
             <div className="mb-4">
               <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide">Overall Progress</h3>
             </div>
@@ -1501,7 +1561,7 @@ function SubSectionRow({ sub, stepId, expanded, onToggle, progressState, onToggl
       </button>
 
       {expanded && (
-        <div className="mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
+        <div className="surface-card mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
           {visible.length > 0 ? (
             visible.map(p => (
               <ProblemRow
@@ -1526,7 +1586,7 @@ function StepRow({ step, progressState, expandedSteps, onToggleStep, expandedSub
   const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
 
   return (
-    <div className="rounded-xl bg-[#15151B] border border-[#26262F] overflow-hidden mb-3">
+    <div className="surface-card rounded-xl bg-[#15151B] border border-[#26262F] overflow-hidden mb-3">
       <button
         onClick={() => onToggleStep(step.id)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1C1C24] transition-colors"

@@ -90,8 +90,8 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
-      <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+    <div className="profile-settings-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+      <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
           <button
             type="button"
@@ -106,7 +106,7 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 md:px-6 py-8">
-        <form onSubmit={handleSubmit} className="space-y-5 rounded-2xl border border-[#26262F] bg-[#15151B] p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="settings-form space-y-5 rounded-2xl border border-[#26262F] bg-[#15151B] p-6 md:p-8">
           {errorMessage && (
             <p role="alert" className="rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
               {errorMessage}
