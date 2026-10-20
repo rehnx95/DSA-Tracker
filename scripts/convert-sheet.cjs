@@ -1,15 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const SOURCE_FILE = path.join(__dirname, '../source/backend.txt');
-const OUTPUT_FILE = path.join(__dirname, '../src/data/sheet2.json');
+const SOURCE_DIR = path.join(__dirname, '../source');
+const OUTPUT_DIR = path.join(__dirname, '../src/data');
 
 // Title used for problems that sit directly under a Step (no "N.M — Title" header).
 // Set to null so the UI can simply skip rendering a subsection heading.
 const IMPLICIT_SUB_TITLE = null;
 
-function parseSheet() {
-  const raw = fs.readFileSync(SOURCE_FILE, 'utf8').replace(/\r\n/g, '\n');
+function parseSheet(sourceFile) {
+  const raw = fs.readFileSync(sourceFile, 'utf8').replace(/\r\n/g, '\n');
 
   // Pre-process: if a Step header or "N.M — Title" header got glued onto the end
   // of the previous line (e.g. "...(LC 127)Step 15 — Graphs"), break it onto its own line.
@@ -170,10 +170,49 @@ function parseSheet() {
   return { steps };
 }
 
-function main() {
-  console.log('Parsing sheet...');
-  const data = parseSheet();
+function listSourceFiles() {
+  return fs.readdirSync(SOURCE_DIR)
+    .filter(file => file.toLowerCase().endsWith('.txt'))
+    .sort((a, b) => a.localeCompare(b));
+}
 
+async function chooseSourceFile() {
+  const files = listSourceFiles();
+  if (files.length === 0) throw new Error(`No .txt source files found in ${SOURCE_DIR}`);
+
+  console.log('Available source sheets:');
+  files.forEach((file, index) => console.log(`  ${index + 1}. ${file}`));
+
+  const readline = require('readline/promises');
+  const { stdin, stdout } = require('process');
+  const prompt = readline.createInterface({ input: stdin, output: stdout });
+  try {
+    const answer = (await prompt.question('Enter a source filename or number: ')).trim();
+    const selected = /^\d+$/.test(answer)
+      ? files[Number(answer) - 1]
+      : files.find(file => file.toLowerCase() === answer.toLowerCase() || file.toLowerCase() === `${answer}.txt`.toLowerCase());
+    if (!selected) throw new Error(`Source file "${answer}" was not found in ${SOURCE_DIR}`);
+    return selected;
+  } finally {
+    prompt.close();
+  }
+}
+
+async function main(sourceName = process.argv[2]) {
+  const selectedName = sourceName || await chooseSourceFile();
+  const filename = selectedName.toLowerCase().endsWith('.txt') ? selectedName : `${selectedName}.txt`;
+  if (path.basename(filename) !== filename || !listSourceFiles().includes(filename)) {
+    throw new Error(`Choose a .txt file from ${SOURCE_DIR}`);
+  }
+
+  const sourceFile = path.join(SOURCE_DIR, filename);
+  const outputName = filename.replace(/\.txt$/i, '');
+  const outputFile = path.join(OUTPUT_DIR, `${outputName}.json`);
+  console.log(`Parsing ${filename}...`);
+  const data = parseSheet(sourceFile);
+  if (data.steps.length === 0 || data.steps.every(step => step.subsections.every(subsection => subsection.problems.length === 0))) {
+    throw new Error(`No steps or problems were found in ${filename}; check the source format.`);
+  }
   let problemsCount = 0;
   let skipCount = 0;
   let implicitCount = 0;
@@ -191,18 +230,18 @@ function main() {
   console.log(`Default Skip: ${skipCount}`);
   console.log(`Implicit subsections (steps with no N.M header): ${implicitCount}`);
 
-  const outputDir = path.dirname(OUTPUT_FILE);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(data, null, 2), 'utf8');
-  console.log(`\nWritten to ${OUTPUT_FILE}`);
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.writeFileSync(outputFile, JSON.stringify(data, null, 2), 'utf8');
+  console.log(`\nWritten to ${outputFile}`);
 
-  return { stepsCount: data.steps.length, problemsCount, skipCount };
+  return { stepsCount: data.steps.length, problemsCount, skipCount, outputFile };
 }
 
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    console.error(`\nConversion failed: ${error.message}`);
+    process.exitCode = 1;
+  });
 }
 
 module.exports = { parseSheet, main };

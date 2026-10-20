@@ -2,13 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const SHEET_FILE = path.join(__dirname, '../src/data/sheet.json');
+const SHEET_FILE = path.join(__dirname, '../src/data/dsa.json');
 
 function verifyCounts() {
   console.log('Verifying DSA Sheet counts...');
 
   if (!fs.existsSync(SHEET_FILE)) {
-    console.error(`Error: ${SHEET_FILE} not found. Run convert-sheet.js first.`);
+    console.error(`Error: ${SHEET_FILE} not found. Run npm run convert-sheet and select dsa.txt.`);
     process.exit(1);
   }
 

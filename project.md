@@ -4,6 +4,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 
 ## What it is
 - Tracks 518 LeetCode-style problems across 18 steps
+- Supports multiple problem sheets, selectable from the collapsible sheets sidebar
 - User accounts with Google OAuth login (Supabase Auth)
 - Cloud database (Supabase PostgreSQL) stores progress, activity, profiles
 - Dark-first responsive UI with light theme toggle
@@ -34,7 +35,7 @@ src/
   App.jsx              — Main app: navigation (showProfile), tracker sidebar, profile page, settings/signout buttons
   main.jsx             — React entry; imports index.css
   index.css            — Design tokens (dark root, light override), scrollbar styling (8px main purple, 6px activity-scroll purple), overflow-y-auto
-  data/sheet.json      — 518 problems, 18 steps
+  data/*.json          — converted problem sheets (one JSON file per source sheet)
   hooks/useProgress.js — per-user Supabase sync, progressRef state access, bulk backup import
   lib/supabase.js      — Supabase client and configuration guard
 .env                   — VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
@@ -63,6 +64,7 @@ src/
 - `progressRef` holds current progress object for synchronous reads during state updates; fixes double-count in activity tracking
 - Activity tracking rules: increment only on `todo` → `done`; decrement only on `done` → `todo`; skipped changes do not affect count
 - Backup import: reads JSON file, calls `bulkUpdate` to apply `{title: {id, state}}` format; export writes same format
+- Sheet conversion: add a `.txt` source under `source/`, run `npm run convert-sheet`, select the source file, and the converter writes a same-named JSON file under `src/data/`; the app discovers converted sheets from that folder. The default DSA source is `dsa.txt` (`dsa.json`), and `backend.txt` converts to `backend.json`.
 - `App.jsx` rebuilt clean from `.backup` after corruption; build passes with Vite
 
 ## Supabase Backend

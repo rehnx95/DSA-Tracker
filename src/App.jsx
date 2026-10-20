@@ -1,9 +1,23 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, Settings, Calendar, Trophy, Target, LogOut } from 'lucide-react';
-import data from './data/sheet.json';
+import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipForward, X, Download, Upload, RefreshCcw, Menu, Settings, Calendar, Trophy, Target, LogOut, BookOpen } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useProgress } from './hooks/useProgress';
 import ProfileSettings from './components/ProfileSettings';
+
+const sheetModules = import.meta.glob('./data/*.json', { eager: true, import: 'default' });
+const availableSheets = Object.entries(sheetModules)
+  .filter(([, sheet]) => Array.isArray(sheet?.steps))
+  .map(([filePath, sheet]) => {
+    const id = filePath.split('/').pop().replace(/\.json$/i, '');
+    return {
+      id,
+      title: id === 'dsa' ? 'DSA Sheet' : id.replace(/[_-]+/g, ' ').replace(/\b\w/g, character => character.toUpperCase()),
+      sheet,
+      problemCount: sheet.steps.reduce((total, step) => total + step.subsections.reduce((subTotal, subsection) => subTotal + subsection.problems.length, 0), 0),
+    };
+  })
+  .sort((a, b) => a.title.localeCompare(b.title));
+const defaultSheetId = availableSheets.find(sheet => sheet.id === 'dsa')?.id || availableSheets[0]?.id;
 
 // =============================================================================
 // Authentication Routing State Machine
@@ -563,6 +577,11 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     reset,
   } = useProgress(user);
 
+  const [selectedSheetId, setSelectedSheetId] = useState(() => {
+    const savedSheetId = localStorage.getItem('dsa-active-sheet');
+    return availableSheets.some(sheet => sheet.id === savedSheetId) ? savedSheetId : defaultSheetId;
+  });
+  const [sheetSidebarOpen, setSheetSidebarOpen] = useState(false);
   const [search, setSearch] = useState(() => localStorage.getItem('dsa-search') || '');
   const [expandedSteps, setExpandedSteps] = useState(() => {
     try { const stored = localStorage.getItem('dsa-expanded-steps'); return stored ? new Set(JSON.parse(stored)) : new Set(); }
@@ -579,7 +598,25 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const selectedSheet = availableSheets.find(sheet => sheet.id === selectedSheetId) || availableSheets[0];
+  const data = useMemo(() => {
+    if (!selectedSheet) return { steps: [] };
+    const problemIdPrefix = selectedSheet.id === 'dsa' ? '' : `${selectedSheet.id}::`;
+    return {
+      steps: selectedSheet.sheet.steps.map(step => ({
+        ...step,
+        id: `${selectedSheet.id}::${step.id}`,
+        subsections: step.subsections.map(subsection => ({
+          ...subsection,
+          id: `${selectedSheet.id}::${subsection.id}`,
+          problems: subsection.problems.map(problem => ({
+            ...problem,
+            id: `${problemIdPrefix}${problem.id}`,
+          })),
+        })),
+      })),
+    };
+  }, [selectedSheet]);
 
   const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
   const userUsername = profile?.username || '';
@@ -595,10 +632,22 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   useEffect(() => { localStorage.setItem('dsa-hide-skipped', String(hideSkipped)); }, [hideSkipped]);
   useEffect(() => { localStorage.setItem('dsa-filter', activeFilter); }, [activeFilter]);
   useEffect(() => { localStorage.setItem('dsa-search', search); }, [search]);
+  useEffect(() => {
+    if (selectedSheet) localStorage.setItem('dsa-active-sheet', selectedSheet.id);
+  }, [selectedSheet]);
   const totalProblems = data.steps.reduce((sum, s) => sum + s.subsections.reduce((ss, sub) => ss + sub.problems.length, 0), 0);
-  const doneCount = Object.values(progress).filter(s => s === 'done').length;
-  const skippedCount = Object.values(progress).filter(s => s === 'skipped').length;
+  const sheetProblems = data.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
+  const doneCount = sheetProblems.filter(problem => progress[problem.id] === 'done').length;
+  const skippedCount = sheetProblems.filter(problem => progress[problem.id] === 'skipped').length;
   const todoCount = totalProblems - doneCount - skippedCount;
+  const profileSheetStats = useMemo(() => availableSheets.map(sheet => {
+    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
+    const problems = sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
+    const solved = problems.filter(problem => progress[`${idPrefix}${problem.id}`] === 'done').length;
+    return { id: sheet.id, title: sheet.title, solved, total: problems.length };
+  }), [progress]);
+  const profileProblemsTotal = profileSheetStats.reduce((total, sheet) => total + sheet.total, 0);
+  const profileProblemsSolved = profileSheetStats.reduce((total, sheet) => total + sheet.solved, 0);
 
   const dailyStreak = useMemo(() => {
     let streak = 0;
@@ -701,7 +750,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const prob = data.steps.flatMap(s => s.subsections.flatMap(sub => sub.problems)).find(p => p.id === id);
     if (!prob) return 'todo';
     return getState(id, prob.defaultSkip);
-  }, [getState]);
+  }, [data, getState]);
 
   const handleToggle = useCallback((id) => {
     const current = progressState(id);
@@ -726,7 +775,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const allSubs = new Set(data.steps.flatMap(s => s.subsections.map(sub => sub.id)));
     setExpandedSteps(allSteps);
     setExpandedSubs(allSubs);
-  }, []);
+  }, [data]);
 
   const collapseAll = useCallback(() => {
     setExpandedSteps(new Set());
@@ -746,7 +795,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
       }).filter(step => step.subsections.length > 0);
     }
     return result;
-  }, [search]);
+  }, [search, data]);
 
   const exportProgress = () => {
     const allProblems = data.steps.flatMap(s => s.subsections.flatMap(sub => sub.problems));
@@ -763,7 +812,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'dsa-progress.json';
+    a.download = `${selectedSheet?.id || 'dsa'}-progress.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -784,7 +833,11 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
         let importedCount = 0;
         for (const [title, value] of Object.entries(imported)) {
           if (value && typeof value === 'object' && value.id && value.state) {
-            const id = value.id;
+            const id = selectedSheet?.id === 'dsa' || !selectedSheet
+              ? value.id
+              : value.id.startsWith(`${selectedSheet.id}::`)
+                ? value.id
+                : `${selectedSheet.id}::${value.id}`;
             const state = value.state;
             if (state === 'done' || state === 'skipped') {
               newProgress[id] = state;
@@ -894,10 +947,37 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 <Target size={16} />
                 <span className="text-xs font-medium">Problems</span>
               </div>
-              <div className="text-2xl font-bold text-[#22A559]">{doneCount}</div>
-              <div className="text-xs text-[#8A8A98] mt-1">Solved</div>
+              <div className="text-2xl font-bold text-[#22A559]">{profileProblemsSolved}</div>
+              <div className="text-xs text-[#8A8A98] mt-1">of {profileProblemsTotal} across all sheets</div>
             </div>
           </div>
+
+          <section className="mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6" aria-labelledby="profile-sheet-progress">
+            <h2 id="profile-sheet-progress" className="mb-4 text-lg font-semibold text-[#E8E8EE]">Sheet progress</h2>
+            <div className="space-y-4">
+              {profileSheetStats.map(sheet => {
+                const percentage = sheet.total ? Math.round((sheet.solved / sheet.total) * 100) : 0;
+                return (
+                  <div key={sheet.id}>
+                    <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate font-medium text-[#E8E8EE]">{sheet.title}</span>
+                      <span className="shrink-0 tabular-nums text-[#8A8A98]">{sheet.solved} / {sheet.total} solved</span>
+                    </div>
+                    <div
+                      className="h-2 overflow-hidden rounded-full bg-[#26262F]"
+                      role="progressbar"
+                      aria-label={`${sheet.title} progress`}
+                      aria-valuemin={0}
+                      aria-valuemax={sheet.total}
+                      aria-valuenow={sheet.solved}
+                    >
+                      <div className="h-full rounded-full bg-[#6D5BF6] transition-all" style={{ width: `${percentage}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
 
           {/* Activity Section */}
           <div className="bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
@@ -1020,12 +1100,19 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     <div className={`min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`} data-theme={theme === 'light' ? 'light' : undefined}>
       <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-1.5 -ml-1 text-[#E8E8EE]" aria-label="Menu"><Menu size={22} /></button>
+          <button
+            onClick={() => setSheetSidebarOpen(open => !open)}
+            className="p-1.5 -ml-1 text-[#E8E8EE]"
+            aria-label={sheetSidebarOpen ? 'Hide sheets sidebar' : 'Show sheets sidebar'}
+            aria-expanded={sheetSidebarOpen}
+          >
+            <Menu size={22} />
+          </button>
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-md shadow-[#6D5BF6]/20 flex-shrink-0">
               <CheckSquare size={16} className="text-white" />
             </div>
-            <h1 className="font-bold text-lg tracking-tight truncate">DSA Sheet</h1>
+            <h1 className="font-bold text-lg tracking-tight truncate">{selectedSheet?.title || 'DSA Sheet'}</h1>
           </div>
           <div className="flex-1" />
           <div className="relative hidden sm:block">
@@ -1065,6 +1152,45 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </div>
           </div>
         )}
+        {sheetSidebarOpen && (
+          <aside className="fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none">
+            <div className="mb-3 flex items-center justify-between px-2">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">Your sheets</h2>
+              <button
+                onClick={() => setSheetSidebarOpen(false)}
+                className="rounded p-1 text-[#8A8A98] hover:bg-[#1C1C24] hover:text-white lg:hidden"
+                aria-label="Close sheets sidebar"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <nav className="space-y-1" aria-label="Problem sheets">
+              {availableSheets.map(sheet => (
+                <button
+                  key={sheet.id}
+                  onClick={() => {
+                    setSelectedSheetId(sheet.id);
+                    setSheetSidebarOpen(false);
+                  }}
+                  aria-current={selectedSheet?.id === sheet.id ? 'page' : undefined}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    selectedSheet?.id === sheet.id
+                      ? 'bg-[#6D5BF6]/20 text-white'
+                      : 'text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white'
+                  }`}
+                >
+                  <BookOpen size={16} className="shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{sheet.title}</span>
+                  <span className="text-xs text-[#8A8A98]">{sheet.problemCount}</span>
+                </button>
+              ))}
+              {availableSheets.length === 0 && (
+                <p className="px-3 py-2 text-sm text-[#8A8A98]">No converted sheets found.</p>
+              )}
+            </nav>
+          </aside>
+        )}
+
         <section className="flex-1 min-w-0 overflow-y-auto pr-2" style={{maxHeight: 'calc(100vh - 120px)'}}>
           <div className="flex items-center gap-2 mb-4 flex-wrap">
             {['all', 'done', 'skipped', 'todo'].map(type => (
