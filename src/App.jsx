@@ -23,7 +23,11 @@ import {
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { useProgress } from "./hooks/useProgress";
 import ProfileSettings from "./components/ProfileSettings";
-import { countSheetProblems, parseSheet } from "./utils/parseSheet";
+import {
+  countSheetProblems,
+  parseSheet,
+  sampleSheetTemplate,
+} from "./utils/parseSheet";
 
 const sheetModules = import.meta.glob("./data/*.json", {
   eager: true,
@@ -929,6 +933,17 @@ function AuthenticatedApp({
     }
   };
 
+  const downloadSampleFormat = () => {
+    const url = URL.createObjectURL(
+      new Blob([sampleSheetTemplate], { type: "text/plain;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sample-sheet.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     localStorage.setItem(
       "dsa-expanded-steps",
@@ -1043,7 +1058,8 @@ function AuthenticatedApp({
 
   const dailyStreak = useMemo(() => {
     let streak = 0;
-    let currentDate = new Date();
+    const [year, month, day] = todayDateKey.split("-").map(Number);
+    let currentDate = new Date(year, month - 1, day);
     currentDate.setHours(0, 0, 0, 0);
     if (!activityLog[getLocalDateKey(currentDate)]) {
       currentDate.setDate(currentDate.getDate() - 1);
@@ -1057,7 +1073,7 @@ function AuthenticatedApp({
       }
     }
     return streak;
-  }, [activityLog]);
+  }, [activityLog, todayDateKey]);
 
   const longestStreak = useMemo(() => {
     const activeDates = Object.entries(activityLog)
@@ -1086,10 +1102,13 @@ function AuthenticatedApp({
   }, [activityLog]);
 
   const yearlyActivityTotal = useMemo(() => {
-    const today = new Date();
+    const [year, month, day] = todayDateKey.split("-").map(Number);
+    const today = new Date(year, month - 1, day);
     today.setHours(0, 0, 0, 0);
     const firstDate = new Date(today);
-    firstDate.setDate(firstDate.getDate() - 364);
+    firstDate.setDate(
+      firstDate.getDate() - ((firstDate.getDay() + 6) % 7) - 52 * 7,
+    );
     return Object.entries(activityLog).reduce(
       (total, [date, count]) =>
         date >= getLocalDateKey(firstDate) && date <= getLocalDateKey(today)
@@ -1097,40 +1116,48 @@ function AuthenticatedApp({
           : total,
       0,
     );
-  }, [activityLog]);
+  }, [activityLog, todayDateKey]);
 
   const yearlyActiveDays = useMemo(() => {
-    const today = new Date();
+    const [year, month, day] = todayDateKey.split("-").map(Number);
+    const today = new Date(year, month - 1, day);
     today.setHours(0, 0, 0, 0);
     const firstDate = new Date(today);
-    firstDate.setDate(firstDate.getDate() - 364);
+    firstDate.setDate(
+      firstDate.getDate() - ((firstDate.getDay() + 6) % 7) - 52 * 7,
+    );
     return Object.entries(activityLog).filter(
       ([date, count]) =>
         count > 0 &&
         date >= getLocalDateKey(firstDate) &&
         date <= getLocalDateKey(today),
     ).length;
-  }, [activityLog]);
+  }, [activityLog, todayDateKey]);
 
   const heatmapData = useMemo(() => {
     const weeks = [];
-    const today = new Date();
+    const [year, month, day] = todayDateKey.split("-").map(Number);
+    const today = new Date(year, month - 1, day);
     today.setHours(0, 0, 0, 0);
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - startDate.getDay() - 52 * 7);
+    const gridStart = new Date(today);
+    gridStart.setDate(
+      gridStart.getDate() - ((gridStart.getDay() + 6) % 7) - 52 * 7,
+    );
+    const firstDate = new Date(gridStart);
 
     for (let weekIndex = 0; weekIndex < 53; weekIndex++) {
       const week = [];
       for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + weekIndex * 7 + dayIndex);
+        const date = new Date(gridStart);
+        date.setDate(gridStart.getDate() + weekIndex * 7 + dayIndex);
         const dateKey = getLocalDateKey(date);
-        const count = date <= today ? activityLog[dateKey] || 0 : 0;
+        const outOfRange = date < firstDate || date > today;
+        const count = outOfRange ? 0 : activityLog[dateKey] || 0;
         week.push({
           date,
           dateKey,
           count,
-          future: date > today,
+          outOfRange,
           intensity: getActivityLevel(count),
         });
       }
@@ -1138,14 +1165,14 @@ function AuthenticatedApp({
     }
     const monthLabels = weeks.map((week) => {
       const firstOfMonth = week.find(
-        (day) => !day.future && day.date.getDate() === 1,
+        (day) => !day.outOfRange && day.date.getDate() === 1,
       );
       return firstOfMonth
         ? firstOfMonth.date.toLocaleDateString(undefined, { month: "short" })
         : "";
     });
     return { weeks, monthLabels };
-  }, [activityLog]);
+  }, [activityLog, todayDateKey]);
 
   const progressState = useCallback(
     (id) => {
@@ -1663,7 +1690,7 @@ function AuthenticatedApp({
                     </div>
                     <div className="activity-heatmap">
                       <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
-                        {["", "Mon", "", "Wed", "", "Fri", ""].map(
+                        {["Mon", "", "Wed", "", "Fri", "", ""].map(
                           (label, index) => (
                             <span key={`weekday-${index}`}>{label}</span>
                           ),
@@ -1675,6 +1702,7 @@ function AuthenticatedApp({
                             {week.map((day) => (
                               <span
                                 key={day.dateKey}
+                                aria-hidden={day.outOfRange || undefined}
                                 aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
                                 title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}`}
                                 className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
@@ -1686,7 +1714,7 @@ function AuthenticatedApp({
                                     "#26a641",
                                     "#39d353",
                                   ][day.intensity],
-                                  visibility: day.future ? "hidden" : "visible",
+                                  visibility: day.outOfRange ? "hidden" : "visible",
                                 }}
                               />
                             ))}
@@ -1980,10 +2008,14 @@ function AuthenticatedApp({
                   ? "Converting and saving…"
                   : "Upload a TXT sheet"}
               </button>
-              <p className="px-1 pt-2 text-[11px] leading-relaxed text-[#8A8A98]">
-                Uses “Step 1 — Title” headings and numbered problem lines. Your
-                sheets are private to your account.
-              </p>
+              <button
+                type="button"
+                onClick={downloadSampleFormat}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:bg-[#1C1C24] hover:text-white"
+              >
+                <Download size={13} />
+                Download sample .txt
+              </button>
               <input
                 ref={uploadSheetInput}
                 type="file"

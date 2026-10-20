@@ -1,5 +1,21 @@
 const IMPLICIT_SUB_TITLE = null;
 
+export const sampleSheetTemplate = `Step 1 — Arrays
+1.1 — Fundamentals
+1. Two Sum (LC 1)
+2. Best Time to Buy and Sell Stock (LC 121)
+3. Contains Duplicate (LC 217)
+
+1.2 — Two Pointers
+4. Valid Palindrome (LC 125)
+5. 3Sum (LC 15) (Skip)
+
+Step 2 — Dynamic Programming
+2.1 — Basic Problems
+6. Climbing Stairs (LC 70)
+7. House Robber (LC 198)
+`;
+
 export function parseSheet(raw) {
   const content = raw
     .replace(/\r\n/g, '\n')

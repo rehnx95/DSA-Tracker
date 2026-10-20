@@ -66,7 +66,7 @@ src/
 - Activity tracking rules: increment only on `todo` → `done`; decrement only on `done` → `todo`; skipped changes do not affect count
 - Backup import: reads JSON file, calls `bulkUpdate` to apply `{title: {id, state}}` format; export writes same format
 - Built-in sheet conversion: developers can add a `.txt` source under `source/`, run `npm run convert-sheet`, and check in the generated JSON under `src/data/`.
-- User-uploaded sheets: signed-in users open the sheets sidebar and select **Upload a TXT sheet**. The app converts the TXT in the browser and stores the resulting data in `user_sheets`; each account can only read its own uploaded sheets. The SQL migration must be applied to the Supabase project first. Uploads accept files up to 2 MB, with `Step 1 — Title` headings and sequential numbered problem lines (optional `(LC 123)` and `(Skip)` markers are supported).
+- User-uploaded sheets: signed-in users open the sheets sidebar and select **Upload a TXT sheet**. The sidebar offers a downloadable sample TXT template. The app converts the TXT in the browser and stores the resulting data in `user_sheets`; each account can only read its own uploaded sheets. The SQL migration must be applied to the Supabase project first. Uploads accept files up to 2 MB, with `Step 1 — Title` headings and sequential numbered problem lines (optional `(LC 123)` and `(Skip)` markers are supported).
 - `App.jsx` rebuilt clean from `.backup` after corruption; build passes with Vite
 
 ## Supabase Backend
