@@ -598,6 +598,9 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [backupAction, setBackupAction] = useState('');
+  const importSheetId = useRef(null);
+  const importFileInput = useRef(null);
   const selectedSheet = availableSheets.find(sheet => sheet.id === selectedSheetId) || availableSheets[0];
   const data = useMemo(() => {
     if (!selectedSheet) return { steps: [] };
@@ -797,24 +800,25 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     return result;
   }, [search, data]);
 
-  const exportProgress = () => {
-    const allProblems = data.steps.flatMap(s => s.subsections.flatMap(sub => sub.problems));
+  const exportProgress = (sheet) => {
+    const idPrefix = sheet.id === 'dsa' ? '' : `${sheet.id}::`;
+    const allProblems = sheet.sheet.steps.flatMap(step => step.subsections.flatMap(subsection => subsection.problems));
     const exportData = {};
-    Object.entries(progress).forEach(([id, state]) => {
+    allProblems.forEach(problem => {
+      const id = `${idPrefix}${problem.id}`;
+      const state = progress[id];
       if (state === 'done' || state === 'skipped') {
-        const problem = allProblems.find(p => p.id === id);
-        if (problem) {
-          exportData[problem.title] = { id, state };
-        }
+        exportData[problem.title] = { id, state };
       }
     });
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${selectedSheet?.id || 'dsa'}-progress.json`;
+    a.download = `${sheet.id}-progress.json`;
     a.click();
     URL.revokeObjectURL(url);
+    setBackupAction('');
   };
 
   const importProgress = (e) => {
@@ -829,17 +833,26 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           alert('Invalid backup file format - must be a JSON object');
           return;
         }
+        const targetSheetId = importSheetId.current;
+        const targetSheet = availableSheets.find(sheet => sheet.id === targetSheetId);
+        if (!targetSheet) {
+          alert('Select a valid sheet before importing progress.');
+          return;
+        }
+        const idPrefix = targetSheet.id === 'dsa' ? '' : `${targetSheet.id}::`;
+        const validProblemIds = new Set(targetSheet.sheet.steps.flatMap(step => (
+          step.subsections.flatMap(subsection => subsection.problems.map(problem => `${idPrefix}${problem.id}`))
+        )));
         const newProgress = {};
         let importedCount = 0;
         for (const [title, value] of Object.entries(imported)) {
           if (value && typeof value === 'object' && value.id && value.state) {
-            const id = selectedSheet?.id === 'dsa' || !selectedSheet
-              ? value.id
-              : value.id.startsWith(`${selectedSheet.id}::`)
-                ? value.id
-                : `${selectedSheet.id}::${value.id}`;
+            const sourceId = String(value.id);
+            const id = targetSheet.id === 'dsa'
+              ? sourceId.replace(/^dsa::/, '')
+              : sourceId.startsWith(idPrefix) ? sourceId : `${idPrefix}${sourceId}`;
             const state = value.state;
-            if (state === 'done' || state === 'skipped') {
+            if (validProblemIds.has(id) && (state === 'done' || state === 'skipped')) {
               newProgress[id] = state;
               importedCount++;
             }
@@ -850,7 +863,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           return;
         }
         bulkUpdate(newProgress);
-        alert(`Successfully imported ${importedCount} problem states`);
+        alert(`Successfully imported ${importedCount} problem states into ${targetSheet.title}`);
       } catch (err) {
         console.error('Import error details:', err);
         alert(`Failed to import backup file: ${err.message}`);
@@ -858,6 +871,8 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     };
     reader.onerror = () => alert('Failed to read backup file');
     reader.readAsText(file);
+    e.target.value = '';
+    setBackupAction('');
   };
 
   const chipActive = (type) => activeFilter === type ? 'bg-[#6D5BF6] text-white' : 'bg-[#15151B] text-[#8A8A98] hover:text-white';
@@ -1041,7 +1056,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
               <h3 className="text-lg font-semibold text-[#E8E8EE] mb-4">Backup & Data</h3>
               <div className="space-y-3">
                 <button
-                  onClick={exportProgress}
+                  onClick={() => setBackupAction('export')}
                   className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -1057,7 +1072,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 </button>
 
                 <button
-                  onClick={() => document.getElementById('import-file').click()}
+                  onClick={() => setBackupAction('import')}
                   className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -1072,10 +1087,62 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                   <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
                 </button>
 
-                <input id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
+                <input ref={importFileInput} id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
               </div>
             </div>
           </div>
+          {backupAction && (
+            <div
+              className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4"
+              onMouseDown={event => {
+                if (event.target === event.currentTarget) setBackupAction('');
+              }}
+            >
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="backup-sheet-title"
+                className="w-full max-w-md rounded-2xl border border-[#26262F] bg-[#15151B] p-5 shadow-2xl"
+              >
+                <h2 id="backup-sheet-title" className="text-lg font-semibold text-[#E8E8EE]">
+                  {backupAction === 'export' ? 'Choose a sheet to export' : 'Choose a sheet to import into'}
+                </h2>
+                <p className="mb-4 mt-1 text-sm text-[#8A8A98]">
+                  {backupAction === 'export'
+                    ? 'Download progress for one sheet.'
+                    : 'Select the destination sheet, then choose its progress backup file.'}
+                </p>
+                <div className="max-h-72 space-y-1 overflow-y-auto">
+                  {availableSheets.map(sheet => (
+                    <button
+                      key={sheet.id}
+                      type="button"
+                      onClick={() => {
+                        if (backupAction === 'export') {
+                          exportProgress(sheet);
+                          return;
+                        }
+                        importSheetId.current = sheet.id;
+                        setBackupAction('');
+                        importFileInput.current?.click();
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#E8E8EE] transition-colors hover:bg-[#26262F]"
+                    >
+                      <span>{sheet.title}</span>
+                      <span className="text-xs text-[#8A8A98]">{sheet.problemCount} problems</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBackupAction('')}
+                  className="mt-4 w-full rounded-lg border border-[#34343F] px-4 py-2 text-sm text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
+                >
+                  Cancel
+                </button>
+              </section>
+            </div>
+          )}
         </main>
       </div>
     );
