@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckSquare, User, FileText, MapPin, Globe, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckSquare, User, MapPin, Globe, ArrowRight, Loader2 } from 'lucide-react';
 
 function Onboarding({ user, onComplete }) {
   const [formData, setFormData] = useState({
     name: '',
     username: '',
-    bio: '',
     location: '',
     website: ''
   });
@@ -46,7 +45,7 @@ function Onboarding({ user, onComplete }) {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('name, username, bio, location, website')
+          .select('name, username, location, website')
           .eq('id', user.id)
           .single();
 
@@ -61,7 +60,6 @@ function Onboarding({ user, onComplete }) {
             setFormData({
               name: data.name || '',
               username: data.username || '',
-              bio: data.bio || '',
               location: data.location || '',
               website: data.website || ''
             });
@@ -113,12 +111,6 @@ function Onboarding({ user, onComplete }) {
       newErrors.username = 'Username is already taken';
     }
 
-    if (!formData.bio.trim()) {
-      newErrors.bio = 'Bio is required';
-    } else if (formData.bio.length < 10) {
-      newErrors.bio = 'Bio must be at least 10 characters';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -143,7 +135,7 @@ function Onboarding({ user, onComplete }) {
           .update({
             name: formData.name,
             username: formData.username,
-            bio: formData.bio,
+            bio: '',
             location: formData.location,
             website: formData.website,
             updated_at: new Date().toISOString()
@@ -160,7 +152,7 @@ function Onboarding({ user, onComplete }) {
             id: user.id,
             name: formData.name,
             username: formData.username,
-            bio: formData.bio,
+            bio: '',
             location: formData.location,
             website: formData.website,
             updated_at: new Date().toISOString()
@@ -183,9 +175,7 @@ function Onboarding({ user, onComplete }) {
   const isProfileComplete = () => {
     return profileData &&
            profileData.name &&
-           profileData.bio &&
            profileData.username &&
-           profileData.bio.length >= 10 &&
            hasCompletedOnboarding;
   };
 
@@ -269,31 +259,6 @@ function Onboarding({ user, onComplete }) {
                 <p className="text-xs text-[#8A8A98] mt-1">Only lowercase letters, numbers, and hyphens allowed</p>
               )}
               {errors.username && <p className="text-red-400 text-sm mt-1">{errors.username}</p>}
-            </div>
-
-            {/* Bio Field */}
-            <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
-                Bio <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <FileText size={20} className="absolute left-3 top-3 text-[#8A8A98]" />
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  placeholder="Tell us about yourself (minimum 10 characters)"
-                  rows={3}
-                  disabled={profileData?.bio} // Read-only if already set
-                  className={`w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all resize-none ${errors.bio ? 'border-red-500' : 'border-[#26262F]'} ${profileData?.bio ? 'bg-[#0B0B0F]/50 cursor-not-allowed' : ''}`}
-                />
-              </div>
-              {profileData?.bio ? (
-                <p className="text-xs text-green-400 mt-1">Bio already set</p>
-              ) : (
-                <p className="text-xs text-[#8A8A98] mt-1">{formData.bio.length}/10 minimum characters</p>
-              )}
-              {errors.bio && <p className="text-red-400 text-sm mt-1">{errors.bio}</p>}
             </div>
 
             {/* Location Field */}

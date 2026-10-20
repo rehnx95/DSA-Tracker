@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronRight, Sun, Moon, User, CheckSquare, SkipFo
 import data from './data/sheet.json';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { useProgress } from './hooks/useProgress';
+import ProfileSettings from './components/ProfileSettings';
 
 // =============================================================================
 // Authentication Routing State Machine
@@ -38,6 +39,13 @@ function App() {
   const authEventOccurred = useRef(false);
 
   useEffect(() => {
+    const oauthError = new URLSearchParams(window.location.search).get('error');
+    if (oauthError) {
+      setAuthError(oauthError === 'server_error'
+        ? 'Google sign-in failed while creating your account. Please apply the latest Supabase database migration and try again.'
+        : 'Google sign-in could not be completed. Please try again.');
+    }
+
     if (!isSupabaseConfigured) {
       setAuthError('Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the app.');
       setAppState(AppState.UNAUTHENTICATED);
@@ -82,7 +90,7 @@ function App() {
     setAppState(AppState.LOADING);
     supabase
       .from('profiles')
-      .select('id, name, username, bio, location, website, onboarding_completed')
+      .select('id, name, username, location, website, onboarding_completed')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data: profileData, error }) => {
@@ -248,7 +256,6 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   const [formData, setFormData] = useState({
     name: profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || '',
     username: profile?.username || '',
-    bio: profile?.bio || '',
     location: profile?.location || '',
     website: profile?.website || ''
   });
@@ -327,9 +334,6 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.bio.trim()) newErrors.bio = 'Bio is required';
-    else if (formData.bio.trim().length < 10) newErrors.bio = 'Bio must be at least 10 characters';
-
     const usernameError = validateUsername(formData.username);
     if (usernameError) newErrors.username = usernameError;
     else if (usernameAvailable === false) newErrors.username = 'Username is already taken';
@@ -349,13 +353,12 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
           id: user.id,
           name: formData.name.trim(),
           username: formData.username.trim().toLowerCase(),
-          bio: formData.bio.trim(),
           location: formData.location.trim(),
           website: formData.website.trim(),
           onboarding_completed: true,
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
-        .select('id, name, username, bio, location, website, onboarding_completed')
+        .select('id, name, username, location, website, onboarding_completed')
         .single();
 
       if (error) throw error;
@@ -467,32 +470,6 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
               </p>
             </div>
 
-            {/* Bio Field */}
-            <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
-                Bio <span className="text-red-400">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-3 text-[#8A8A98]">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                </div>
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  placeholder="Tell us about your coding journey and goals..."
-                  rows={4}
-                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all resize-none"
-                />
-                <div className="absolute right-3 bottom-3 text-xs text-[#8A8A98]">
-                  {formData.bio.length}/10 min
-                </div>
-              </div>
-              {errors.bio && <p className="text-red-400 text-sm mt-1">{errors.bio}</p>}
-            </div>
-
             {/* Location Field */}
             <div>
               <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
@@ -602,90 +579,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
   const [activeFilter, setActiveFilter] = useState(() => localStorage.getItem('dsa-filter') || 'all');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [profileForm, setProfileForm] = useState(null);
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [profileFormError, setProfileFormError] = useState('');
-  const [profileFormSuccess, setProfileFormSuccess] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const userName = profile?.name || user.user_metadata?.full_name || user.user_metadata?.name || 'User';
   const userUsername = profile?.username || '';
-  const userBio = profile?.bio || '';
   const userLocation = profile?.location || '';
   const userWebsite = profile?.website || '';
 
   const openProfileSettings = () => {
-    setProfileForm({
-      name: profile?.name || '',
-      username: profile?.username || '',
-      bio: profile?.bio || '',
-      location: profile?.location || '',
-      website: profile?.website || '',
-    });
-    setProfileFormError('');
-    setProfileFormSuccess('');
     setShowSettings(true);
-  };
-
-  const saveProfileSettings = async (event) => {
-    event.preventDefault();
-    const values = {
-      name: profileForm.name.trim(),
-      username: profileForm.username.trim().toLowerCase(),
-      bio: profileForm.bio.trim(),
-      location: profileForm.location.trim(),
-      website: profileForm.website.trim(),
-    };
-
-    if (!values.name) {
-      setProfileFormError('Name is required.');
-      return;
-    }
-    if (!/^(?=.*[a-z0-9])[a-z0-9-]{3,30}$/.test(values.username)) {
-      setProfileFormError('Username must be 3–30 characters using lowercase letters, numbers, and hyphens.');
-      return;
-    }
-    if (values.website) {
-      try {
-        const websiteUrl = new URL(values.website);
-        if (!['http:', 'https:'].includes(websiteUrl.protocol)) throw new Error('Invalid URL protocol');
-      } catch {
-        setProfileFormError('Enter a valid website URL starting with http:// or https://.');
-        return;
-      }
-    }
-
-    setIsSavingProfile(true);
-    setProfileFormError('');
-    setProfileFormSuccess('');
-    try {
-      const { data: isAvailable, error: availabilityError } = await supabase.rpc('is_username_available', {
-        candidate_username: values.username,
-      });
-      if (availabilityError) throw availabilityError;
-      if (!isAvailable) {
-        setProfileFormError('That username is already taken.');
-        return;
-      }
-
-      const { data: savedProfile, error } = await supabase
-        .from('profiles')
-        .update({ ...values, updated_at: new Date().toISOString() })
-        .eq('id', user.id)
-        .select('id, name, username, bio, location, website, onboarding_completed')
-        .single();
-      if (error) throw error;
-
-      onProfileUpdated(savedProfile);
-      setProfileFormSuccess('Profile updated successfully.');
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      setProfileFormError(error.code === '23505'
-        ? 'That username is already taken.'
-        : 'Could not save your profile. Please check your connection and try again.');
-    } finally {
-      setIsSavingProfile(false);
-    }
   };
 
   useEffect(() => { localStorage.setItem('dsa-expanded-steps', JSON.stringify([...expandedSteps])); }, [expandedSteps]);
@@ -950,7 +852,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
             </div>
             <div className="flex-1 text-center md:text-left">
               <h1 className="text-2xl md:text-3xl font-bold text-[#E8E8EE]">{userName}</h1>
-              <p className="text-[#8A8A98] mt-1">@{userUsername} • {userBio || 'Add a bio to tell us about yourself'}</p>
+              <p className="text-[#8A8A98] mt-1">@{userUsername}</p>
               {userLocation && (
                 <div className="flex items-center gap-2 text-[#8A8A98] mt-2 text-sm">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1098,101 +1000,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     );
   }
 
-  function ProfileSettingsPage() {
-    return (
-      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
-        <header className="sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
-          <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
-            <button
-              onClick={() => setShowSettings(false)}
-              aria-label="Back to profile"
-              className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors"
-            >
-              <ChevronDown size={20} className="rotate-90" />
-            </button>
-            <h1 className="font-bold text-xl">Edit profile</h1>
-          </div>
-        </header>
-
-        <main className="max-w-3xl mx-auto px-4 md:px-6 py-8">
-          <form onSubmit={saveProfileSettings} className="space-y-5 rounded-2xl border border-[#26262F] bg-[#15151B] p-6 md:p-8">
-            {profileFormError && (
-              <p role="alert" className="rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
-                {profileFormError}
-              </p>
-            )}
-            {profileFormSuccess && (
-              <p role="status" className="rounded-lg border border-green-500/30 bg-green-900/20 p-3 text-sm text-green-300">
-                {profileFormSuccess}
-              </p>
-            )}
-
-            {[
-              { name: 'name', label: 'Name', type: 'text', required: true, maxLength: 100 },
-              { name: 'username', label: 'Username', type: 'text', required: true, maxLength: 30 },
-              { name: 'location', label: 'Location', type: 'text', maxLength: 100 },
-              { name: 'website', label: 'Website / URL', type: 'url', placeholder: 'https://example.com', maxLength: 2048 },
-            ].map(field => (
-              <div key={field.name}>
-                <label htmlFor={`profile-${field.name}`} className="mb-2 block text-sm font-medium">
-                  {field.label}
-                </label>
-                <input
-                  id={`profile-${field.name}`}
-                  name={field.name}
-                  type={field.type}
-                  required={field.required}
-                  maxLength={field.maxLength}
-                  placeholder={field.placeholder}
-                  value={profileForm[field.name]}
-                  onChange={event => {
-                    const value = field.name === 'username' ? event.target.value.toLowerCase() : event.target.value;
-                    setProfileForm(current => ({ ...current, [field.name]: value }));
-                    setProfileFormError('');
-                    setProfileFormSuccess('');
-                  }}
-                  className="w-full rounded-lg border border-[#26262F] bg-[#0B0B0F] px-4 py-3 text-[#E8E8EE] placeholder-[#8A8A98] focus:border-[#6D5BF6] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6]"
-                />
-                {field.name === 'username' && (
-                  <p className="mt-1 text-xs text-[#8A8A98]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
-                )}
-              </div>
-            ))}
-
-            <div>
-              <label htmlFor="profile-bio" className="mb-2 block text-sm font-medium">Bio</label>
-              <textarea
-                id="profile-bio"
-                name="bio"
-                rows={4}
-                maxLength={500}
-                value={profileForm.bio}
-                onChange={event => {
-                  setProfileForm(current => ({ ...current, bio: event.target.value }));
-                  setProfileFormError('');
-                  setProfileFormSuccess('');
-                }}
-                placeholder="Tell people about yourself"
-                className="w-full resize-y rounded-lg border border-[#26262F] bg-[#0B0B0F] px-4 py-3 text-[#E8E8EE] placeholder-[#8A8A98] focus:border-[#6D5BF6] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6]"
-              />
-              <p className="mt-1 text-right text-xs text-[#8A8A98]">{profileForm.bio.length}/500</p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSavingProfile}
-              className="w-full rounded-lg bg-[#6D5BF6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#5B4AD6] disabled:cursor-wait disabled:opacity-60"
-            >
-              {isSavingProfile ? 'Saving…' : 'Save profile'}
-            </button>
-          </form>
-        </main>
-      </div>
-    );
-  }
-
   if (showSettings) {
-    return <ProfileSettingsPage />;
+    return (
+      <ProfileSettings
+        userId={user.id}
+        profile={profile}
+        onBack={() => setShowSettings(false)}
+        onSaved={onProfileUpdated}
+      />
+    );
   }
 
   if (showProfile) {

@@ -24,7 +24,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 - Export/Import JSON backup format: `{ [problemTitle]: { id, state: "done"|"skipped"|"todo" } }`
 - Reset progress button (stats row, not duplicate)
 - Responsive layout: mobile sidebar toggle, overflow-y-auto scrollbars
-- Profile page: full-page profile with editable name, username, bio, location, and website settings; stats, streak, heatmap, and backup controls
+- Profile page: full-page profile with editable name, username, location, and website settings; stats, streak, heatmap, and backup controls
 - Navigation: avatar click → profile; back button → tracker; sign out clears the Supabase session
 - All progress/activity/user data saved to Supabase; UI state (expanded, filter, search, theme) in localStorage
 
@@ -68,7 +68,7 @@ src/
 ## Supabase Backend
 - Auth: Google OAuth via Supabase Auth; the app restores the session and loads the matching profile before showing the tracker.
 - Database: `profiles`, `progress`, and `activity_log` are scoped to the signed-in user's ID. First-time users complete onboarding before entering the tracker.
-- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql` and `supabase/migrations/20261020170900_activity_calendar_streaks.sql`. They are additive; the activity migration repairs tracker-generated activity counts from the current solved problems.
+- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, and `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`. They are additive; the activity migration repairs tracker-generated activity counts, the signup migrations avoid optional-table and removed-bio dependencies, and the latest migration keeps account creation compatible with profiles tables that do not have a `bio` column.
 - The browser uses only the Supabase project URL and public anon key. Never put a service-role key in frontend environment variables.
 
 ### Google sign-in setup
