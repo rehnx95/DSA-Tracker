@@ -93,7 +93,9 @@ function getActivityLevel(count) {
 
 function getPeopleRoute(pathname = window.location.pathname) {
   if (pathname === "/people") return { page: "people", username: "" };
-  const profileMatch = pathname.match(/^\/u\/([A-Za-z0-9-]{3,48})\/?$/);
+  const profileMatch = pathname.match(
+    /^\/(?:user|u)\/([A-Za-z0-9-]{3,48})\/?$/,
+  );
   if (profileMatch)
     return { page: "profile", username: profileMatch[1].toLowerCase() };
   return { page: "tracker", username: "" };
@@ -858,20 +860,33 @@ function AuthenticatedApp({
     }
 
     let active = true;
+    const controller = new AbortController();
     setProfileSearchLoading(true);
     setProfileSearchError("");
     const timer = window.setTimeout(async () => {
       try {
-        const { data, error } = await supabase.rpc("search_public_profiles", {
-          search_term: query,
-        });
-        if (error) throw error;
-        if (active) setProfileSearchResults(data || []);
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!session?.access_token) throw new Error("Sign in to search users.");
+
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}`,
+          {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            signal: controller.signal,
+          },
+        );
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Could not search users.");
+        if (active) setProfileSearchResults(result.results || []);
       } catch (error) {
-        if (!active) return;
+        if (!active || error.name === "AbortError") return;
         console.error("Failed to search public profiles:", error);
         setProfileSearchError(
-          "Could not search profiles. Apply the public profile search migration and try again.",
+          error.message || "Could not search profiles. Please try again.",
         );
       } finally {
         if (active) setProfileSearchLoading(false);
@@ -881,6 +896,7 @@ function AuthenticatedApp({
     return () => {
       active = false;
       window.clearTimeout(timer);
+      controller.abort();
     };
   }, [profileSearchOpen, profileSearchQuery]);
 
@@ -928,7 +944,7 @@ function AuthenticatedApp({
     publicProfileReturnPath.current = "/people";
     setProfileSearchQuery("");
     setProfileSearchResults([]);
-    navigateTo(`/u/${encodeURIComponent(username)}`);
+    navigateTo(`/user/${encodeURIComponent(username)}`);
   };
 
   const returnFromPublicProfile = () => {
@@ -1567,7 +1583,7 @@ function AuthenticatedApp({
     onBack,
   }) {
     return (
-      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 border-b">
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
             <button
@@ -1612,92 +1628,86 @@ function AuthenticatedApp({
           <div className="relative">
             <Search
               size={18}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#8A8A98]"
             />
             <input
               id="people-search"
               autoFocus
               value={query}
               onChange={(event) => onQueryChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") onQueryChange("");
+                if (event.key === "Enter" && results[0])
+                  onSelectProfile(results[0].username);
+              }}
               placeholder="Try a username, e.g. alex-codes"
+              aria-autocomplete="list"
+              aria-controls="people-search-results"
               className="h-12 w-full rounded-xl border border-[#34343F] bg-[#111111] pl-11 pr-4 text-sm text-[#E8E8EE] placeholder-[#8A8A98] outline-none transition-colors focus:border-[#765cf6]"
             />
+            {query.trim().length >= 3 && (
+              <div
+                id="people-search-results"
+                role="listbox"
+                className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-[#34343F] bg-[#111111] shadow-2xl"
+              >
+                {loading ? (
+                  <p className="px-4 py-3 text-sm text-[#8A8A98]">
+                    Searching people…
+                  </p>
+                ) : error ? (
+                  <p role="alert" className="px-4 py-3 text-sm text-red-300">
+                    {error}
+                  </p>
+                ) : results.length ? (
+                  results.map((result) => (
+                    <button
+                      key={result.username}
+                      type="button"
+                      role="option"
+                      aria-selected="false"
+                      onClick={() => onSelectProfile(result.username)}
+                      className="flex w-full items-center gap-3 border-b border-[#26262F] px-4 py-3 text-left last:border-0 hover:bg-[#1C1C24]"
+                    >
+                      <span className="people-result-avatar">
+                        {(result.name || result.username)
+                          .charAt(0)
+                          .toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-[#E8E8EE]">
+                          {result.name || result.username}
+                        </span>
+                        <span className="mt-0.5 block truncate text-xs text-[#8A8A98]">
+                          @{result.username}
+                        </span>
+                      </span>
+                      <ChevronRight
+                        size={17}
+                        className="text-[#8A8A98]"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-4 py-3 text-sm text-[#8A8A98]">
+                    No users found. Try a different username.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <p className="mt-2 text-xs text-[#8A8A98]">
             Enter at least 3 characters. Search matches the start of a
             username.
           </p>
 
-          <section className="mt-8" aria-live="polite" aria-label="People search results">
-            {query.trim().length < 3 ? (
-              <div className="surface-card rounded-xl border p-6">
-                <h2 className="font-semibold">Discover profiles</h2>
-                <p className="mt-2 text-sm text-[#8A8A98]">
-                  Search a username to find a member and view their public
-                  progress.
-                </p>
-              </div>
-            ) : loading ? (
-              <div className="surface-card rounded-xl border p-6 text-sm text-[#8A8A98]">
-                Searching profiles…
-              </div>
-            ) : error ? (
-              <div
-                role="alert"
-                className="rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300"
-              >
-                {error}
-              </div>
-            ) : results.length ? (
-              <div className="overflow-hidden rounded-xl border border-[#26262F] bg-[#090909]">
-                <div className="border-b border-[#26262F] px-5 py-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">
-                    People
-                  </h2>
-                </div>
-                <ul className="divide-y divide-[#26262F]">
-                  {results.map((result) => (
-                    <li key={result.username}>
-                      <button
-                        type="button"
-                        onClick={() => onSelectProfile(result.username)}
-                        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#15151B]"
-                      >
-                        <span className="people-result-avatar">
-                          {(result.name || result.username)
-                            .charAt(0)
-                            .toUpperCase()}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-[#E8E8EE]">
-                            {result.name || result.username}
-                          </span>
-                          <span className="mt-1 block truncate text-sm text-[#8A8A98]">
-                            @{result.username}
-                          </span>
-                        </span>
-                        <span className="hidden text-xs font-medium text-violet-300 sm:block">
-                          View profile
-                        </span>
-                        <ChevronRight
-                          size={18}
-                          className="text-[#8A8A98]"
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <div className="surface-card rounded-xl border p-6">
-                <h2 className="font-semibold">No profiles found</h2>
-                <p className="mt-2 text-sm text-[#8A8A98]">
-                  Try another username. Only users who have completed their
-                  profile appear in search.
-                </p>
-              </div>
-            )}
+          <section className="surface-card mt-8 rounded-xl border p-6">
+            <h2 className="font-semibold">Public profiles</h2>
+            <p className="mt-2 text-sm text-[#8A8A98]">
+              Search by username to see matching profiles. Profile pages include
+              public details, solved totals, and activity.
+            </p>
           </section>
         </main>
       </div>
@@ -1760,13 +1770,103 @@ function AuthenticatedApp({
       return { weeks, monthLabels };
     }, [activity, dateKey]);
 
-    const activeDays = Object.values(activity).filter(
-      (count) => Number(count) > 0,
-    ).length;
-    const solvedPastYear = Object.values(activity).reduce(
-      (total, count) => total + Number(count || 0),
+    const profileProgress = profile?.progress || [];
+    const progressById = useMemo(
+      () => new Map(profileProgress.map((row) => [row.problem_id, row])),
+      [profileProgress],
+    );
+    const customSheets = profile?.custom_sheets || [];
+    const profileSheetStats = useMemo(() => {
+      const builtInStats = builtInSheets.map((sheet) => {
+        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+        const problems = sheet.sheet.steps.flatMap((step) =>
+          step.subsections.flatMap((subsection) => subsection.problems),
+        );
+        const solved = problems.filter(
+          (problem) =>
+            progressById.get(`${idPrefix}${problem.id}`)?.state === "done",
+        ).length;
+        const skipped = problems.filter((problem) => {
+          const row = progressById.get(`${idPrefix}${problem.id}`);
+          return row?.state === "skipped" || (!row && problem.defaultSkip);
+        }).length;
+        return {
+          id: sheet.id,
+          title: sheet.title,
+          solved,
+          skipped,
+          total: problems.length,
+        };
+      });
+      const uploadedStats = customSheets.map((sheet) => ({
+        id: sheet.id,
+        title: sheet.title,
+        solved: Number(sheet.solved || 0),
+        skipped: Number(sheet.skipped || 0),
+        total: Number(sheet.total || 0),
+      }));
+      return [...builtInStats, ...uploadedStats];
+    }, [customSheets, progressById]);
+    const recentAccepted = useMemo(() => {
+      const builtInAccepted = builtInSheets.flatMap((sheet) => {
+        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+        return sheet.sheet.steps.flatMap((step) =>
+          step.subsections.flatMap((subsection) =>
+            subsection.problems.flatMap((problem) => {
+              const id = `${idPrefix}${problem.id}`;
+              const row = progressById.get(id);
+              if (row?.state !== "done") return [];
+              return [
+                {
+                  id,
+                  title: problem.title,
+                  sheetTitle: sheet.title,
+                  acceptedOn: row.completed_on || null,
+                  completedAt: row.updated_at || null,
+                },
+              ];
+            }),
+          ),
+        );
+      });
+      const uploadedAccepted = (profile?.custom_recent_accepted || []).map(
+        (problem) => ({
+          id: problem.id,
+          title: problem.title,
+          sheetTitle: problem.sheet_title,
+          acceptedOn: problem.accepted_on,
+          completedAt: problem.completed_at,
+        }),
+      );
+      return [...builtInAccepted, ...uploadedAccepted]
+        .sort((first, second) => {
+          if (first.completedAt && second.completedAt) {
+            return second.completedAt.localeCompare(first.completedAt);
+          }
+          if (first.completedAt) return -1;
+          if (second.completedAt) return 1;
+          if (!first.acceptedOn && !second.acceptedOn) return 0;
+          if (!first.acceptedOn) return 1;
+          if (!second.acceptedOn) return -1;
+          return second.acceptedOn.localeCompare(first.acceptedOn);
+        })
+        .slice(0, 8);
+    }, [profile?.custom_recent_accepted, progressById]);
+    const activeDays = heatmapData.weeks
+      .flat()
+      .filter((item) => !item.outOfRange && item.count > 0).length;
+    const profileProblemsSolved = profileSheetStats.reduce(
+      (total, sheet) => total + sheet.solved,
       0,
     );
+    const profileProblemsTotal = profileSheetStats.reduce(
+      (total, sheet) => total + sheet.total,
+      0,
+    );
+    const solvedPastYear = heatmapData.weeks
+      .flat()
+      .filter((item) => !item.outOfRange)
+      .reduce((total, item) => total + item.count, 0);
 
     return (
       <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
@@ -1780,7 +1880,7 @@ function AuthenticatedApp({
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
-            <h1 className="text-xl font-bold">Community</h1>
+            <h1 className="text-xl font-bold">Public profile</h1>
             <div className="flex-1" />
             <button
               type="button"
@@ -1792,23 +1892,49 @@ function AuthenticatedApp({
           </div>
         </header>
 
-        <main className="mx-auto max-w-5xl space-y-5 px-4 py-8 md:px-6">
-          {error && (
+        <main className="mx-auto max-w-[1440px] px-4 py-8 md:px-6">
+          {error && !loading && !profile ? (
+            <section className="surface-card rounded-2xl border p-8 text-center">
+              <p className="text-sm font-semibold uppercase tracking-wider text-violet-300">
+                {error === "This profile could not be found."
+                  ? "404"
+                  : "Profile"}
+              </p>
+              <h2 className="mt-2 text-2xl font-bold">
+                {error === "This profile could not be found."
+                  ? "Profile not found"
+                  : "Could not load profile"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-[#8A8A98]">
+                {error === "This profile could not be found."
+                  ? "This username doesn’t match a public profile. Check the spelling or search for another user."
+                  : error}
+              </p>
+              <button
+                type="button"
+                onClick={onBack}
+                className="mt-6 rounded-lg bg-[#6D5BF6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5B4AD6]"
+              >
+                Find people
+              </button>
+            </section>
+          ) : error ? (
             <div
               role="alert"
               className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300"
             >
               {error}
             </div>
-          )}
+          ) : null}
           {loading ? (
             <div className="surface-card rounded-2xl border p-6 text-sm text-[#8A8A98]">
               Loading profile…
             </div>
           ) : (
             profile && (
-              <>
-                <section className="surface-card flex flex-wrap items-center gap-5 rounded-2xl border p-6">
+              <div className="profile-layout">
+                <aside className="profile-sidebar">
+                <section className="profile-hero">
                   <div className="profile-avatar">
                     {(profile.name || profile.username || "U")
                       .charAt(0)
@@ -1822,49 +1948,127 @@ function AuthenticatedApp({
                       @{profile.username}
                     </p>
                     {profile.location && (
-                      <p className="mt-2 text-sm text-[#A1A1AA]">
+                      <div className="mt-3 flex items-center gap-2 text-sm text-[#8A8A98]">
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden="true"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
                         {profile.location}
-                      </p>
+                      </div>
                     )}
                     {profile.website && (
                       <a
                         href={profile.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block break-all text-sm text-violet-400 hover:underline"
+                        className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline"
                       >
                         {profile.website}
                       </a>
                     )}
-                  </div>
-                  <div className="w-full border-t border-[#26262F] pt-4 text-xs text-[#8A8A98]">
                     <a
-                      href={`/u/${encodeURIComponent(profile.username)}`}
-                      className="hover:text-violet-300"
+                      href={`/user/${encodeURIComponent(profile.username)}`}
+                      className="mt-4 block break-all text-xs text-[#8A8A98] hover:text-violet-300"
                     >
-                      dsa-tracker/u/{profile.username}
+                      {window.location.host}/user/{profile.username}
                     </a>
                   </div>
                 </section>
+                </aside>
 
-                <section className="grid grid-cols-2 gap-4">
-                  <div className="surface-card rounded-xl border p-5">
-                    <p className="text-sm text-[#8A8A98]">Problems solved</p>
-                    <p className="mt-2 text-3xl font-bold text-[#22A559]">
-                      {Number(profile.total_solved || 0).toLocaleString()}
-                    </p>
-                    <p className="mt-1 text-xs text-[#8A8A98]">across all sheets</p>
+                <div className="profile-main">
+                <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+                  <div className="surface-card stat-card rounded-xl border border-[#26262F] bg-[#15151B] p-4">
+                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                      <Calendar size={16} />
+                      <span className="text-xs font-medium">Current streak</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#FF6B35]">
+                      {Number(profile.current_streak || 0)}
+                    </div>
+                    <div className="mt-1 text-xs text-[#8A8A98]">current days</div>
                   </div>
-                  <div className="surface-card rounded-xl border p-5">
-                    <p className="text-sm text-[#8A8A98]">Active days</p>
-                    <p className="mt-2 text-3xl font-bold text-[#6D5BF6]">
-                      {activeDays.toLocaleString()}
-                    </p>
-                    <p className="mt-1 text-xs text-[#8A8A98]">in the past year</p>
+                  <div className="surface-card stat-card rounded-xl border border-[#26262F] bg-[#15151B] p-4">
+                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                      <Trophy size={16} />
+                      <span className="text-xs font-medium">Best streak</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#6D5BF6]">
+                      {Number(profile.longest_streak || 0)}
+                    </div>
+                    <div className="mt-1 text-xs text-[#8A8A98]">longest streak</div>
+                  </div>
+                  <div className="surface-card stat-card col-span-2 rounded-xl border border-[#26262F] bg-[#15151B] p-4 md:col-span-1">
+                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                      <Target size={16} />
+                      <span className="text-xs font-medium">Problems</span>
+                    </div>
+                    <div className="text-2xl font-bold text-[#22A559]">
+                      {profileProblemsSolved}
+                    </div>
+                    <div className="mt-1 text-xs text-[#8A8A98]">
+                      of {profileProblemsTotal} across all sheets
+                    </div>
+                  </div>
+                </div>
+
+                <section
+                  className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6"
+                  aria-labelledby="public-profile-sheet-progress"
+                >
+                  <h2
+                    id="public-profile-sheet-progress"
+                    className="mb-4 text-lg font-semibold text-[#E8E8EE]"
+                  >
+                    Sheet progress
+                  </h2>
+                  <div className="space-y-4">
+                    {profileSheetStats.map((sheet) => {
+                      const percentage = sheet.total
+                        ? Math.round((sheet.solved / sheet.total) * 100)
+                        : 0;
+                      return (
+                        <div key={sheet.id}>
+                          <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
+                            <span className="truncate font-medium text-[#E8E8EE]">
+                              {sheet.title}
+                            </span>
+                            <span className="shrink-0 tabular-nums text-[#8A8A98]">
+                              <span className="text-[#22A559]">{sheet.solved} solved</span>
+                              <span className="mx-2 text-[#52525B]">·</span>
+                              <span className="text-[#E65100]">{sheet.skipped} skipped</span>
+                              <span className="mx-2 text-[#52525B]">·</span>
+                              {sheet.total} total
+                            </span>
+                          </div>
+                          <div
+                            className="h-2 overflow-hidden rounded-full bg-[#26262F]"
+                            role="progressbar"
+                            aria-label={`${sheet.title} progress`}
+                            aria-valuemin={0}
+                            aria-valuemax={sheet.total}
+                            aria-valuenow={sheet.solved}
+                          >
+                            <div
+                              className="h-full rounded-full bg-[#6D5BF6] transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
-                <section className="surface-card rounded-2xl border p-5 md:p-6">
+                <section className="surface-card mb-6 rounded-2xl border border-[#26262F] bg-[#15151B] p-6">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold text-[#E8E8EE]">
                       {solvedPastYear.toLocaleString()} problems solved in the past year
@@ -1932,11 +2136,60 @@ function AuthenticatedApp({
                       </div>
                     </div>
                   </div>
-                  <p className="mt-3 text-xs text-[#8A8A98]">
-                    Activity from the past year
-                  </p>
+                  <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                    <span>Total active days: {activeDays}</span>
+                    <span>Updated live as problems are marked solved</span>
+                  </div>
                 </section>
-              </>
+
+                <section
+                  className="recent-ac-card surface-card"
+                  aria-labelledby="public-recent-ac-heading"
+                >
+                  <div className="recent-ac-heading">
+                    <div>
+                      <h2 id="public-recent-ac-heading">Recent AC</h2>
+                      <p>Latest accepted problems</p>
+                    </div>
+                    <span className="recent-ac-count">{recentAccepted.length}</span>
+                  </div>
+                  {recentAccepted.length > 0 ? (
+                    <ul className="recent-ac-list">
+                      {recentAccepted.map((problem) => (
+                        <li key={problem.id} className="recent-ac-item">
+                          <div className="recent-ac-check" aria-hidden="true">✓</div>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className="truncate text-sm font-medium text-[#E8E8EE]"
+                              title={problem.title}
+                            >
+                              {problem.title}
+                            </p>
+                            <p className="mt-1 truncate text-xs text-[#858585]">
+                              {problem.sheetTitle}
+                            </p>
+                          </div>
+                          {problem.acceptedOn ? (
+                            <time className="recent-ac-date" dateTime={problem.acceptedOn}>
+                              {new Date(`${problem.acceptedOn}T00:00:00`).toLocaleDateString(
+                                undefined,
+                                { month: "short", day: "numeric" },
+                              )}
+                            </time>
+                          ) : (
+                            <span className="recent-ac-date">Date unavailable</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="recent-ac-empty">
+                      Accepted problems will show here as they are solved.
+                    </p>
+                  )}
+                </section>
+                </div>
+              </div>
             )
           )}
         </main>

@@ -27,7 +27,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 - Reset progress button (stats row, not duplicate)
 - Responsive layout: mobile sidebar toggle, overflow-y-auto scrollbars
 - Profile page: full-page profile with editable name, username, location, and website settings; stats, streak, heatmap, and backup controls
-- User search: authenticated users can search public profiles by username at `/people` and open shareable `/u/<username>` pages; pages show profile details, solved totals, and the yearly activity heatmap, while email addresses and individual progress records are not exposed
+- User search: authenticated users can search public profiles at `/people` through the Vercel `/api/search` autocomplete endpoint, then open shareable `/user/<username>` pages; public profiles show the same streaks, built-in/custom sheet summaries, heatmap, and Recent AC as the owner profile, without exposing email addresses, credentials, or uploaded sheet contents
 - Navigation: avatar click → profile; back button → tracker; sign out clears the Supabase session
 - All progress/activity/user data saved to Supabase; UI state (expanded, filter, search, theme) in localStorage
 
@@ -52,7 +52,7 @@ src/
 ## Navigation
 - Main page (`showProfile` false): DSA tracker with sidebar (progress stats, streak, filter, search, reset button in stats row only)
 - Profile page (`showProfile` true): Click avatar icon in header; full profile with user info, stats, heatmap, backup export/import
-- Public profiles: select **People** in the tracker header, search at least three username characters, then select a result; the profile is available at `/u/<username>` and can be shared, while the public view contains profile details, aggregate solved count, and recent-year activity only
+- Public profiles: select **People** in the tracker header, search at least three username characters, then select a result; the profile is available at `/user/<username>` (`/u/<username>` remains a legacy alias) and can be shared. Its profile details, streaks, sheet progress, recent accepted problems, and activity heatmap are read live from the authenticated public-profile RPC. Email addresses, credentials, todo states, and uploaded sheet contents are not returned.
 - Hosting must rewrite `/people` and `/u/*` requests to the SPA entry (`index.html`) so profile URLs also work when opened directly or refreshed.
 - Back button returns to tracker
 - Sign out clears the Supabase session
@@ -75,14 +75,14 @@ src/
 ## Supabase Backend
 - Auth: Google OAuth via Supabase Auth; the app restores the session and loads the matching profile before showing the tracker.
 - Database: `profiles`, `progress`, and `activity_log` are scoped to the signed-in user's ID. First-time users complete onboarding before entering the tracker.
-- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`, `supabase/migrations/20261021003000_user_uploaded_sheets.sql`, `supabase/migrations/20261021012200_public_profile_search.sql`, and `supabase/migrations/20261021013500_public_profile_search_long_usernames.sql`. They are additive; uploaded sheets remain private, and public-profile RPCs expose only onboarding-complete profiles and aggregate activity to authenticated users.
+- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`, `supabase/migrations/20261021003000_user_uploaded_sheets.sql`, `supabase/migrations/20261021012200_public_profile_search.sql`, `supabase/migrations/20261021013500_public_profile_search_long_usernames.sql`, `supabase/migrations/20261021025300_indexed_user_search_limit.sql`, and `supabase/migrations/20261021031600_public_profile_full_data.sql`. Apply them in timestamp order. Public-profile RPCs expose selected fields and display-ready progress/activity summaries to authenticated users, while uploaded sheet contents remain private.
 - The browser uses only the Supabase project URL and public anon key. Never put a service-role key in frontend environment variables.
 
 ### Google sign-in setup
 1. In Supabase, enable the Google provider under **Authentication → Sign In / Providers** and configure the OAuth client ID and secret from your Google Cloud OAuth credentials.
 2. Add the Supabase callback URL shown in the provider settings to the Google OAuth client's authorized redirect URIs.
 3. In **Authentication → URL Configuration**, set the production site URL and allow the local development URL (for example `http://localhost:5173`) and every deployed app origin.
-4. Apply all SQL migrations in the Supabase SQL Editor (or through the project's migration workflow), including the user-uploaded-sheets and public-profile-search migrations.
+4. Apply all SQL migrations in the Supabase SQL Editor (or through the project's migration workflow), including the user-uploaded-sheets and full public-profile migrations.
 5. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the local `.env` and deployment environment, then restart/redeploy the frontend.
 
 ## Build / Deploy
@@ -90,19 +90,21 @@ src/
 - `npm run build` — production build; passes clean
 - `.env` file must contain `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; these variables are also required in the deployment environment
 - No service worker or PWA; standard Vite SPA
-- Vercel uses the repository root, `npm run build`, and `dist`; `vercel.json` rewrites app routes such as `/people` and `/u/<username>` to `index.html`, so they work when opened or refreshed directly.
+- Vercel uses the repository root, `npm run build`, and `dist`; `vercel.json` rewrites app routes such as `/people` and `/user/<username>` to `index.html`. Files under `api/` deploy as Vercel Functions and handle API requests.
 
 ### Deploy to Vercel
 1. Push the repository to GitHub if it is not already there. Do not commit `.env`; it is ignored by Git.
 2. In Vercel, choose **Add New → Project**, import this repository, and keep the project root as `.`. Select the Vite preset (or set the build command to `npm run build` and output directory to `dist`).
-3. In the Vercel project’s **Settings → Environment Variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production (and Preview/Development if those deployments should work). Use the Supabase project URL and public anon/publishable key only; never add the service-role key.
+3. In the Vercel project’s **Settings → Environment Variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for Production (and Preview/Development if those deployments should work). Also add `SUPABASE_URL` and `SUPABASE_ANON_KEY` for the `/api/search` function, using the Supabase project URL and public anon/publishable key. Never add the service-role key.
 4. Deploy once and copy the generated production URL, such as `https://your-project.vercel.app`.
 5. In Supabase **Authentication → URL Configuration**, set the Site URL to the production URL. Add the production URL and any Vercel preview URLs you intend to use to the allowed redirect URLs.
 6. In Google Cloud OAuth credentials, add the production URL (and intended preview origins) as authorized JavaScript origins. Keep the authorized redirect URI set to the Supabase callback URL shown under the Google provider settings; it is not the Vercel URL.
-7. Apply the Supabase SQL migrations in this repository in timestamp order, including the auth/profile, activity, uploaded-sheet, and public-profile-search migrations. Profile search and public profile pages require the public-profile migrations.
+7. Apply the Supabase SQL migrations in this repository in timestamp order, including the auth/profile, activity, uploaded-sheet, and full public-profile migrations. The public profile page requires the latest `20261021031600_public_profile_full_data.sql` migration.
 8. Redeploy after changing Vercel environment variables. Test Google sign-in, onboarding, saved progress, TXT upload, `/people`, and a direct `/u/<username>` URL on the production domain.
 
 User and profile search currently require a signed-in account. Vercel’s SPA rewrite makes the profile URLs load directly, but it does not make the profile data public to signed-out visitors.
+
+The live username autocomplete is implemented as `api/search.js`, a Vercel Function that validates the caller’s Supabase access token and returns at most five public `{ name, username }` matches. The matching RPC uses a lowercase prefix query and `profiles_username_lower_pattern_idx`; click-through profile URLs use `/user/<username>` (`/u/<username>` remains a legacy alias).
 
 ## Plan Reference
 - `/home/rehnx/.claude-omniroute/plans/i-want-to-make-quirky-lark.md` — Full backend conversion plan: Supabase Auth + DB, replace `useProgress`, auth guard, schema migrations
