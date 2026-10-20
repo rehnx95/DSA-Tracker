@@ -19,6 +19,7 @@ import {
   Target,
   LogOut,
   BookOpen,
+  Users,
   Link2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
