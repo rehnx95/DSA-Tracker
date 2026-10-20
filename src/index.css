@@ -392,6 +392,20 @@ input:focus-visible {
   font-weight: 700;
 }
 
+.people-result-avatar {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .profile-user-details {
   width: 100%;
   min-width: 0;

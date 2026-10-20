@@ -19,6 +19,8 @@ import {
   Target,
   LogOut,
   BookOpen,
+  Users,
+  Link2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { useProgress } from "./hooks/useProgress";
@@ -87,6 +89,14 @@ function getActivityLevel(count) {
   if (count <= 3) return 2;
   if (count <= 6) return 3;
   return 4;
+}
+
+function getPeopleRoute(pathname = window.location.pathname) {
+  if (pathname === "/people") return { page: "people", username: "" };
+  const profileMatch = pathname.match(/^\/u\/([A-Za-z0-9-]{3,48})\/?$/);
+  if (profileMatch)
+    return { page: "profile", username: profileMatch[1].toLowerCase() };
+  return { page: "tracker", username: "" };
 }
 
 function App() {
@@ -789,9 +799,155 @@ function AuthenticatedApp({
   );
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [peopleSearchPage, setPeopleSearchPage] = useState(
+    () => getPeopleRoute().page === "people",
+  );
+  const [profileSearchOpen, setProfileSearchOpen] = useState(
+    () => getPeopleRoute().page === "people",
+  );
+  const [profileSearchQuery, setProfileSearchQuery] = useState("");
+  const [profileSearchResults, setProfileSearchResults] = useState([]);
+  const [profileSearchLoading, setProfileSearchLoading] = useState(false);
+  const [profileSearchError, setProfileSearchError] = useState("");
+  const [selectedPublicUsername, setSelectedPublicUsername] = useState(
+    () => getPeopleRoute().username,
+  );
+  const [publicProfile, setPublicProfile] = useState(null);
+  const [publicProfileLoading, setPublicProfileLoading] = useState(false);
+  const [publicProfileError, setPublicProfileError] = useState("");
+  const publicProfileReturnPath = useRef(
+    getPeopleRoute().page === "people" ? "/people" : "/",
+  );
+  const [copiedProfileLink, setCopiedProfileLink] = useState(false);
   const [backupAction, setBackupAction] = useState("");
   const importSheetId = useRef(null);
   const importFileInput = useRef(null);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = getPeopleRoute();
+      setPeopleSearchPage(route.page === "people");
+      setProfileSearchOpen(route.page === "people");
+      setSelectedPublicUsername(route.username);
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const navigateTo = (path) => {
+    if (window.location.pathname !== path) window.history.pushState({}, "", path);
+    const route = getPeopleRoute(path);
+    setPeopleSearchPage(route.page === "people");
+    setProfileSearchOpen(route.page === "people");
+    setSelectedPublicUsername(route.username);
+  };
+
+  const openPeopleSearch = () => {
+    publicProfileReturnPath.current = "/people";
+    setProfileSearchQuery("");
+    setProfileSearchResults([]);
+    navigateTo("/people");
+  };
+  useEffect(() => {
+    const query = profileSearchQuery.trim();
+    if (!profileSearchOpen || query.length < 3) {
+      setProfileSearchResults([]);
+      setProfileSearchError("");
+      setProfileSearchLoading(false);
+      return undefined;
+    }
+
+    let active = true;
+    setProfileSearchLoading(true);
+    setProfileSearchError("");
+    const timer = window.setTimeout(async () => {
+      try {
+        const { data, error } = await supabase.rpc("search_public_profiles", {
+          search_term: query,
+        });
+        if (error) throw error;
+        if (active) setProfileSearchResults(data || []);
+      } catch (error) {
+        if (!active) return;
+        console.error("Failed to search public profiles:", error);
+        setProfileSearchError(
+          "Could not search profiles. Apply the public profile search migration and try again.",
+        );
+      } finally {
+        if (active) setProfileSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [profileSearchOpen, profileSearchQuery]);
+
+  useEffect(() => {
+    if (!selectedPublicUsername) {
+      setPublicProfile(null);
+      setPublicProfileError("");
+      return undefined;
+    }
+
+    let active = true;
+    setPublicProfile(null);
+    setPublicProfileLoading(true);
+    setPublicProfileError("");
+    supabase
+      .rpc("get_public_profile", {
+        requested_username: selectedPublicUsername,
+      })
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!active) return;
+        const profileData = data?.[0];
+        if (!profileData) throw new Error("Profile not found.");
+        setPublicProfile(profileData);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load public profile:", error);
+        setPublicProfileError(
+          error.message === "Profile not found."
+            ? "This profile could not be found."
+            : "Could not load this profile. Apply the public profile search migration and try again.",
+        );
+      })
+      .finally(() => {
+        if (active) setPublicProfileLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedPublicUsername]);
+
+  const openPublicProfile = (username) => {
+    publicProfileReturnPath.current = "/people";
+    setProfileSearchQuery("");
+    setProfileSearchResults([]);
+    navigateTo(`/u/${encodeURIComponent(username)}`);
+  };
+
+  const returnFromPublicProfile = () => {
+    navigateTo(publicProfileReturnPath.current || "/");
+  };
+
+  const copyPublicProfileLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopiedProfileLink(true);
+      window.setTimeout(() => setCopiedProfileLink(false), 1800);
+    } catch (error) {
+      console.error("Could not copy the public profile link:", error);
+      setPublicProfileError(
+        "Could not copy the link. Copy the profile URL from your browser address bar.",
+      );
+    }
+  };
+
   useEffect(() => {
     const timer = window.setInterval(() => {
       setTodayDateKey(current => {
@@ -1366,10 +1522,424 @@ function AuthenticatedApp({
       ? "bg-[#6D5BF6] text-white"
       : "bg-[#15151B] text-[#8A8A98] hover:text-white";
 
+  if (peopleSearchPage) {
+    return (
+      <PeopleSearchPage
+        query={profileSearchQuery}
+        onQueryChange={setProfileSearchQuery}
+        results={profileSearchResults}
+        loading={profileSearchLoading}
+        error={profileSearchError}
+        onSelectProfile={openPublicProfile}
+        onBack={() => navigateTo("/")}
+      />
+    );
+  }
+
+  if (selectedPublicUsername) {
+    return (
+      <PublicProfilePage
+        profile={publicProfile}
+        loading={publicProfileLoading}
+        error={publicProfileError}
+        copied={copiedProfileLink}
+        onCopyLink={copyPublicProfileLink}
+        onBack={returnFromPublicProfile}
+      />
+    );
+  }
+
   if (progressLoading) {
     return (
       <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
         <p className="text-[#8A8A98]">Syncing your saved progress…</p>
+      </div>
+    );
+  }
+
+  function PeopleSearchPage({
+    query,
+    onQueryChange,
+    results,
+    loading,
+    error,
+    onSelectProfile,
+    onBack,
+  }) {
+    return (
+      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+        <header className="dashboard-header sticky top-0 z-50 border-b">
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to tracker"
+              className="rounded-lg p-2 text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+            >
+              <ChevronDown size={20} className="rotate-90" />
+            </button>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6D5BF6]">
+                <CheckSquare size={16} className="text-white" />
+              </div>
+              <span className="font-bold tracking-tight">DSA TRACKER</span>
+            </div>
+            <div className="flex-1" />
+            <span className="flex items-center gap-2 text-sm font-medium text-violet-300">
+              <Users size={17} />
+              <span className="hidden sm:inline">Community</span>
+            </span>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-4xl px-4 py-10 md:px-6 md:py-14">
+          <div className="mb-8">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
+              DSA Tracker Community
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Find people
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#A1A1AA]">
+              Look up a username to explore a solver’s public profile and
+              activity.
+            </p>
+          </div>
+
+          <label className="mb-2 block text-sm font-medium text-[#E8E8EE]" htmlFor="people-search">
+            Search by username
+          </label>
+          <div className="relative">
+            <Search
+              size={18}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+            />
+            <input
+              id="people-search"
+              autoFocus
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="Try a username, e.g. alex-codes"
+              className="h-12 w-full rounded-xl border border-[#34343F] bg-[#111111] pl-11 pr-4 text-sm text-[#E8E8EE] placeholder-[#8A8A98] outline-none transition-colors focus:border-[#765cf6]"
+            />
+          </div>
+          <p className="mt-2 text-xs text-[#8A8A98]">
+            Enter at least 3 characters. Search matches the start of a
+            username.
+          </p>
+
+          <section className="mt-8" aria-live="polite" aria-label="People search results">
+            {query.trim().length < 3 ? (
+              <div className="surface-card rounded-xl border p-6">
+                <h2 className="font-semibold">Discover profiles</h2>
+                <p className="mt-2 text-sm text-[#8A8A98]">
+                  Search a username to find a member and view their public
+                  progress.
+                </p>
+              </div>
+            ) : loading ? (
+              <div className="surface-card rounded-xl border p-6 text-sm text-[#8A8A98]">
+                Searching profiles…
+              </div>
+            ) : error ? (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300"
+              >
+                {error}
+              </div>
+            ) : results.length ? (
+              <div className="overflow-hidden rounded-xl border border-[#26262F] bg-[#090909]">
+                <div className="border-b border-[#26262F] px-5 py-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">
+                    People
+                  </h2>
+                </div>
+                <ul className="divide-y divide-[#26262F]">
+                  {results.map((result) => (
+                    <li key={result.username}>
+                      <button
+                        type="button"
+                        onClick={() => onSelectProfile(result.username)}
+                        className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-[#15151B]"
+                      >
+                        <span className="people-result-avatar">
+                          {(result.name || result.username)
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-[#E8E8EE]">
+                            {result.name || result.username}
+                          </span>
+                          <span className="mt-1 block truncate text-sm text-[#8A8A98]">
+                            @{result.username}
+                          </span>
+                        </span>
+                        <span className="hidden text-xs font-medium text-violet-300 sm:block">
+                          View profile
+                        </span>
+                        <ChevronRight
+                          size={18}
+                          className="text-[#8A8A98]"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="surface-card rounded-xl border p-6">
+                <h2 className="font-semibold">No profiles found</h2>
+                <p className="mt-2 text-sm text-[#8A8A98]">
+                  Try another username. Only users who have completed their
+                  profile appear in search.
+                </p>
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  function PublicProfilePage({
+    profile,
+    loading,
+    error,
+    copied,
+    onCopyLink,
+    onBack,
+  }) {
+    const [dateKey, setDateKey] = useState(() => getLocalDateKey(new Date()));
+    useEffect(() => {
+      const timer = window.setInterval(() => {
+        setDateKey((current) => {
+          const today = getLocalDateKey(new Date());
+          return current === today ? current : today;
+        });
+      }, 60_000);
+      return () => window.clearInterval(timer);
+    }, []);
+
+    const activity = profile?.activity || {};
+    const heatmapData = useMemo(() => {
+      const [year, month, day] = dateKey.split("-").map(Number);
+      const today = new Date(year, month - 1, day);
+      today.setHours(0, 0, 0, 0);
+      const start = new Date(today);
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - 52 * 7);
+      const weeks = [];
+      for (let weekIndex = 0; weekIndex < 53; weekIndex++) {
+        const week = [];
+        for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + weekIndex * 7 + dayIndex);
+          const dateKey = getLocalDateKey(date);
+          const outOfRange = date > today;
+          const count = outOfRange ? 0 : Number(activity[dateKey] || 0);
+          week.push({
+            date,
+            dateKey,
+            count,
+            outOfRange,
+            intensity: getActivityLevel(count),
+          });
+        }
+        weeks.push(week);
+      }
+      const monthLabels = weeks.map((week) => {
+        const firstOfMonth = week.find(
+          (item) => !item.outOfRange && item.date.getDate() === 1,
+        );
+        return firstOfMonth
+          ? firstOfMonth.date.toLocaleDateString(undefined, { month: "short" })
+          : "";
+      });
+      return { weeks, monthLabels };
+    }, [activity, dateKey]);
+
+    const activeDays = Object.values(activity).filter(
+      (count) => Number(count) > 0,
+    ).length;
+    const solvedPastYear = Object.values(activity).reduce(
+      (total, count) => total + Number(count || 0),
+      0,
+    );
+
+    return (
+      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+        <header className="dashboard-header sticky top-0 z-50 border-b">
+          <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 py-4 md:px-6">
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to tracker"
+              className="rounded-lg p-2 text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+            >
+              <ChevronDown size={20} className="rotate-90" />
+            </button>
+            <h1 className="text-xl font-bold">Community</h1>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={onCopyLink}
+              className="rounded-lg border border-[#34343F] px-3 py-2 text-sm font-medium text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+            >
+              {copied ? "Link copied" : "Share profile"}
+            </button>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-5xl space-y-5 px-4 py-8 md:px-6">
+          {error && (
+            <div
+              role="alert"
+              className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300"
+            >
+              {error}
+            </div>
+          )}
+          {loading ? (
+            <div className="surface-card rounded-2xl border p-6 text-sm text-[#8A8A98]">
+              Loading profile…
+            </div>
+          ) : (
+            profile && (
+              <>
+                <section className="surface-card flex flex-wrap items-center gap-5 rounded-2xl border p-6">
+                  <div className="profile-avatar">
+                    {(profile.name || profile.username || "U")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-2xl font-bold text-[#E8E8EE]">
+                      {profile.name || profile.username}
+                    </h2>
+                    <p className="mt-1 text-sm text-[#8A8A98]">
+                      @{profile.username}
+                    </p>
+                    {profile.location && (
+                      <p className="mt-2 text-sm text-[#A1A1AA]">
+                        {profile.location}
+                      </p>
+                    )}
+                    {profile.website && (
+                      <a
+                        href={profile.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-block break-all text-sm text-violet-400 hover:underline"
+                      >
+                        {profile.website}
+                      </a>
+                    )}
+                  </div>
+                  <div className="w-full border-t border-[#26262F] pt-4 text-xs text-[#8A8A98]">
+                    <a
+                      href={`/u/${encodeURIComponent(profile.username)}`}
+                      className="hover:text-violet-300"
+                    >
+                      dsa-tracker/u/{profile.username}
+                    </a>
+                  </div>
+                </section>
+
+                <section className="grid grid-cols-2 gap-4">
+                  <div className="surface-card rounded-xl border p-5">
+                    <p className="text-sm text-[#8A8A98]">Problems solved</p>
+                    <p className="mt-2 text-3xl font-bold text-[#22A559]">
+                      {Number(profile.total_solved || 0).toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-xs text-[#8A8A98]">across all sheets</p>
+                  </div>
+                  <div className="surface-card rounded-xl border p-5">
+                    <p className="text-sm text-[#8A8A98]">Active days</p>
+                    <p className="mt-2 text-3xl font-bold text-[#6D5BF6]">
+                      {activeDays.toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-xs text-[#8A8A98]">in the past year</p>
+                  </div>
+                </section>
+
+                <section className="surface-card rounded-2xl border p-5 md:p-6">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold text-[#E8E8EE]">
+                      {solvedPastYear.toLocaleString()} problems solved in the past year
+                    </h2>
+                    <div
+                      className="flex items-center gap-2 text-xs text-[#8A8A98]"
+                      aria-label="Activity scale: less to more"
+                    >
+                      <span>Less</span>
+                      <div className="flex gap-1">
+                        {["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"].map(
+                          (color) => (
+                            <span
+                              key={color}
+                              className="h-3 w-3 rounded-sm"
+                              style={{ backgroundColor: color }}
+                            />
+                          ),
+                        )}
+                      </div>
+                      <span>More</span>
+                    </div>
+                  </div>
+                  <div className="activity-scroll pb-2">
+                    <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
+                      {heatmapData.monthLabels.map((month, index) => (
+                        <span key={index} className="whitespace-nowrap">
+                          {month}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="activity-heatmap">
+                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
+                        {["Mon", "", "Wed", "", "Fri", "", ""].map(
+                          (label, index) => (
+                            <span key={`weekday-${index}`}>{label}</span>
+                          ),
+                        )}
+                      </div>
+                      <div className="activity-weeks">
+                        {heatmapData.weeks.map((week, weekIndex) => (
+                          <div key={weekIndex} className="activity-week">
+                            {week.map((item) => (
+                              <span
+                                key={item.dateKey}
+                                aria-label={`${item.count} problems solved on ${item.date.toLocaleDateString()}`}
+                                title={`${item.count} ${item.count === 1 ? "problem" : "problems"} solved on ${item.date.toLocaleDateString()}`}
+                                className="activity-day block rounded-[2px] border border-white/[0.04]"
+                                style={{
+                                  backgroundColor: [
+                                    "#161b22",
+                                    "#0e4429",
+                                    "#006d32",
+                                    "#26a641",
+                                    "#39d353",
+                                  ][item.intensity],
+                                  visibility: item.outOfRange
+                                    ? "hidden"
+                                    : "visible",
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-[#8A8A98]">
+                    Activity from the past year
+                  </p>
+                </section>
+              </>
+            )
+          )}
+        </main>
       </div>
     );
   }
@@ -1389,6 +1959,19 @@ function AuthenticatedApp({
             <h1 className="font-bold text-xl">My Profile</h1>
             <div className="flex-1" />
             <div className="flex items-center gap-3">
+              {userUsername && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    publicProfileReturnPath.current = "/";
+                    navigateTo(`/u/${encodeURIComponent(userUsername)}`);
+                  }}
+                  className="flex items-center gap-2 rounded-lg border border-[#34343F] px-3 py-2 text-sm font-medium text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+                >
+                  <Link2 size={16} />
+                  <span className="hidden sm:inline">Public profile</span>
+                </button>
+              )}
               <button
                 onClick={openProfileSettings}
                 aria-label="Edit profile settings"
@@ -1937,6 +2520,16 @@ function AuthenticatedApp({
               </button>
             )}
           </div>
+          <button
+            type="button"
+            onClick={openPeopleSearch}
+            aria-label="Find people"
+            aria-current={peopleSearchPage ? "page" : undefined}
+            className="flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-[#A1A1AA] transition-colors hover:bg-[#1C1C24] hover:text-[#E8E8EE] sm:px-3"
+          >
+            <Users size={17} />
+            <span className="hidden sm:inline">People</span>
+          </button>
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}

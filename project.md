@@ -27,6 +27,7 @@ Full-stack DSA (Data Structures & Algorithms) problem tracker web application wi
 - Reset progress button (stats row, not duplicate)
 - Responsive layout: mobile sidebar toggle, overflow-y-auto scrollbars
 - Profile page: full-page profile with editable name, username, location, and website settings; stats, streak, heatmap, and backup controls
+- User search: authenticated users can search public profiles by username at `/people` and open shareable `/u/<username>` pages; pages show profile details, solved totals, and the yearly activity heatmap, while email addresses and individual progress records are not exposed
 - Navigation: avatar click → profile; back button → tracker; sign out clears the Supabase session
 - All progress/activity/user data saved to Supabase; UI state (expanded, filter, search, theme) in localStorage
 
@@ -51,6 +52,8 @@ src/
 ## Navigation
 - Main page (`showProfile` false): DSA tracker with sidebar (progress stats, streak, filter, search, reset button in stats row only)
 - Profile page (`showProfile` true): Click avatar icon in header; full profile with user info, stats, heatmap, backup export/import
+- Public profiles: select **People** in the tracker header, search at least three username characters, then select a result; the profile is available at `/u/<username>` and can be shared, while the public view contains profile details, aggregate solved count, and recent-year activity only
+- Hosting must rewrite `/people` and `/u/*` requests to the SPA entry (`index.html`) so profile URLs also work when opened directly or refreshed.
 - Back button returns to tracker
 - Sign out clears the Supabase session
 
@@ -72,14 +75,14 @@ src/
 ## Supabase Backend
 - Auth: Google OAuth via Supabase Auth; the app restores the session and loads the matching profile before showing the tracker.
 - Database: `profiles`, `progress`, and `activity_log` are scoped to the signed-in user's ID. First-time users complete onboarding before entering the tracker.
-- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`, and `supabase/migrations/20261021003000_user_uploaded_sheets.sql`. They are additive; the user-sheets migration creates private per-account storage protected by row-level security.
+- Latest schema migrations: `supabase/migrations/20261020165100_multi_user_auth_profiles.sql`, `supabase/migrations/20261020170900_activity_calendar_streaks.sql`, `supabase/migrations/20261020174800_decouple_auth_signup_from_user_settings.sql`, `supabase/migrations/20261020175400_remove_bio_signup_dependency.sql`, `supabase/migrations/20261021003000_user_uploaded_sheets.sql`, `supabase/migrations/20261021012200_public_profile_search.sql`, and `supabase/migrations/20261021013500_public_profile_search_long_usernames.sql`. They are additive; uploaded sheets remain private, and public-profile RPCs expose only onboarding-complete profiles and aggregate activity to authenticated users.
 - The browser uses only the Supabase project URL and public anon key. Never put a service-role key in frontend environment variables.
 
 ### Google sign-in setup
 1. In Supabase, enable the Google provider under **Authentication → Sign In / Providers** and configure the OAuth client ID and secret from your Google Cloud OAuth credentials.
 2. Add the Supabase callback URL shown in the provider settings to the Google OAuth client's authorized redirect URIs.
 3. In **Authentication → URL Configuration**, set the production site URL and allow the local development URL (for example `http://localhost:5173`) and every deployed app origin.
-4. Apply all SQL migrations in the Supabase SQL Editor (or through the project's migration workflow), including the user-uploaded-sheets migration.
+4. Apply all SQL migrations in the Supabase SQL Editor (or through the project's migration workflow), including the user-uploaded-sheets and public-profile-search migrations.
 5. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the local `.env` and deployment environment, then restart/redeploy the frontend.
 
 ## Build / Deploy
