@@ -1109,7 +1109,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                   <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
                 </button>
 
-                <input ref={importFileInput} id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
+                <input
+                  ref={importFileInput}
+                  id="import-file"
+                  type="file"
+                  accept=".json,application/json"
+                  aria-label="Choose a progress backup JSON file"
+                  className="fixed left-0 top-0 h-px w-px opacity-0"
+                  onChange={importProgress}
+                />
               </div>
             </div>
           </div>
@@ -1132,10 +1140,21 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 <p className="mb-4 mt-1 text-sm text-[#8A8A98]">
                   {backupAction === 'export'
                     ? 'Download progress for one sheet.'
-                    : 'Select the destination sheet, then choose its progress backup file.'}
+                    : 'Choose the sheet you want to restore, then select its progress backup file. This dialog stays open if you cancel the file picker.'}
                 </p>
+                {backupAction === 'import' && (
+                  <div className="mb-4 rounded-lg border border-[#6D5BF6]/25 bg-[#6D5BF6]/10 p-3 text-sm text-[#C4BDFE]">
+                    <p className="font-medium">How to import</p>
+                    <ol className="mt-1 list-inside list-decimal space-y-1 text-xs leading-relaxed text-[#AFA8E8]">
+                      <li>Select the destination sheet below.</li>
+                      <li>Choose the matching progress backup JSON file.</li>
+                      <li>Only problem IDs belonging to that sheet will be imported.</li>
+                    </ol>
+                    <p className="mt-2 text-xs text-[#AFA8E8]">Create a backup with Profile → Export Progress if you don’t have one yet.</p>
+                  </div>
+                )}
                 <div className="max-h-72 space-y-1 overflow-y-auto">
-                  {backupAction !== 'import-file' && availableSheets.map(sheet => (
+                  {availableSheets.map(sheet => (
                     <button
                       key={sheet.id}
                       type="button"
@@ -1145,7 +1164,12 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                           return;
                         }
                         importSheetId.current = sheet.id;
-                        setBackupAction('import-file');
+                        const input = importFileInput.current;
+                        if (!input) {
+                          alert('Could not open the file picker. Please try Import again.');
+                          return;
+                        }
+                        input.click();
                       }}
                       className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#E8E8EE] transition-colors hover:bg-[#26262F]"
                     >
@@ -1153,33 +1177,6 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                       <span className="text-xs text-[#8A8A98]">{sheet.problemCount} problems</span>
                     </button>
                   ))}
-                  {backupAction === 'import-file' && (
-                    <div className="mt-3 border-t border-[#26262F] pt-3">
-                      <p className="mb-2 text-sm text-[#A1A1AA]">
-                        Destination: {availableSheets.find(sheet => sheet.id === importSheetId.current)?.title}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const input = importFileInput.current;
-                          if (!input) {
-                            alert('Could not open the file picker. Close this dialog and try Import again.');
-                            return;
-                          }
-                          try {
-                            if (typeof input.showPicker === 'function') input.showPicker();
-                            else input.click();
-                          } catch (pickerError) {
-                            console.warn('Native file picker API failed; falling back to input click:', pickerError);
-                            input.click();
-                          }
-                        }}
-                        className="w-full rounded-lg bg-[#6D5BF6] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#5B4AD6]"
-                      >
-                        Choose backup file
-                      </button>
-                    </div>
-                  )}
                 </div>
                 <button
                   type="button"
