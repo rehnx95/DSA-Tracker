@@ -35,7 +35,7 @@ export function useProgress(user) {
       console.error('Failed to save user data to Supabase:', saveError);
       setError('Some changes could not be saved. Check your connection and reload to sync your account.');
     });
-    return write.catch(() => {});
+    return write.then(() => true, () => false);
   }, []);
 
   useEffect(() => {
@@ -203,7 +203,7 @@ export function useProgress(user) {
       replaceActivity(nextActivity);
     }
 
-    await save(async () => {
+    return save(async () => {
       if (entries.length > 0) {
         const { error: progressError } = await supabase
           .from('progress')
@@ -220,8 +220,49 @@ export function useProgress(user) {
     return 'todo';
   }, [progress]);
 
-  const reset = useCallback(async () => {
+  const reset = useCallback(async (problemIds) => {
     if (!user || !supabase) return;
+
+    if (Array.isArray(problemIds)) {
+      const idsToReset = [...new Set(problemIds)].filter(id => progressRef.current[id]);
+      if (idsToReset.length === 0) return;
+
+      const nextProgress = { ...progressRef.current };
+      const nextCompletedOn = { ...completedOnRef.current };
+      const dateDeltas = {};
+      for (const id of idsToReset) {
+        if (nextProgress[id] === 'done') {
+          const date = nextCompletedOn[id] || getLocalDateKey();
+          dateDeltas[date] = (dateDeltas[date] || 0) - 1;
+        }
+        delete nextProgress[id];
+        delete nextCompletedOn[id];
+      }
+
+      const changedDates = Object.keys(dateDeltas).filter(date => dateDeltas[date] !== 0);
+      const nextActivity = { ...activityRef.current };
+      for (const date of changedDates) {
+        const count = Math.max(0, (nextActivity[date] || 0) + dateDeltas[date]);
+        if (count > 0) nextActivity[date] = count;
+        else delete nextActivity[date];
+      }
+
+      replaceProgress(nextProgress);
+      completedOnRef.current = nextCompletedOn;
+      if (changedDates.length > 0) replaceActivity(nextActivity);
+
+      await save(async () => {
+        const { error: progressError } = await supabase
+          .from('progress')
+          .delete()
+          .eq('user_id', user.id)
+          .in('problem_id', idsToReset);
+        if (progressError) throw progressError;
+        for (const date of changedDates) await persistActivity(user.id, date);
+      });
+      return;
+    }
+
     replaceProgress({});
     replaceActivity({});
     completedOnRef.current = {};

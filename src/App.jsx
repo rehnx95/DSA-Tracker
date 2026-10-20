@@ -825,12 +825,12 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (loadEvent) => {
+    reader.onload = async (loadEvent) => {
       try {
         const fileContent = loadEvent.target.result;
         const imported = JSON.parse(fileContent);
-        if (!imported || typeof imported !== 'object') {
-          alert('Invalid backup file format - must be a JSON object');
+        if (!imported || typeof imported !== 'object' || Array.isArray(imported)) {
+          alert('Invalid backup file format. Choose a progress backup JSON exported from your profile.');
           return;
         }
         const targetSheetId = importSheetId.current;
@@ -859,11 +859,15 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
           }
         }
         if (importedCount === 0) {
-          alert('No valid problem states found in backup file');
+          alert(`No matching problem states were found for ${targetSheet.title}. Choose a progress backup that contains problem IDs from this sheet.`);
           return;
         }
-        bulkUpdate(newProgress);
-        alert(`Successfully imported ${importedCount} problem states into ${targetSheet.title}`);
+        const saved = await bulkUpdate(newProgress);
+        if (!saved) {
+          alert('The backup was read, but progress could not be saved to your account. Check the sync error and try again.');
+          return;
+        }
+        alert(`Successfully imported ${importedCount} problem states into ${targetSheet.title}.`);
       } catch (err) {
         console.error('Import error details:', err);
         alert(`Failed to import backup file: ${err.message}`);
@@ -1087,6 +1091,24 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                   <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
                 </button>
 
+                <button
+                  onClick={() => {
+                    if (confirm('Reset all progress across every sheet? This cannot be undone.')) reset();
+                  }}
+                  className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-900/20"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
+                      <RefreshCcw size={20} />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-sm font-medium text-red-300">Reset All Sheets</div>
+                      <div className="text-xs text-[#8A8A98]">Clear all progress and activity</div>
+                    </div>
+                  </div>
+                  <ChevronDown size={16} className="rotate-90 text-[#8A8A98]" />
+                </button>
+
                 <input ref={importFileInput} id="import-file" type="file" accept=".json" className="hidden" onChange={importProgress} />
               </div>
             </div>
@@ -1113,7 +1135,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                     : 'Select the destination sheet, then choose its progress backup file.'}
                 </p>
                 <div className="max-h-72 space-y-1 overflow-y-auto">
-                  {availableSheets.map(sheet => (
+                  {backupAction !== 'import-file' && availableSheets.map(sheet => (
                     <button
                       key={sheet.id}
                       type="button"
@@ -1123,8 +1145,7 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                           return;
                         }
                         importSheetId.current = sheet.id;
-                        setBackupAction('');
-                        importFileInput.current?.click();
+                        setBackupAction('import-file');
                       }}
                       className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#E8E8EE] transition-colors hover:bg-[#26262F]"
                     >
@@ -1132,6 +1153,33 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                       <span className="text-xs text-[#8A8A98]">{sheet.problemCount} problems</span>
                     </button>
                   ))}
+                  {backupAction === 'import-file' && (
+                    <div className="mt-3 border-t border-[#26262F] pt-3">
+                      <p className="mb-2 text-sm text-[#A1A1AA]">
+                        Destination: {availableSheets.find(sheet => sheet.id === importSheetId.current)?.title}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = importFileInput.current;
+                          if (!input) {
+                            alert('Could not open the file picker. Close this dialog and try Import again.');
+                            return;
+                          }
+                          try {
+                            if (typeof input.showPicker === 'function') input.showPicker();
+                            else input.click();
+                          } catch (pickerError) {
+                            console.warn('Native file picker API failed; falling back to input click:', pickerError);
+                            input.click();
+                          }
+                        }}
+                        className="w-full rounded-lg bg-[#6D5BF6] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#5B4AD6]"
+                      >
+                        Choose backup file
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1346,10 +1394,14 @@ function AuthenticatedApp({ user, profile, authError, onProfileUpdated, onSignOu
                 </div>
               </div>
               <button
-                onClick={() => { if (confirm('Reset all progress?')) reset(); }}
+                onClick={() => {
+                  if (confirm(`Reset progress for ${selectedSheet?.title || 'this sheet'} only? Other sheets will not be affected.`)) {
+                    reset(sheetProblems.map(problem => problem.id));
+                  }
+                }}
                 className="w-full text-xs py-1.5 bg-[#1C1C24] hover:bg-red-900/30 text-[#8A8A98] hover:text-red-400 rounded-md transition-colors flex items-center justify-center gap-1"
               >
-                <RefreshCcw size={12} /> Reset All Progress
+                <RefreshCcw size={12} /> Reset This Sheet
               </button>
             </div>
           </div>
