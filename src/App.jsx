@@ -825,11 +825,7 @@ function AuthenticatedApp({
       ? savedSheetId
       : defaultSheetId;
   });
-  const [sheetSidebarOpen, setSheetSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
-  const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
-    window.matchMedia("(min-width: 768px)").matches,
-  );
   const [search, setSearch] = useState(
     () => localStorage.getItem("dsa-search") || "",
   );
@@ -894,16 +890,6 @@ function AuthenticatedApp({
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-    const handleViewportChange = (event) => {
-      setIsDesktopViewport(event.matches);
-      setSheetSidebarOpen(false);
-    };
-    mediaQuery.addEventListener("change", handleViewportChange);
-    return () => mediaQuery.removeEventListener("change", handleViewportChange);
   }, []);
 
   const navigateTo = (path) => {
@@ -2227,7 +2213,7 @@ function AuthenticatedApp({
                       </div>
                     </div>
                   </div>
-                  <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
+                  <div className="mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                     <span>Total active days: {activeDays}</span>
                     <span>Refreshes automatically while this profile is open</span>
                   </div>
@@ -2607,7 +2593,7 @@ function AuthenticatedApp({
                   </div>
                 </div>
                 <div className="activity-scroll pb-2">
-                  <div className="activity-calendar">
+                  <div>
                     <div className="activity-months mb-2 text-[10px] text-[#A1A1A1]">
                       {heatmapData.monthLabels.map((month, index) => (
                         <span key={index} className="whitespace-nowrap">
@@ -2651,7 +2637,7 @@ function AuthenticatedApp({
                     </div>
                   </div>
                 </div>
-                <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
+                <div className="mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                   <span>Total active days: {yearlyActiveDays}</span>
                   <span>Updated live as you mark problems solved</span>
                 </div>
@@ -2824,24 +2810,18 @@ function AuthenticatedApp({
       data-theme={theme === "light" ? "light" : undefined}
     >
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
-        <div className="tracker-header-inner max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
-            onClick={() => {
-              if (isDesktopViewport)
-                setDesktopSidebarOpen((open) => !open);
-              else setSheetSidebarOpen((open) => !open);
-            }}
-            className="tracker-sidebar-toggle p-1.5 -ml-1 text-[#EDEDED]"
+            onClick={() => setDesktopSidebarOpen((open) => !open)}
+            className="p-1.5 -ml-1 text-[#EDEDED]"
             aria-label={
-              (isDesktopViewport ? desktopSidebarOpen : sheetSidebarOpen)
-                ? "Hide sheets sidebar"
-                : "Show sheets sidebar"
+              desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
             }
-            aria-expanded={isDesktopViewport ? desktopSidebarOpen : sheetSidebarOpen}
+            aria-expanded={desktopSidebarOpen}
           >
             <Menu size={22} />
           </button>
-          <div className="tracker-header-brand flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center flex-shrink-0">
               <CheckSquare size={16} className="text-black" />
             </div>
@@ -2854,8 +2834,8 @@ function AuthenticatedApp({
               </p>
             </div>
           </div>
-          <div className="tracker-header-spacer flex-1" />
-          <div className="tracker-desktop-search relative hidden sm:block">
+          <div className="flex-1" />
+          <div className="relative hidden sm:block">
             <Search
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
@@ -2903,7 +2883,7 @@ function AuthenticatedApp({
       </header>
 
       <main
-        className={`dashboard-main ${isDesktopViewport && !desktopSidebarOpen ? "desktop-sidebar-collapsed" : ""} max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0`}
+        className={`dashboard-main ${!desktopSidebarOpen ? "desktop-sidebar-collapsed" : ""} max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0`}
       >
         {progressError && (
           <div
@@ -2932,28 +2912,13 @@ function AuthenticatedApp({
             </div>
           </div>
         )}
-        {!isDesktopViewport && sheetSidebarOpen && (
-          <button
-            type="button"
-            className="sheet-sidebar-backdrop"
-            onClick={() => setSheetSidebarOpen(false)}
-            aria-label="Close sheets menu"
-          />
-        )}
         <aside
-          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} ${isDesktopViewport && !desktopSidebarOpen ? "desktop-sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
+          className={`sheet-sidebar ${!desktopSidebarOpen ? "desktop-sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#A1A1A1]">
                 Your sheets
               </h2>
-              <button
-                onClick={() => setSheetSidebarOpen(false)}
-                className="sheet-sidebar-close rounded p-1 text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white lg:hidden"
-                aria-label="Close sheets sidebar"
-              >
-                <X size={16} />
-              </button>
             </div>
             <div className="mb-3 px-1">
               <button
@@ -2999,8 +2964,7 @@ function AuthenticatedApp({
                     type="button"
                     onClick={() => {
                       setSelectedSheetId(sheet.id);
-                      if (isDesktopViewport) setDesktopSidebarOpen(false);
-                      else setSheetSidebarOpen(false);
+                      setDesktopSidebarOpen(false);
                     }}
                     aria-current={
                       selectedSheet?.id === sheet.id ? "page" : undefined
@@ -3046,26 +3010,8 @@ function AuthenticatedApp({
 
         <section
           className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2"
-          style={{ maxHeight: "calc(100dvh - 120px)" }}
+          style={{ maxHeight: "calc(100vh - 120px)" }}
         >
-          <div className="mobile-problem-search">
-            <Search size={16} aria-hidden="true" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search problems in this sheet"
-              aria-label="Search problems"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                aria-label="Clear problem search"
-              >
-                <X size={15} />
-              </button>
-            )}
-          </div>
           <div className="tracker-toolbar flex items-center gap-2 mb-4 flex-wrap">
             {["all", "done", "skipped", "todo"].map((type) => (
               <button
@@ -3266,7 +3212,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
             ? `Mark ${prob.title} as not done`
             : `Mark ${prob.title} as done`
         }
-        className={`problem-check w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#46A758] border-[#46A758]" : "border-[#EDEDED]/60 bg-transparent hover:border-[#EDEDED]"}`}
+        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#46A758] border-[#46A758]" : "border-[#EDEDED]/60 bg-transparent hover:border-[#EDEDED]"}`}
       >
         {isDone && (
           <svg
@@ -3289,7 +3235,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
 
       <button
         onClick={() => onToggle(prob.id)}
-        className={`problem-title min-w-0 flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#A1A1A1]" : "text-[#EDEDED] hover:text-white"}`}
+        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#A1A1A1]" : "text-[#EDEDED] hover:text-white"}`}
       >
         {prob.title}
       </button>
@@ -3297,7 +3243,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
       <button
         onClick={() => onSkip(prob.id)}
         aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
-        className={`problem-skip flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#F5A623] bg-[#F5A623]/10" : "text-[#A1A1A1] hover:text-[#F5A623] hover:bg-[#F5A623]/10"}`}
+        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#F5A623] bg-[#F5A623]/10" : "text-[#A1A1A1] hover:text-[#F5A623] hover:bg-[#F5A623]/10"}`}
       >
         <SkipForward size={13} />
         <span>Skip</span>
@@ -3336,23 +3282,23 @@ function SubSectionRow({
   }
 
   return (
-    <div className="topic-section ml-4 pl-3 border-l border-[#262626]">
+    <div className="ml-4 pl-3 border-l border-[#262626]">
       <button
         onClick={() => onToggle(sub.id)}
-        className="topic-toggle w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#EDEDED] transition-colors"
+        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#EDEDED] transition-colors"
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="topic-title font-medium text-[#EDEDED]">{sub.title}</span>
-        <div className="topic-progress flex-1 mx-2">
+        <span className="font-medium text-[#EDEDED]">{sub.title}</span>
+        <div className="flex-1 mx-2">
           <ProgressBar done={done} total={total} />
         </div>
-        <span className="topic-count text-xs text-[#A1A1A1] tabular-nums">
+        <span className="text-xs text-[#A1A1A1] tabular-nums">
           {done}/{total}
         </span>
       </button>
 
       {expanded && (
-        <div className="topic-problems surface-card mt-2 mb-3 bg-[#0A0A0A] rounded-xl border border-[#262626] p-2">
+        <div className="surface-card mt-2 mb-3 bg-[#0A0A0A] rounded-xl border border-[#262626] p-2">
           {visible.length > 0 ? (
             visible.map((p) => (
               <ProblemRow
@@ -3394,10 +3340,10 @@ function StepRow({
   const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
 
   return (
-    <div className="sheet-section surface-card rounded-xl bg-[#0A0A0A] border border-[#262626] overflow-hidden mb-3">
+    <div className="surface-card rounded-xl bg-[#0A0A0A] border border-[#262626] overflow-hidden mb-3">
       <button
         onClick={() => onToggleStep(step.id)}
-        className="sheet-section-toggle w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1F1F1F] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1F1F1F] transition-colors"
       >
         <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
           {expandedSteps.has(step.id) ? (
@@ -3417,7 +3363,7 @@ function StepRow({
         </span>
       </button>
 
-      <div className="sheet-section-content px-4 pb-3">
+      <div className="px-4 pb-3">
         {expandedSteps.has(step.id) &&
           step.subsections.map((sub) => (
             <SubSectionRow
