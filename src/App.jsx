@@ -21,6 +21,7 @@ import {
   BookOpen,
   Users,
   Link2,
+  Trash2,
 } from "lucide-react";
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { useProgress } from "./hooks/useProgress";
@@ -750,6 +751,7 @@ function AuthenticatedApp({
   const [customSheets, setCustomSheets] = useState([]);
   const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
   const [uploadingSheet, setUploadingSheet] = useState(false);
+  const [deletingSheetId, setDeletingSheetId] = useState(null);
   const [sheetError, setSheetError] = useState("");
   const [todayDateKey, setTodayDateKey] = useState(() =>
     getLocalDateKey(new Date()),
@@ -1119,6 +1121,54 @@ function AuthenticatedApp({
       );
     } finally {
       setUploadingSheet(false);
+    }
+  };
+
+  const handleRemoveSheet = async (sheet) => {
+    if (!sheet.customId) return;
+    const confirmed = window.confirm(
+      `Remove "${sheet.title}" and its saved progress? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setSheetError("");
+    setDeletingSheetId(sheet.id);
+    try {
+      const { data: removed, error } = await supabase.rpc(
+        "delete_user_sheet",
+        { requested_sheet_id: sheet.customId },
+      );
+      if (error) throw error;
+      if (!removed) throw new Error("This uploaded sheet could not be found.");
+
+      const problemIds = sheet.sheet.steps.flatMap((step) =>
+        step.subsections.flatMap((subsection) =>
+          subsection.problems.map(
+            (problem) => `${sheet.id}::${problem.id}`,
+          ),
+        ),
+      );
+      await reset(problemIds, { persist: false });
+      setCustomSheets((current) =>
+        current.filter((customSheet) => customSheet.id !== sheet.id),
+      );
+
+      if (selectedSheetId === sheet.id) {
+        const nextSheet =
+          builtInSheets.find((builtInSheet) => builtInSheet.id === defaultSheetId) ||
+          builtInSheets[0] ||
+          customSheets.find((customSheet) => customSheet.id !== sheet.id);
+        setSelectedSheetId(nextSheet?.id || "");
+        if (nextSheet) localStorage.setItem("dsa-active-sheet", nextSheet.id);
+        else localStorage.removeItem("dsa-active-sheet");
+      }
+    } catch (error) {
+      console.error("Failed to remove uploaded sheet:", error);
+      setSheetError(
+        error.message || "Could not remove this sheet. Please try again.",
+      );
+    } finally {
+      setDeletingSheetId(null);
     }
   };
 
@@ -2875,27 +2925,41 @@ function AuthenticatedApp({
             </div>
             <nav className="space-y-1" aria-label="Problem sheets">
               {availableSheets.map((sheet) => (
-                <button
-                  key={sheet.id}
-                  onClick={() => {
-                    setSelectedSheetId(sheet.id);
-                    setSheetSidebarOpen(false);
-                  }}
-                  aria-current={
-                    selectedSheet?.id === sheet.id ? "page" : undefined
-                  }
-                  className={`sheet-nav-item flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                    selectedSheet?.id === sheet.id
-                      ? "bg-[#6D5BF6]/20 text-white"
-                      : "text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
-                  }`}
-                >
-                  <BookOpen size={16} className="shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{sheet.title}</span>
-                  <span className="text-xs text-[#8A8A98]">
-                    {sheet.problemCount}
-                  </span>
-                </button>
+                <div key={sheet.id} className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSheetId(sheet.id);
+                      setSheetSidebarOpen(false);
+                    }}
+                    aria-current={
+                      selectedSheet?.id === sheet.id ? "page" : undefined
+                    }
+                    className={`sheet-nav-item flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      selectedSheet?.id === sheet.id
+                        ? "bg-[#6D5BF6]/20 text-white"
+                        : "text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
+                    }`}
+                  >
+                    <BookOpen size={16} className="shrink-0" />
+                    <span className="min-w-0 flex-1 truncate">{sheet.title}</span>
+                    <span className="text-xs text-[#8A8A98]">
+                      {sheet.problemCount}
+                    </span>
+                  </button>
+                  {sheet.customId && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSheet(sheet)}
+                      disabled={deletingSheetId === sheet.id}
+                      aria-label={`Remove ${sheet.title}`}
+                      title={`Remove ${sheet.title}`}
+                      className="rounded-lg p-2 text-[#8A8A98] transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
               ))}
               {availableSheets.length === 0 && (
                 <p className="px-3 py-2 text-sm text-[#8A8A98]">

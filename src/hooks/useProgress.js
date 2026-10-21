@@ -259,7 +259,7 @@ export function useProgress(user) {
     return 'todo';
   }, [progress]);
 
-  const reset = useCallback(async (problemIds) => {
+  const reset = useCallback(async (problemIds, { persist = true } = {}) => {
     if (!user || !supabase) return;
 
     if (Array.isArray(problemIds)) {
@@ -292,6 +292,8 @@ export function useProgress(user) {
       replaceCompletedOn(nextCompletedOn);
       replaceCompletedAt(nextCompletedAt);
       if (changedDates.length > 0) replaceActivity(nextActivity);
+
+      if (!persist) return;
 
       await save(async () => {
         const { error: progressError } = await supabase
