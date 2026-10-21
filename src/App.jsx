@@ -268,10 +268,10 @@ function App() {
   // =======================================================================
   if (appState === AppState.LOADING) {
     return (
-      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
+      <div className="min-h-screen bg-[#000000] text-[#EDEDED] font-sans flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-3 border-[#6D5BF6] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[#8A8A98]">Loading...</p>
+          <div className="w-10 h-10 border-3 border-[#EDEDED] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#A1A1A1]">Loading...</p>
         </div>
       </div>
     );
@@ -296,7 +296,7 @@ function App() {
 // =============================================================================
 function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
   return (
-    <div className="auth-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+    <div className="auth-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
       <div className="auth-layout">
         <section className="auth-showcase" aria-label="Track Sheet overview">
           <div className="auth-showcase-brand">
@@ -369,7 +369,7 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
             {error && (
               <p
                 role="alert"
-                className="mb-5 rounded-xl border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300"
+                className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
               >
                 {error}
               </p>
@@ -553,19 +553,19 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
   };
 
   return (
-    <div className="profile-settings-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex flex-col">
+    <div className="profile-settings-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans flex flex-col">
       {/* Header */}
-      <header className="dashboard-header bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+      <header className="dashboard-header bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center">
-              <CheckSquare size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center">
+              <CheckSquare size={16} className="text-black" />
             </div>
             <h1 className="font-bold text-lg">Complete Your Profile</h1>
           </div>
           <button
             onClick={onSignOut}
-            className="text-[#8A8A98] hover:text-[#E8E8EE] flex items-center gap-2 text-sm"
+            className="text-[#A1A1A1] hover:text-[#EDEDED] flex items-center gap-2 text-sm"
           >
             <LogOut size={14} />
             Sign out
@@ -575,19 +575,19 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 
       {/* Main Content */}
       <main className="flex-1 max-w-2xl mx-auto px-4 md:px-6 py-8">
-        <div className="onboarding-panel bg-[#15151B] rounded-2xl border border-[#26262F] p-6 md:p-8">
+        <div className="onboarding-panel bg-[#0A0A0A] rounded-2xl border border-[#262626] p-6 md:p-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-2">
               Welcome to Track Sheet
             </h2>
-            <p className="text-[#8A8A98]">
+            <p className="text-[#A1A1A1]">
               Let's set up your profile to get started with tracking your coding
               journey.
             </p>
           </div>
 
           {errors.submit && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3 mb-6 text-red-400 text-sm">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-6 text-red-400 text-sm">
               {errors.submit}
             </div>
           )}
@@ -595,13 +595,13 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+              <label className="block text-sm font-medium text-[#EDEDED] mb-2">
                 Full Name <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <User
                   size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
                 />
                 <input
                   type="text"
@@ -609,7 +609,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="John Doe"
-                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-[#000000] border border-[#262626] rounded-lg text-[#EDEDED] placeholder-[#A1A1A1] focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:border-transparent transition-all"
                 />
               </div>
               {errors.name && (
@@ -619,13 +619,13 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 
             {/* Username Field */}
             <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+              <label className="block text-sm font-medium text-[#EDEDED] mb-2">
                 Username (Handle) <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <User
                   size={20}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
                 />
                 <input
                   type="text"
@@ -633,12 +633,12 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   value={formData.username}
                   onChange={handleChange}
                   placeholder="johndoe"
-                  className={`w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 transition-all ${
+                  className={`w-full pl-10 pr-4 py-3 bg-[#000000] border rounded-lg text-[#EDEDED] placeholder-[#A1A1A1] focus:outline-none focus:ring-2 transition-all ${
                     usernameAvailable === true
                       ? "border-green-500 focus:ring-green-500"
                       : usernameAvailable === false
                         ? "border-red-500 focus:ring-red-500"
-                        : "border-[#26262F] focus:ring-[#6D5BF6]"
+                        : "border-[#262626] focus:ring-[#EDEDED]"
                   }`}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -656,11 +656,11 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   )}
                 </div>
               </div>
-              <p className="text-xs text-[#8A8A98] mt-1">
+              <p className="text-xs text-[#A1A1A1] mt-1">
                 3+ characters, lowercase letters, numbers, and hyphens only
               </p>
               <p
-                className={`text-sm mt-1 ${validationMessage ? "text-red-400" : "text-[#8A8A98]"}`}
+                className={`text-sm mt-1 ${validationMessage ? "text-red-400" : "text-[#A1A1A1]"}`}
               >
                 {validationMessage}
               </p>
@@ -668,7 +668,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
 
             {/* Location Field */}
             <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+              <label className="block text-sm font-medium text-[#EDEDED] mb-2">
                 Location
               </label>
               <div className="relative">
@@ -679,7 +679,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
                 >
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
@@ -690,14 +690,14 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   value={formData.location}
                   onChange={handleChange}
                   placeholder="New York, USA"
-                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-[#000000] border border-[#262626] rounded-lg text-[#EDEDED] placeholder-[#A1A1A1] focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:border-transparent transition-all"
                 />
               </div>
             </div>
 
             {/* Website Field */}
             <div>
-              <label className="block text-sm font-medium text-[#E8E8EE] mb-2">
+              <label className="block text-sm font-medium text-[#EDEDED] mb-2">
                 Website / Portfolio
               </label>
               <div className="relative">
@@ -708,7 +708,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
                 >
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
@@ -720,7 +720,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
                   value={formData.website}
                   onChange={handleChange}
                   placeholder="https://johndoe.dev"
-                  className="w-full pl-10 pr-4 py-3 bg-[#0B0B0F] border border-[#26262F] rounded-lg text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-[#000000] border border-[#262626] rounded-lg text-[#EDEDED] placeholder-[#A1A1A1] focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -730,7 +730,7 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
               <button
                 type="submit"
                 disabled={isLoading || usernameAvailable === false}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#6D5BF6] hover:bg-[#5B4AD6] disabled:bg-[#26262F] disabled:text-[#8A8A98] disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#6D5BF6] focus:ring-offset-2 focus:ring-offset-[#0B0B0F] shadow-lg shadow-[#6D5BF6]/20"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#EDEDED] hover:bg-white disabled:bg-[#262626] disabled:text-[#A1A1A1] disabled:cursor-not-allowed text-black font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-[#EDEDED] focus:ring-offset-2 focus:ring-offset-[#000000] shadow-lg shadow-[#EDEDED]/20"
               >
                 {isLoading ? (
                   <>
@@ -1697,8 +1697,8 @@ function AuthenticatedApp({
 
   const chipActive = (type) =>
     activeFilter === type
-      ? "bg-[#6D5BF6] text-white"
-      : "bg-[#15151B] text-[#8A8A98] hover:text-white";
+      ? "bg-[#EDEDED] text-black"
+      : "bg-[#0A0A0A] text-[#A1A1A1] hover:text-white";
 
   if (peopleSearchPage) {
     return (
@@ -1729,8 +1729,8 @@ function AuthenticatedApp({
 
   if (customSheetsLoading || progressLoading) {
     return (
-      <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
-        <p className="text-[#8A8A98]">
+      <div className="min-h-screen bg-[#000000] text-[#EDEDED] font-sans flex items-center justify-center">
+        <p className="text-[#A1A1A1]">
           {customSheetsLoading
             ? "Preparing your sheets…"
             : "Syncing your saved progress…"}
@@ -1749,25 +1749,25 @@ function AuthenticatedApp({
     onBack,
   }) {
     return (
-      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
+      <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 border-b">
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
             <button
               type="button"
               onClick={onBack}
               aria-label="Back to tracker"
-              className="rounded-lg p-2 text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+              className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6D5BF6]">
-                <CheckSquare size={16} className="text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EDEDED]">
+                <CheckSquare size={16} className="text-black" />
               </div>
               <span className="font-bold tracking-tight">Track Sheet</span>
             </div>
             <div className="flex-1" />
-            <span className="text-sm font-medium text-[#A1A1AA]">Search</span>
+            <span className="text-sm font-medium text-[#A1A1A1]">Search</span>
           </div>
         </header>
 
@@ -1776,7 +1776,7 @@ function AuthenticatedApp({
           <div className="relative">
             <Search
               size={18}
-              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#8A8A98]"
+              className="pointer-events-none absolute left-4 top-1/2 z-10 -translate-y-1/2 text-[#A1A1A1]"
             />
             <input
               id="people-search"
@@ -1792,16 +1792,16 @@ function AuthenticatedApp({
               placeholder="Search by username"
               aria-autocomplete="list"
               aria-controls="people-search-results"
-              className="h-12 w-full rounded-xl border border-[#34343F] bg-[#111111] pl-11 pr-4 text-sm text-[#E8E8EE] placeholder-[#8A8A98] outline-none transition-colors focus:border-[#765cf6]"
+              className="h-12 w-full rounded-xl border border-[#383838] bg-[#0A0A0A] pl-11 pr-4 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none transition-colors focus:border-[#EDEDED]"
             />
             {query.trim().length >= 3 && (
               <div
                 id="people-search-results"
                 role="listbox"
-                className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-[#34343F] bg-[#111111] shadow-2xl"
+                className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-[#383838] bg-[#0A0A0A] shadow-2xl"
               >
                 {loading ? (
-                  <p className="px-4 py-3 text-sm text-[#8A8A98]">
+                  <p className="px-4 py-3 text-sm text-[#A1A1A1]">
                     Searching people…
                   </p>
                 ) : error ? (
@@ -1816,7 +1816,7 @@ function AuthenticatedApp({
                       role="option"
                       aria-selected="false"
                       onClick={() => onSelectProfile(result.username)}
-                      className="flex w-full items-center gap-3 border-b border-[#26262F] px-4 py-3 text-left last:border-0 hover:bg-[#1C1C24]"
+                      className="flex w-full items-center gap-3 border-b border-[#262626] px-4 py-3 text-left last:border-0 hover:bg-[#1F1F1F]"
                     >
                       <span className="people-result-avatar">
                         {(result.name || result.username)
@@ -1824,29 +1824,29 @@ function AuthenticatedApp({
                           .toUpperCase()}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-[#E8E8EE]">
+                        <span className="block truncate text-sm font-semibold text-[#EDEDED]">
                           {result.name || result.username}
                         </span>
-                        <span className="mt-0.5 block truncate text-xs text-[#8A8A98]">
+                        <span className="mt-0.5 block truncate text-xs text-[#A1A1A1]">
                           @{result.username}
                         </span>
                       </span>
                       <ChevronRight
                         size={17}
-                        className="text-[#8A8A98]"
+                        className="text-[#A1A1A1]"
                         aria-hidden="true"
                       />
                     </button>
                   ))
                 ) : (
-                  <p className="px-4 py-3 text-sm text-[#8A8A98]">
+                  <p className="px-4 py-3 text-sm text-[#A1A1A1]">
                     No users found. Try a different username.
                   </p>
                 )}
               </div>
             )}
           </div>
-          <p className="mt-2 text-xs text-[#8A8A98]">3 characters minimum.</p>
+          <p className="mt-2 text-xs text-[#A1A1A1]">3 characters minimum.</p>
         </main>
       </div>
     );
@@ -1946,14 +1946,14 @@ function AuthenticatedApp({
       .reduce((total, item) => total + item.count, 0);
 
     return (
-      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
+      <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
         <header className="dashboard-header sticky top-0 z-50 border-b">
           <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 py-4 md:px-6">
             <button
               type="button"
               onClick={onBack}
               aria-label="Back to tracker"
-              className="rounded-lg p-2 text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+              className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
@@ -1962,7 +1962,7 @@ function AuthenticatedApp({
             <button
               type="button"
               onClick={onCopyLink}
-              className="rounded-lg border border-[#34343F] px-3 py-2 text-sm font-medium text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+              className="rounded-lg border border-[#383838] px-3 py-2 text-sm font-medium text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
             >
               {copied ? "Link copied" : "Share profile"}
             </button>
@@ -1982,7 +1982,7 @@ function AuthenticatedApp({
                   ? "Profile not found"
                   : "Could not load profile"}
               </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-[#8A8A98]">
+              <p className="mx-auto mt-2 max-w-md text-sm text-[#A1A1A1]">
                 {error === "This profile could not be found."
                   ? "This username doesn’t match a public profile. Check the spelling or search for another user."
                   : error}
@@ -1990,7 +1990,7 @@ function AuthenticatedApp({
               <button
                 type="button"
                 onClick={onBack}
-                className="mt-6 rounded-lg bg-[#6D5BF6] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#5B4AD6]"
+                className="mt-6 rounded-lg bg-[#EDEDED] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-white"
               >
                 Find people
               </button>
@@ -1998,13 +1998,13 @@ function AuthenticatedApp({
           ) : error ? (
             <div
               role="alert"
-              className="rounded-lg border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-300"
+              className="rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300"
             >
               {error}
             </div>
           ) : null}
           {loading ? (
-            <div className="surface-card rounded-2xl border p-6 text-sm text-[#8A8A98]">
+            <div className="surface-card rounded-2xl border p-6 text-sm text-[#A1A1A1]">
               Loading profile…
             </div>
           ) : (
@@ -2018,14 +2018,14 @@ function AuthenticatedApp({
                       .toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-2xl font-bold text-[#E8E8EE]">
+                    <h2 className="text-2xl font-bold text-[#EDEDED]">
                       {profile.name || profile.username}
                     </h2>
-                    <p className="mt-1 text-sm text-[#8A8A98]">
+                    <p className="mt-1 text-sm text-[#A1A1A1]">
                       @{profile.username}
                     </p>
                     {profile.location && (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-[#8A8A98]">
+                      <div className="mt-3 flex items-center gap-2 text-sm text-[#A1A1A1]">
                         <svg
                           width="14"
                           height="14"
@@ -2046,14 +2046,14 @@ function AuthenticatedApp({
                         href={profile.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline"
+                        className="mt-2 inline-block break-all text-sm text-[#A1A1A1] hover:text-white hover:underline"
                       >
                         {profile.website}
                       </a>
                     )}
                     <a
                       href={`/user/${encodeURIComponent(profile.username)}`}
-                      className="mt-4 block break-all text-xs text-[#8A8A98] hover:text-violet-300"
+                      className="mt-4 block break-all text-xs text-[#A1A1A1] hover:text-violet-300"
                     >
                       {window.location.host}/user/{profile.username}
                     </a>
@@ -2063,47 +2063,47 @@ function AuthenticatedApp({
 
                 <div className="profile-main">
                 <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
-                  <div className="surface-card stat-card rounded-xl border border-[#26262F] bg-[#15151B] p-4">
-                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                  <div className="surface-card stat-card rounded-xl border border-[#262626] bg-[#0A0A0A] p-4">
+                    <div className="mb-1 flex items-center gap-2 text-[#A1A1A1]">
                       <Calendar size={16} />
                       <span className="text-xs font-medium">Current streak</span>
                     </div>
                     <div className="text-2xl font-bold text-[#FF6B35]">
                       {Number(profile.current_streak || 0)}
                     </div>
-                    <div className="mt-1 text-xs text-[#8A8A98]">current days</div>
+                    <div className="mt-1 text-xs text-[#A1A1A1]">current days</div>
                   </div>
-                  <div className="surface-card stat-card rounded-xl border border-[#26262F] bg-[#15151B] p-4">
-                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                  <div className="surface-card stat-card rounded-xl border border-[#262626] bg-[#0A0A0A] p-4">
+                    <div className="mb-1 flex items-center gap-2 text-[#A1A1A1]">
                       <Trophy size={16} />
                       <span className="text-xs font-medium">Best streak</span>
                     </div>
-                    <div className="text-2xl font-bold text-[#6D5BF6]">
+                    <div className="text-2xl font-bold text-[#EDEDED]">
                       {Number(profile.longest_streak || 0)}
                     </div>
-                    <div className="mt-1 text-xs text-[#8A8A98]">longest streak</div>
+                    <div className="mt-1 text-xs text-[#A1A1A1]">longest streak</div>
                   </div>
-                  <div className="surface-card stat-card col-span-2 rounded-xl border border-[#26262F] bg-[#15151B] p-4 md:col-span-1">
-                    <div className="mb-1 flex items-center gap-2 text-[#8A8A98]">
+                  <div className="surface-card stat-card col-span-2 rounded-xl border border-[#262626] bg-[#0A0A0A] p-4 md:col-span-1">
+                    <div className="mb-1 flex items-center gap-2 text-[#A1A1A1]">
                       <Target size={16} />
                       <span className="text-xs font-medium">Problems</span>
                     </div>
-                    <div className="text-2xl font-bold text-[#22A559]">
+                    <div className="text-2xl font-bold text-[#46A758]">
                       {profileProblemsSolved}
                     </div>
-                    <div className="mt-1 text-xs text-[#8A8A98]">
+                    <div className="mt-1 text-xs text-[#A1A1A1]">
                       of {profileProblemsTotal} across all sheets
                     </div>
                   </div>
                 </div>
 
                 <section
-                  className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6"
+                  className="surface-card mb-8 rounded-2xl border border-[#262626] bg-[#0A0A0A] p-6"
                   aria-labelledby="public-profile-sheet-progress"
                 >
                   <h2
                     id="public-profile-sheet-progress"
-                    className="mb-4 text-lg font-semibold text-[#E8E8EE]"
+                    className="mb-4 text-lg font-semibold text-[#EDEDED]"
                   >
                     Sheet progress
                   </h2>
@@ -2115,19 +2115,19 @@ function AuthenticatedApp({
                       return (
                         <div key={sheet.id}>
                           <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
-                            <span className="truncate font-medium text-[#E8E8EE]">
+                            <span className="truncate font-medium text-[#EDEDED]">
                               {sheet.title}
                             </span>
-                            <span className="shrink-0 tabular-nums text-[#8A8A98]">
-                              <span className="text-[#22A559]">{sheet.solved} solved</span>
-                              <span className="mx-2 text-[#52525B]">·</span>
-                              <span className="text-[#E65100]">{sheet.skipped} skipped</span>
-                              <span className="mx-2 text-[#52525B]">·</span>
+                            <span className="shrink-0 tabular-nums text-[#A1A1A1]">
+                              <span className="text-[#46A758]">{sheet.solved} solved</span>
+                              <span className="mx-2 text-[#4D4D4D]">·</span>
+                              <span className="text-[#F5A623]">{sheet.skipped} skipped</span>
+                              <span className="mx-2 text-[#4D4D4D]">·</span>
                               {sheet.total} total
                             </span>
                           </div>
                           <div
-                            className="h-2 overflow-hidden rounded-full bg-[#26262F]"
+                            className="h-2 overflow-hidden rounded-full bg-[#262626]"
                             role="progressbar"
                             aria-label={`${sheet.title} progress`}
                             aria-valuemin={0}
@@ -2135,7 +2135,7 @@ function AuthenticatedApp({
                             aria-valuenow={sheet.solved}
                           >
                             <div
-                              className="h-full rounded-full bg-[#6D5BF6] transition-all"
+                              className="h-full rounded-full bg-[#EDEDED] transition-all"
                               style={{ width: `${percentage}%` }}
                             />
                           </div>
@@ -2145,18 +2145,18 @@ function AuthenticatedApp({
                   </div>
                 </section>
 
-                <section className="surface-card mb-6 rounded-2xl border border-[#26262F] bg-[#15151B] p-6">
+                <section className="surface-card mb-6 rounded-2xl border border-[#262626] bg-[#0A0A0A] p-6">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-[#E8E8EE]">
+                    <h2 className="text-lg font-semibold text-[#EDEDED]">
                       {solvedPastYear.toLocaleString()} problems solved in the past year
                     </h2>
                     <div
-                      className="flex items-center gap-2 text-xs text-[#8A8A98]"
+                      className="flex items-center gap-2 text-xs text-[#A1A1A1]"
                       aria-label="Activity scale: less to more"
                     >
                       <span>Less</span>
                       <div className="flex gap-1">
-                        {["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"].map(
+                        {["#171717", "#0e4429", "#006d32", "#26a641", "#39d353"].map(
                           (color) => (
                             <span
                               key={color}
@@ -2170,7 +2170,7 @@ function AuthenticatedApp({
                     </div>
                   </div>
                   <div className="activity-scroll pb-2">
-                    <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
+                    <div className="activity-months mb-2 text-[10px] text-[#A1A1A1]">
                       {heatmapData.monthLabels.map((month, index) => (
                         <span key={index} className="whitespace-nowrap">
                           {month}
@@ -2178,7 +2178,7 @@ function AuthenticatedApp({
                       ))}
                     </div>
                     <div className="activity-heatmap">
-                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
+                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#A1A1A1]">
                         {["Mon", "", "Wed", "", "Fri", "", ""].map(
                           (label, index) => (
                             <span key={`weekday-${index}`}>{label}</span>
@@ -2196,7 +2196,7 @@ function AuthenticatedApp({
                                 className="activity-day block rounded-[2px] border border-white/[0.04]"
                                 style={{
                                   backgroundColor: [
-                                    "#161b22",
+                                    "#171717",
                                     "#0e4429",
                                     "#006d32",
                                     "#26a641",
@@ -2213,7 +2213,7 @@ function AuthenticatedApp({
                       </div>
                     </div>
                   </div>
-                  <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                  <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                     <span>Total active days: {activeDays}</span>
                     <span>Refreshes automatically while this profile is open</span>
                   </div>
@@ -2237,7 +2237,7 @@ function AuthenticatedApp({
                           <div className="recent-ac-check" aria-hidden="true">✓</div>
                           <div className="min-w-0 flex-1">
                             <p
-                              className="truncate text-sm font-medium text-[#E8E8EE]"
+                              className="truncate text-sm font-medium text-[#EDEDED]"
                               title={problem.title}
                             >
                               {problem.title}
@@ -2277,12 +2277,12 @@ function AuthenticatedApp({
   // Profile page component
   function ProfilePage() {
     return (
-      <div className="profile-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300">
-        <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+      <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300">
+        <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
             <button
               onClick={() => setShowProfile(false)}
-              className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#E8E8EE]"
+              className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#EDEDED]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
@@ -2296,7 +2296,7 @@ function AuthenticatedApp({
                     publicProfileReturnPath.current = "/";
                     navigateTo(`/u/${encodeURIComponent(userUsername)}`);
                   }}
-                  className="flex items-center gap-2 rounded-lg border border-[#34343F] px-3 py-2 text-sm font-medium text-[#E8E8EE] transition-colors hover:bg-[#1C1C24]"
+                  className="flex items-center gap-2 rounded-lg border border-[#383838] px-3 py-2 text-sm font-medium text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
                 >
                   <Link2 size={16} />
                   <span className="hidden sm:inline">Public profile</span>
@@ -2305,13 +2305,13 @@ function AuthenticatedApp({
               <button
                 onClick={openProfileSettings}
                 aria-label="Edit profile settings"
-                className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors text-[#8A8A98]"
+                className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#A1A1A1]"
               >
                 <Settings size={20} />
               </button>
               <button
                 onClick={onSignOut}
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-900/20 transition-colors text-red-400"
+                className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400"
               >
                 <LogOut size={20} />
               </button>
@@ -2323,7 +2323,7 @@ function AuthenticatedApp({
           {(authError || progressError) && (
             <div
               role="alert"
-              className="mb-6 rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300"
+              className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300"
             >
               {authError || progressError}
             </div>
@@ -2335,17 +2335,17 @@ function AuthenticatedApp({
                   {userName.charAt(0).toUpperCase() || "U"}
                 </div>
                 <div className="profile-user-details">
-                  <h1 className="text-2xl font-bold text-[#E8E8EE]">
+                  <h1 className="text-2xl font-bold text-[#EDEDED]">
                     {userName}
                   </h1>
                   {user.email && (
-                    <p className="mt-1 break-all text-sm text-[#8A8A98]">
+                    <p className="mt-1 break-all text-sm text-[#A1A1A1]">
                       {user.email}
                     </p>
                   )}
-                  <p className="mt-1 text-sm text-[#8A8A98]">@{userUsername}</p>
+                  <p className="mt-1 text-sm text-[#A1A1A1]">@{userUsername}</p>
                   {userLocation && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-[#8A8A98]">
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[#A1A1A1]">
                       <svg
                         width="14"
                         height="14"
@@ -2365,7 +2365,7 @@ function AuthenticatedApp({
                       href={userWebsite}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 inline-block break-all text-sm text-[#A1A1AA] hover:text-white hover:underline"
+                      className="mt-2 inline-block break-all text-sm text-[#A1A1A1] hover:text-white hover:underline"
                     >
                       {userWebsite}
                     </a>
@@ -2373,55 +2373,55 @@ function AuthenticatedApp({
                 </div>
               </section>
 
-              <section className="surface-card rounded-2xl border border-[#26262F] bg-[#15151B] divide-y divide-[#26262F]">
+              <section className="surface-card rounded-2xl border border-[#262626] bg-[#0A0A0A] divide-y divide-[#262626]">
                 <div className="p-4">
-                  <h2 className="mb-4 text-lg font-semibold text-[#E8E8EE]">
+                  <h2 className="mb-4 text-lg font-semibold text-[#EDEDED]">
                     Progress &amp; Data Management
                   </h2>
                   <div className="space-y-3">
                     <button
                       onClick={() => setBackupAction("export")}
-                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1F1F1F] transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#6D5BF6]/20 flex items-center justify-center text-[#6D5BF6]">
+                        <div className="w-10 h-10 rounded-lg bg-[#1F1F1F] flex items-center justify-center text-[#EDEDED]">
                           <Download size={20} />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-medium text-[#E8E8EE]">
+                          <div className="text-sm font-medium text-[#EDEDED]">
                             Export Progress
                           </div>
-                          <div className="text-xs text-[#8A8A98]">
+                          <div className="text-xs text-[#A1A1A1]">
                             Download your progress as JSON
                           </div>
                         </div>
                       </div>
                       <ChevronDown
                         size={16}
-                        className="rotate-90 text-[#8A8A98]"
+                        className="rotate-90 text-[#A1A1A1]"
                       />
                     </button>
 
                     <button
                       onClick={() => setBackupAction("import")}
-                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1C1C24] transition-colors"
+                      className="w-full flex items-center justify-between p-3.5 rounded-lg hover:bg-[#1F1F1F] transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#E65100]/20 flex items-center justify-center text-[#E65100]">
+                        <div className="w-10 h-10 rounded-lg bg-[#F5A623]/20 flex items-center justify-center text-[#F5A623]">
                           <Upload size={20} />
                         </div>
                         <div className="text-left">
-                          <div className="text-sm font-medium text-[#E8E8EE]">
+                          <div className="text-sm font-medium text-[#EDEDED]">
                             Import Progress
                           </div>
-                          <div className="text-xs text-[#8A8A98]">
+                          <div className="text-xs text-[#A1A1A1]">
                             Restore progress from backup
                           </div>
                         </div>
                       </div>
                       <ChevronDown
                         size={16}
-                        className="rotate-90 text-[#8A8A98]"
+                        className="rotate-90 text-[#A1A1A1]"
                       />
                     </button>
 
@@ -2434,7 +2434,7 @@ function AuthenticatedApp({
                         )
                           reset();
                       }}
-                      className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-900/20"
+                      className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-500/10"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400">
@@ -2444,14 +2444,14 @@ function AuthenticatedApp({
                           <div className="text-sm font-medium text-red-300">
                             Reset All Sheets
                           </div>
-                          <div className="text-xs text-[#8A8A98]">
+                          <div className="text-xs text-[#A1A1A1]">
                             Clear all progress and activity
                           </div>
                         </div>
                       </div>
                       <ChevronDown
                         size={16}
-                        className="rotate-90 text-[#8A8A98]"
+                        className="rotate-90 text-[#A1A1A1]"
                       />
                     </button>
 
@@ -2472,51 +2472,51 @@ function AuthenticatedApp({
             <div className="profile-main">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4 mb-8 md:grid-cols-3">
-                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <div className="surface-card stat-card bg-[#0A0A0A] rounded-xl border border-[#262626] p-4">
+                  <div className="flex items-center gap-2 text-[#A1A1A1] mb-1">
                     <Calendar size={16} />
                     <span className="text-xs font-medium">Current streak</span>
                   </div>
                   <div className="text-2xl font-bold text-[#FF6B35]">
                     {dailyStreak}
                   </div>
-                  <div className="text-xs text-[#8A8A98] mt-1">
+                  <div className="text-xs text-[#A1A1A1] mt-1">
                     current days
                   </div>
                 </div>
-                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <div className="surface-card stat-card bg-[#0A0A0A] rounded-xl border border-[#262626] p-4">
+                  <div className="flex items-center gap-2 text-[#A1A1A1] mb-1">
                     <Trophy size={16} />
                     <span className="text-xs font-medium">Best streak</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#6D5BF6]">
+                  <div className="text-2xl font-bold text-[#EDEDED]">
                     {longestStreak}
                   </div>
-                  <div className="text-xs text-[#8A8A98] mt-1">
+                  <div className="text-xs text-[#A1A1A1] mt-1">
                     longest streak
                   </div>
                 </div>
-                <div className="surface-card stat-card bg-[#15151B] rounded-xl border border-[#26262F] p-4">
-                  <div className="flex items-center gap-2 text-[#8A8A98] mb-1">
+                <div className="surface-card stat-card bg-[#0A0A0A] rounded-xl border border-[#262626] p-4">
+                  <div className="flex items-center gap-2 text-[#A1A1A1] mb-1">
                     <Target size={16} />
                     <span className="text-xs font-medium">Problems</span>
                   </div>
-                  <div className="text-2xl font-bold text-[#22A559]">
+                  <div className="text-2xl font-bold text-[#46A758]">
                     {profileProblemsSolved}
                   </div>
-                  <div className="text-xs text-[#8A8A98] mt-1">
+                  <div className="text-xs text-[#A1A1A1] mt-1">
                     of {profileProblemsTotal} across all sheets
                   </div>
                 </div>
               </div>
 
               <section
-                className="surface-card mb-8 rounded-2xl border border-[#26262F] bg-[#15151B] p-6"
+                className="surface-card mb-8 rounded-2xl border border-[#262626] bg-[#0A0A0A] p-6"
                 aria-labelledby="profile-sheet-progress"
               >
                 <h2
                   id="profile-sheet-progress"
-                  className="mb-4 text-lg font-semibold text-[#E8E8EE]"
+                  className="mb-4 text-lg font-semibold text-[#EDEDED]"
                 >
                   Sheet progress
                 </h2>
@@ -2528,23 +2528,23 @@ function AuthenticatedApp({
                     return (
                       <div key={sheet.id}>
                         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm">
-                          <span className="truncate font-medium text-[#E8E8EE]">
+                          <span className="truncate font-medium text-[#EDEDED]">
                             {sheet.title}
                           </span>
-                          <span className="shrink-0 tabular-nums text-[#8A8A98]">
-                            <span className="text-[#22A559]">
+                          <span className="shrink-0 tabular-nums text-[#A1A1A1]">
+                            <span className="text-[#46A758]">
                               {sheet.solved} solved
                             </span>
-                            <span className="mx-2 text-[#52525B]">·</span>
-                            <span className="text-[#E65100]">
+                            <span className="mx-2 text-[#4D4D4D]">·</span>
+                            <span className="text-[#F5A623]">
                               {sheet.skipped} skipped
                             </span>
-                            <span className="mx-2 text-[#52525B]">·</span>
+                            <span className="mx-2 text-[#4D4D4D]">·</span>
                             {sheet.total} total
                           </span>
                         </div>
                         <div
-                          className="h-2 overflow-hidden rounded-full bg-[#26262F]"
+                          className="h-2 overflow-hidden rounded-full bg-[#262626]"
                           role="progressbar"
                           aria-label={`${sheet.title} progress`}
                           aria-valuemin={0}
@@ -2552,7 +2552,7 @@ function AuthenticatedApp({
                           aria-valuenow={sheet.solved}
                         >
                           <div
-                            className="h-full rounded-full bg-[#6D5BF6] transition-all"
+                            className="h-full rounded-full bg-[#EDEDED] transition-all"
                             style={{ width: `${percentage}%` }}
                           />
                         </div>
@@ -2563,20 +2563,20 @@ function AuthenticatedApp({
               </section>
 
               {/* Activity Section */}
-              <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 mb-6">
+              <div className="surface-card bg-[#0A0A0A] rounded-2xl border border-[#262626] p-6 mb-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <h3 className="text-lg font-semibold text-[#E8E8EE]">
+                  <h3 className="text-lg font-semibold text-[#EDEDED]">
                     {yearlyActivityTotal.toLocaleString()} problems solved in
                     the past year
                   </h3>
                   <div
-                    className="flex items-center gap-2 text-xs text-[#8A8A98]"
+                    className="flex items-center gap-2 text-xs text-[#A1A1A1]"
                     aria-label="Activity scale: less to more"
                   >
                     <span>Less</span>
                     <div className="flex gap-1">
                       {[
-                        "#161b22",
+                        "#171717",
                         "#0e4429",
                         "#006d32",
                         "#26a641",
@@ -2594,7 +2594,7 @@ function AuthenticatedApp({
                 </div>
                 <div className="activity-scroll pb-2">
                   <div className="activity-calendar">
-                    <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
+                    <div className="activity-months mb-2 text-[10px] text-[#A1A1A1]">
                       {heatmapData.monthLabels.map((month, index) => (
                         <span key={index} className="whitespace-nowrap">
                           {month}
@@ -2602,7 +2602,7 @@ function AuthenticatedApp({
                       ))}
                     </div>
                     <div className="activity-heatmap">
-                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#8A8A98]">
+                      <div className="activity-weekday-labels text-[9px] leading-[11px] text-[#A1A1A1]">
                         {["Mon", "", "Wed", "", "Fri", "", ""].map(
                           (label, index) => (
                             <span key={`weekday-${index}`}>{label}</span>
@@ -2621,7 +2621,7 @@ function AuthenticatedApp({
                                 className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
                                 style={{
                                   backgroundColor: [
-                                    "#161b22",
+                                    "#171717",
                                     "#0e4429",
                                     "#006d32",
                                     "#26a641",
@@ -2637,7 +2637,7 @@ function AuthenticatedApp({
                     </div>
                   </div>
                 </div>
-                <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                   <span>Total active days: {yearlyActiveDays}</span>
                   <span>Updated live as you mark problems solved</span>
                 </div>
@@ -2665,7 +2665,7 @@ function AuthenticatedApp({
                         </div>
                         <div className="min-w-0 flex-1">
                           <p
-                            className="truncate text-sm font-medium text-[#E8E8EE]"
+                            className="truncate text-sm font-medium text-[#EDEDED]"
                             title={problem.title}
                           >
                             {problem.title}
@@ -2713,25 +2713,25 @@ function AuthenticatedApp({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="backup-sheet-title"
-                className="w-full max-w-md rounded-2xl border border-[#26262F] bg-[#15151B] p-5 shadow-2xl"
+                className="w-full max-w-md rounded-2xl border border-[#262626] bg-[#0A0A0A] p-5 shadow-2xl"
               >
                 <h2
                   id="backup-sheet-title"
-                  className="text-lg font-semibold text-[#E8E8EE]"
+                  className="text-lg font-semibold text-[#EDEDED]"
                 >
                   {backupAction === "export"
                     ? "Choose a sheet to export"
                     : "Choose a sheet to import into"}
                 </h2>
-                <p className="mb-4 mt-1 text-sm text-[#8A8A98]">
+                <p className="mb-4 mt-1 text-sm text-[#A1A1A1]">
                   {backupAction === "export"
                     ? "Download progress for one sheet."
                     : "Choose the sheet you want to restore, then select its progress backup file. This dialog stays open if you cancel the file picker."}
                 </p>
                 {backupAction === "import" && (
-                  <div className="mb-4 rounded-lg border border-[#6D5BF6]/25 bg-[#6D5BF6]/10 p-3 text-sm text-[#C4BDFE]">
+                  <div className="mb-4 rounded-lg border border-[#262626] bg-[#0A0A0A] p-3 text-sm text-[#EDEDED]">
                     <p className="font-medium">How to import</p>
-                    <ol className="mt-1 list-inside list-decimal space-y-1 text-xs leading-relaxed text-[#AFA8E8]">
+                    <ol className="mt-1 list-inside list-decimal space-y-1 text-xs leading-relaxed text-[#A1A1A1]">
                       <li>Select the destination sheet below.</li>
                       <li>Choose the matching progress backup JSON file.</li>
                       <li>
@@ -2739,7 +2739,7 @@ function AuthenticatedApp({
                         imported.
                       </li>
                     </ol>
-                    <p className="mt-2 text-xs text-[#AFA8E8]">
+                    <p className="mt-2 text-xs text-[#A1A1A1]">
                       Create a backup with Profile → Export Progress if you
                       don’t have one yet.
                     </p>
@@ -2765,10 +2765,10 @@ function AuthenticatedApp({
                         }
                         input.click();
                       }}
-                      className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#E8E8EE] transition-colors hover:bg-[#26262F]"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm text-[#EDEDED] transition-colors hover:bg-[#262626]"
                     >
                       <span>{sheet.title}</span>
-                      <span className="text-xs text-[#8A8A98]">
+                      <span className="text-xs text-[#A1A1A1]">
                         {sheet.problemCount} problems
                       </span>
                     </button>
@@ -2777,7 +2777,7 @@ function AuthenticatedApp({
                 <button
                   type="button"
                   onClick={() => setBackupAction("")}
-                  className="mt-4 w-full rounded-lg border border-[#34343F] px-4 py-2 text-sm text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
+                  className="mt-4 w-full rounded-lg border border-[#383838] px-4 py-2 text-sm text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white"
                 >
                   Cancel
                 </button>
@@ -2806,14 +2806,14 @@ function AuthenticatedApp({
 
   return (
     <div
-      className={`dashboard-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans transition-colors duration-300`}
+      className={`dashboard-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300`}
       data-theme={theme === "light" ? "light" : undefined}
     >
-      <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+      <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
             onClick={() => setSheetSidebarOpen((open) => !open)}
-            className="p-1.5 -ml-1 text-[#E8E8EE]"
+            className="p-1.5 -ml-1 text-[#EDEDED]"
             aria-label={
               sheetSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
             }
@@ -2822,14 +2822,14 @@ function AuthenticatedApp({
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#6D5BF6] to-[#8B7CFD] flex items-center justify-center shadow-md shadow-[#6D5BF6]/20 flex-shrink-0">
-              <CheckSquare size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center flex-shrink-0">
+              <CheckSquare size={16} className="text-black" />
             </div>
             <div className="min-w-0">
               <h1 className="font-bold text-lg tracking-tight truncate">
                 Track Sheet
               </h1>
-              <p className="hidden truncate text-[10px] leading-tight text-[#8A8A98] sm:block">
+              <p className="hidden truncate text-[10px] leading-tight text-[#A1A1A1] sm:block">
                 {selectedSheet?.title || "DSA"}
               </p>
             </div>
@@ -2838,18 +2838,18 @@ function AuthenticatedApp({
           <div className="relative hidden sm:block">
             <Search
               size={15}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8A8A98]"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
             />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search problems..."
-              className="pl-8 pr-8 py-1.5 w-48 lg:w-72 bg-[#15151B] border border-[#26262F] rounded-lg text-sm text-[#E8E8EE] placeholder-[#8A8A98] focus:outline-none focus:border-[#6D5BF6] transition-colors"
+              className="pl-8 pr-8 py-1.5 w-48 lg:w-72 bg-[#0A0A0A] border border-[#262626] rounded-lg text-sm text-[#EDEDED] placeholder-[#A1A1A1] focus:outline-none focus:border-[#EDEDED] transition-colors"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#8A8A98] hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#A1A1A1] hover:text-white"
               >
                 <X size={14} />
               </button>
@@ -2860,7 +2860,7 @@ function AuthenticatedApp({
             onClick={openPeopleSearch}
             aria-label="Find people"
             aria-current={peopleSearchPage ? "page" : undefined}
-            className="flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-[#A1A1AA] transition-colors hover:bg-[#1C1C24] hover:text-[#E8E8EE] sm:px-3"
+            className="flex h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-[#A1A1A1] transition-colors hover:bg-[#1F1F1F] hover:text-[#EDEDED] sm:px-3"
           >
             <Users size={17} />
             <span className="hidden sm:inline">People</span>
@@ -2868,7 +2868,7 @@ function AuthenticatedApp({
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            className="p-1.5 rounded-lg hover:bg-[#1C1C24] text-[#8A8A98] hover:text-[#E8E8EE] transition-colors"
+            className="p-1.5 rounded-lg hover:bg-[#1F1F1F] text-[#A1A1A1] hover:text-[#EDEDED] transition-colors"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -2877,7 +2877,7 @@ function AuthenticatedApp({
             aria-label="Profile"
             className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
           >
-            <User size={14} className="text-[#6D5BF6]" />
+            <User size={14} className="text-[#EDEDED]" />
           </button>
         </div>
       </header>
@@ -2886,7 +2886,7 @@ function AuthenticatedApp({
         {progressError && (
           <div
             role="alert"
-            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl"
+            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#0A0A0A] p-4 text-sm text-red-300 shadow-xl"
           >
             <div className="flex items-start gap-3">
               <p>{progressError}</p>
@@ -2903,7 +2903,7 @@ function AuthenticatedApp({
         {authError && (
           <div
             role="alert"
-            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#15151B] p-4 text-sm text-red-300 shadow-xl"
+            className="fixed bottom-4 right-4 z-[60] max-w-md rounded-lg border border-red-500/30 bg-[#0A0A0A] p-4 text-sm text-red-300 shadow-xl"
           >
             <div className="flex items-start gap-3">
               <p>{authError}</p>
@@ -2919,15 +2919,15 @@ function AuthenticatedApp({
           />
         )}
         <aside
-          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
+          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
             <div className="mb-3 flex items-center justify-between px-2">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">
+              <h2 className="text-xs font-semibold uppercase tracking-wide text-[#A1A1A1]">
                 Your sheets
               </h2>
               <button
                 onClick={() => setSheetSidebarOpen(false)}
-                className="rounded p-1 text-[#8A8A98] hover:bg-[#1C1C24] hover:text-white lg:hidden"
+                className="rounded p-1 text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white lg:hidden"
                 aria-label="Close sheets sidebar"
               >
                 <X size={16} />
@@ -2938,7 +2938,7 @@ function AuthenticatedApp({
                 type="button"
                 onClick={() => uploadSheetInput.current?.click()}
                 disabled={uploadingSheet}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#34343F] px-3 py-2 text-sm text-[#E8E8EE] transition-colors hover:border-[#6D5BF6]/60 hover:bg-[#1C1C24] disabled:cursor-wait disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#EDEDED] transition-colors hover:border-[#EDEDED]/60 hover:bg-[#1F1F1F] disabled:cursor-wait disabled:opacity-60"
               >
                 <Upload size={15} />
                 {uploadingSheet
@@ -2948,7 +2948,7 @@ function AuthenticatedApp({
               <button
                 type="button"
                 onClick={downloadSampleFormat}
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[#A1A1AA] transition-colors hover:bg-[#1C1C24] hover:text-white"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[#A1A1A1] transition-colors hover:bg-[#1F1F1F] hover:text-white"
               >
                 <Download size={13} />
                 Download sample .txt
@@ -2964,7 +2964,7 @@ function AuthenticatedApp({
               {sheetError && (
                 <p
                   role="alert"
-                  className="mt-2 rounded-lg border border-red-500/30 bg-red-900/20 p-2 text-xs leading-relaxed text-red-300"
+                  className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs leading-relaxed text-red-300"
                 >
                   {sheetError}
                 </p>
@@ -2984,13 +2984,13 @@ function AuthenticatedApp({
                     }
                     className={`sheet-nav-item flex min-w-0 flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                       selectedSheet?.id === sheet.id
-                        ? "bg-[#6D5BF6]/20 text-white"
-                        : "text-[#A1A1AA] hover:bg-[#1C1C24] hover:text-white"
+                        ? "bg-[#1F1F1F] text-white"
+                        : "text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white"
                     }`}
                   >
                     <BookOpen size={16} className="shrink-0" />
                     <span className="min-w-0 flex-1 truncate">{sheet.title}</span>
-                    <span className="text-xs text-[#8A8A98]">
+                    <span className="text-xs text-[#A1A1A1]">
                       {sheet.problemCount}
                     </span>
                   </button>
@@ -3001,7 +3001,7 @@ function AuthenticatedApp({
                       disabled={deletingSheetId !== null}
                       aria-label={`Permanently remove ${sheet.title}`}
                       title={`Remove ${sheet.title}`}
-                      className="rounded-lg p-2 text-[#8A8A98] transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
+                      className="rounded-lg p-2 text-[#A1A1A1] transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -3009,12 +3009,12 @@ function AuthenticatedApp({
                 </div>
               ))}
               {availableSheets.length === 0 && (
-                <p className="px-3 py-2 text-sm text-[#8A8A98]">
+                <p className="px-3 py-2 text-sm text-[#A1A1A1]">
                   No sheets available. Upload a TXT sheet to get started.
                 </p>
               )}
               {customSheetsLoading && (
-                <p className="px-3 py-2 text-xs text-[#8A8A98]">
+                <p className="px-3 py-2 text-xs text-[#A1A1A1]">
                   Loading your sheets…
                 </p>
               )}
@@ -3060,18 +3060,18 @@ function AuthenticatedApp({
                       : "To do"}
               </button>
             ))}
-            <label className="flex items-center gap-1.5 text-xs text-[#8A8A98] ml-2 cursor-pointer select-none">
+            <label className="flex items-center gap-1.5 text-xs text-[#A1A1A1] ml-2 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={hideSkipped}
                 onChange={(e) => setHideSkipped(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-[#26262F] bg-[#15151B] accent-[#6D5BF6]"
+                className="w-3.5 h-3.5 rounded border-[#262626] bg-[#0A0A0A] accent-[#EDEDED]"
               />
               Hide skipped
             </label>
           </div>
 
-          <div className="flex items-center gap-2 mb-4 text-xs text-[#8A8A98]">
+          <div className="flex items-center gap-2 mb-4 text-xs text-[#A1A1A1]">
             <button
               onClick={expandAll}
               className="hover:text-white transition-colors"
@@ -3107,7 +3107,7 @@ function AuthenticatedApp({
         </section>
 
         <aside className={`hidden lg:block w-72 flex-shrink-0 space-y-3`}>
-          <div className="surface-card bg-[#15151B] rounded-2xl border border-[#26262F] p-6 relative">
+          <div className="surface-card bg-[#0A0A0A] rounded-2xl border border-[#262626] p-6 relative">
             <div className="mb-4">
               <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide">
                 Overall Progress
@@ -3129,7 +3129,7 @@ function AuthenticatedApp({
             <div className="relative mt-4">
               <div className="h-2 bg-zinc-800 rounded-full overflow-visible relative">
                 <div
-                  className="h-full bg-[#6D5BF6] rounded-full transition-all duration-500 ease-out relative"
+                  className="h-full bg-[#EDEDED] rounded-full transition-all duration-500 ease-out relative"
                   style={{
                     width: `${totalProblems > 0 ? (doneCount / totalProblems) * 100 : 0}%`,
                   }}
@@ -3164,7 +3164,7 @@ function AuthenticatedApp({
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-[#E65100] tabular-nums">
+                  <div className="text-lg font-bold text-[#F5A623] tabular-nums">
                     {skippedCount}
                   </div>
                   <div className="text-[10px] text-zinc-500 uppercase tracking-wide">
@@ -3190,7 +3190,7 @@ function AuthenticatedApp({
                     reset(sheetProblems.map((problem) => problem.id));
                   }
                 }}
-                className="w-full text-xs py-1.5 bg-[#1C1C24] hover:bg-red-900/30 text-[#8A8A98] hover:text-red-400 rounded-md transition-colors flex items-center justify-center gap-1"
+                className="w-full text-xs py-1.5 bg-[#1F1F1F] hover:bg-red-500/10 text-[#A1A1A1] hover:text-red-400 rounded-md transition-colors flex items-center justify-center gap-1"
               >
                 <RefreshCcw size={12} /> Reset This Sheet
               </button>
@@ -3213,11 +3213,11 @@ function AuthenticatedApp({
 // =============================================================================
 // Step and Problem Row Components
 // =============================================================================
-function ProgressBar({ done, total, colorClass = "bg-[#6D5BF6]" }) {
+function ProgressBar({ done, total, colorClass = "bg-[#EDEDED]" }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
     <div
-      className="w-full h-[3px] bg-[#26262F] rounded-full overflow-hidden flex-shrink-0"
+      className="w-full h-[3px] bg-[#262626] rounded-full overflow-hidden flex-shrink-0"
       aria-label={`${pct}% complete`}
     >
       <div
@@ -3234,7 +3234,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
 
   return (
     <div
-      className={`problem-row group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? "opacity-50 bg-[#15151B]/40" : "hover:bg-[#1C1C24]"}`}
+      className={`problem-row group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? "opacity-50 bg-[#0A0A0A]/40" : "hover:bg-[#1F1F1F]"}`}
     >
       <button
         onClick={() => onToggle(prob.id)}
@@ -3243,7 +3243,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
             ? `Mark ${prob.title} as not done`
             : `Mark ${prob.title} as done`
         }
-        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#22A559] border-[#22A559]" : "border-[#6D5BF6]/60 bg-transparent hover:border-[#6D5BF6]"}`}
+        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#46A758] border-[#46A758]" : "border-[#EDEDED]/60 bg-transparent hover:border-[#EDEDED]"}`}
       >
         {isDone && (
           <svg
@@ -3266,7 +3266,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
 
       <button
         onClick={() => onToggle(prob.id)}
-        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#8A8A98]" : "text-[#E8E8EE] hover:text-white"}`}
+        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#A1A1A1]" : "text-[#EDEDED] hover:text-white"}`}
       >
         {prob.title}
       </button>
@@ -3274,7 +3274,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
       <button
         onClick={() => onSkip(prob.id)}
         aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
-        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#E65100] bg-[#E65100]/10" : "text-[#8A8A98] hover:text-[#E65100] hover:bg-[#E65100]/10"}`}
+        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#F5A623] bg-[#F5A623]/10" : "text-[#A1A1A1] hover:text-[#F5A623] hover:bg-[#F5A623]/10"}`}
       >
         <SkipForward size={13} />
         <span>Skip</span>
@@ -3313,23 +3313,23 @@ function SubSectionRow({
   }
 
   return (
-    <div className="ml-4 pl-3 border-l border-[#26262F]">
+    <div className="ml-4 pl-3 border-l border-[#262626]">
       <button
         onClick={() => onToggle(sub.id)}
-        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#E8E8EE] transition-colors"
+        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#EDEDED] transition-colors"
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="font-medium text-[#E8E8EE]">{sub.title}</span>
+        <span className="font-medium text-[#EDEDED]">{sub.title}</span>
         <div className="flex-1 mx-2">
           <ProgressBar done={done} total={total} />
         </div>
-        <span className="text-xs text-[#8A8A98] tabular-nums">
+        <span className="text-xs text-[#A1A1A1] tabular-nums">
           {done}/{total}
         </span>
       </button>
 
       {expanded && (
-        <div className="surface-card mt-2 mb-3 bg-[#15151B] rounded-xl border border-[#26262F] p-2">
+        <div className="surface-card mt-2 mb-3 bg-[#0A0A0A] rounded-xl border border-[#262626] p-2">
           {visible.length > 0 ? (
             visible.map((p) => (
               <ProblemRow
@@ -3341,7 +3341,7 @@ function SubSectionRow({
               />
             ))
           ) : (
-            <div className="py-4 text-center text-xs text-[#8A8A98]">
+            <div className="py-4 text-center text-xs text-[#A1A1A1]">
               No problems match the filter
             </div>
           )}
@@ -3371,10 +3371,10 @@ function StepRow({
   const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
 
   return (
-    <div className="surface-card rounded-xl bg-[#15151B] border border-[#26262F] overflow-hidden mb-3">
+    <div className="surface-card rounded-xl bg-[#0A0A0A] border border-[#262626] overflow-hidden mb-3">
       <button
         onClick={() => onToggleStep(step.id)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1C1C24] transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1F1F1F] transition-colors"
       >
         <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
           {expandedSteps.has(step.id) ? (
@@ -3383,13 +3383,13 @@ function StepRow({
             <ChevronRight size={16} />
           )}
         </div>
-        <h2 className="font-semibold text-[17px] text-[#E8E8EE] flex-1">
+        <h2 className="font-semibold text-[17px] text-[#EDEDED] flex-1">
           {step.title}
         </h2>
         <div className="flex-1 mx-3 hidden md:block">
           <ProgressBar done={done} total={total} />
         </div>
-        <span className="text-sm text-[#8A8A98] tabular-nums whitespace-nowrap">
+        <span className="text-sm text-[#A1A1A1] tabular-nums whitespace-nowrap">
           {done}/{total}
         </span>
       </button>

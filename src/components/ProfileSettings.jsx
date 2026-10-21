@@ -90,14 +90,14 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
   };
 
   return (
-    <div className="profile-settings-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
-      <header className="dashboard-header sticky top-0 z-50 bg-[#0B0B0F]/80 backdrop-blur-xl border-b border-[#26262F]">
+    <div className="profile-settings-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
+      <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
           <button
             type="button"
             onClick={onBack}
             aria-label="Back to profile"
-            className="p-2 rounded-lg hover:bg-[#1C1C24] transition-colors"
+            className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors"
           >
             <ChevronDown size={20} className="rotate-90" />
           </button>
@@ -106,14 +106,14 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
       </header>
 
       <main className="max-w-3xl mx-auto px-4 md:px-6 py-8">
-        <form onSubmit={handleSubmit} className="settings-form space-y-5 rounded-2xl border border-[#26262F] bg-[#15151B] p-6 md:p-8">
+        <form onSubmit={handleSubmit} className="settings-form space-y-5 rounded-xl border border-[#262626] bg-[#0A0A0A] p-6 md:p-8">
           {errorMessage && (
-            <p role="alert" className="rounded-lg border border-red-500/30 bg-red-900/20 p-3 text-sm text-red-300">
+            <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
               {errorMessage}
             </p>
           )}
           {successMessage && (
-            <p role="status" className="rounded-lg border border-green-500/30 bg-green-900/20 p-3 text-sm text-green-300">
+            <p role="status" className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-300">
               {successMessage}
             </p>
           )}
@@ -137,10 +137,10 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
                 placeholder={field.placeholder}
                 value={form[field.name]}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-[#26262F] bg-[#0B0B0F] px-4 py-3 text-[#E8E8EE] placeholder-[#8A8A98] focus:border-[#6D5BF6] focus:outline-none focus:ring-2 focus:ring-[#6D5BF6]"
+                className="w-full rounded-lg border border-[#262626] bg-[#000000] px-4 py-3 text-[#EDEDED] placeholder-[#A1A1A1] focus:border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#EDEDED]"
               />
               {field.name === 'username' && (
-                <p className="mt-1 text-xs text-[#8A8A98]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
+                <p className="mt-1 text-xs text-[#A1A1A1]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
               )}
             </div>
           ))}
@@ -148,7 +148,7 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full rounded-lg bg-[#6D5BF6] px-4 py-3 font-medium text-white transition-colors hover:bg-[#5B4AD6] disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-lg bg-[#EDEDED] px-4 py-3 font-medium text-black transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-60"
           >
             {isSaving ? 'Saving…' : 'Save profile'}
           </button>
