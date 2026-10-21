@@ -195,7 +195,7 @@ function Onboarding({ user, onComplete }) {
           <p className="text-[#8A8A98]">
             {profileData?.username
               ? "Let's update your profile information"
-              : "Let's set up your Track Sheet account with some basic information"}
+              : "Let's set up your DSA Sheet Tracker account with some basic information"}
           </p>
         </div>
 
