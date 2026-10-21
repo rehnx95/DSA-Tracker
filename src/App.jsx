@@ -2213,7 +2213,7 @@ function AuthenticatedApp({
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                  <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
                     <span>Total active days: {activeDays}</span>
                     <span>Refreshes automatically while this profile is open</span>
                   </div>
@@ -2593,7 +2593,7 @@ function AuthenticatedApp({
                   </div>
                 </div>
                 <div className="activity-scroll pb-2">
-                  <div>
+                  <div className="activity-calendar">
                     <div className="activity-months mb-2 text-[10px] text-[#8A8A98]">
                       {heatmapData.monthLabels.map((month, index) => (
                         <span key={index} className="whitespace-nowrap">
@@ -2635,11 +2635,11 @@ function AuthenticatedApp({
                         ))}
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
-                      <span>Total active days: {yearlyActiveDays}</span>
-                      <span>Updated live as you mark problems solved</span>
-                    </div>
                   </div>
+                </div>
+                <div className="activity-summary mt-3 flex items-center justify-between text-xs text-[#8A8A98]">
+                  <span>Total active days: {yearlyActiveDays}</span>
+                  <span>Updated live as you mark problems solved</span>
                 </div>
               </div>
 
