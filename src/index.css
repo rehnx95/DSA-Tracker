@@ -1277,27 +1277,27 @@ canvas {
   .dashboard-main > aside.sheet-sidebar {
     position: fixed;
     z-index: 40;
-    top: auto;
-    right: 0;
+    top: calc(61px + env(safe-area-inset-top));
+    right: auto;
     bottom: 0;
     left: 0;
     display: flex;
-    width: 100%;
+    width: min(16rem, calc(100vw - 3rem));
     max-height: calc(100dvh - 61px - env(safe-area-inset-top));
     flex-direction: column;
     overflow: hidden;
-    padding: 1rem 1rem max(1rem, env(safe-area-inset-bottom));
+    padding: 0.75rem 0.75rem max(0.75rem, env(safe-area-inset-bottom));
     border: 1px solid var(--border);
-    border-bottom: 0;
-    border-radius: 1.1rem 1.1rem 0 0;
+    border-left: 0;
+    border-radius: 0 1rem 1rem 0;
     background: var(--page);
-    box-shadow: 0 -1rem 3rem rgba(0, 0, 0, 0.35);
-    transform: translateY(105%);
+    box-shadow: 1rem 0 3rem rgba(0, 0, 0, 0.35);
+    transform: translateX(-104%);
   }
 
   .dashboard-main > aside.sheet-sidebar.is-open {
     visibility: visible;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 
   .sheet-sidebar-close {
