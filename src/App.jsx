@@ -2824,14 +2824,14 @@ function AuthenticatedApp({
       data-theme={theme === "light" ? "light" : undefined}
     >
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
+        <div className="tracker-header-inner max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
             onClick={() => {
               if (isDesktopViewport)
                 setDesktopSidebarOpen((open) => !open);
               else setSheetSidebarOpen((open) => !open);
             }}
-            className="p-1.5 -ml-1 text-[#EDEDED]"
+            className="tracker-sidebar-toggle p-1.5 -ml-1 text-[#EDEDED]"
             aria-label={
               (isDesktopViewport ? desktopSidebarOpen : sheetSidebarOpen)
                 ? "Hide sheets sidebar"
@@ -2841,7 +2841,7 @@ function AuthenticatedApp({
           >
             <Menu size={22} />
           </button>
-          <div className="flex items-center gap-2.5 min-w-0">
+          <div className="tracker-header-brand flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center flex-shrink-0">
               <CheckSquare size={16} className="text-black" />
             </div>
@@ -2854,8 +2854,8 @@ function AuthenticatedApp({
               </p>
             </div>
           </div>
-          <div className="flex-1" />
-          <div className="relative hidden sm:block">
+          <div className="tracker-header-spacer flex-1" />
+          <div className="tracker-desktop-search relative hidden sm:block">
             <Search
               size={15}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
@@ -2902,7 +2902,9 @@ function AuthenticatedApp({
         </div>
       </header>
 
-      <main className="dashboard-main max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0">
+      <main
+        className={`dashboard-main ${isDesktopViewport && !desktopSidebarOpen ? "desktop-sidebar-collapsed" : ""} max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0`}
+      >
         {progressError && (
           <div
             role="alert"
@@ -2997,7 +2999,8 @@ function AuthenticatedApp({
                     type="button"
                     onClick={() => {
                       setSelectedSheetId(sheet.id);
-                      setSheetSidebarOpen(false);
+                      if (isDesktopViewport) setDesktopSidebarOpen(false);
+                      else setSheetSidebarOpen(false);
                     }}
                     aria-current={
                       selectedSheet?.id === sheet.id ? "page" : undefined
