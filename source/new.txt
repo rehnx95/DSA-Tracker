@@ -1,0 +1,10 @@
+Step 2 — Sorting Techniques
+2.1 — Sorting I
+51. Selection Sort
+52. Bubble Sort
+53. Insertion Sort
+2.2 — Sorting II
+54. Merge Sort (LC 912)
+55. Recursive Bubble Sort
+56. Recursive Insertion Sort
+57. Quick Sort (LC 912)
