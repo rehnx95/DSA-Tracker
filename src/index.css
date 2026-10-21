@@ -1016,6 +1016,14 @@ input:focus-visible {
     visibility: visible;
     transform: none;
   }
+
+  .sheet-sidebar.desktop-sidebar-closed {
+    display: none;
+  }
+
+  .sheet-sidebar-backdrop {
+    display: none;
+  }
 }
 
 @media (max-width: 760px) {

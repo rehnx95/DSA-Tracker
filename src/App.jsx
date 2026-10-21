@@ -826,6 +826,10 @@ function AuthenticatedApp({
       : defaultSheetId;
   });
   const [sheetSidebarOpen, setSheetSidebarOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
+    window.matchMedia("(min-width: 1024px)").matches,
+  );
   const [search, setSearch] = useState(
     () => localStorage.getItem("dsa-search") || "",
   );
@@ -890,6 +894,16 @@ function AuthenticatedApp({
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const handleViewportChange = (event) => {
+      setIsDesktopViewport(event.matches);
+      setSheetSidebarOpen(false);
+    };
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => mediaQuery.removeEventListener("change", handleViewportChange);
   }, []);
 
   const navigateTo = (path) => {
@@ -2812,12 +2826,18 @@ function AuthenticatedApp({
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
-            onClick={() => setSheetSidebarOpen((open) => !open)}
+            onClick={() => {
+              if (isDesktopViewport)
+                setDesktopSidebarOpen((open) => !open);
+              else setSheetSidebarOpen((open) => !open);
+            }}
             className="p-1.5 -ml-1 text-[#EDEDED]"
             aria-label={
-              sheetSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
+              (isDesktopViewport ? desktopSidebarOpen : sheetSidebarOpen)
+                ? "Hide sheets sidebar"
+                : "Show sheets sidebar"
             }
-            aria-expanded={sheetSidebarOpen}
+            aria-expanded={isDesktopViewport ? desktopSidebarOpen : sheetSidebarOpen}
           >
             <Menu size={22} />
           </button>
@@ -2910,7 +2930,7 @@ function AuthenticatedApp({
             </div>
           </div>
         )}
-        {sheetSidebarOpen && (
+        {!isDesktopViewport && sheetSidebarOpen && (
           <button
             type="button"
             className="sheet-sidebar-backdrop"
@@ -2919,7 +2939,7 @@ function AuthenticatedApp({
           />
         )}
         <aside
-          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
+          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} ${isDesktopViewport && !desktopSidebarOpen ? "desktop-sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#A1A1A1]">
