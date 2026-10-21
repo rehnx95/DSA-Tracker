@@ -1,5 +1,6 @@
 {
-  "name": "sheet tracker",
+  "name": "track-sheet",
+  "description": "A multi-user tracker for DSA problem sheets.",
   "private": true,
   "version": "1.0.0",
   "type": "module",

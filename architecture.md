@@ -1,6 +1,6 @@
 # Track Sheet — Architecture and Operations
 
-Track Sheet is a multi-user DSA problem-sheet tracker. Users authenticate with
+Track Sheet is a multi-user sheet tracker for DSA practice. Users authenticate with
 Google through Supabase, choose built-in sheets or upload private TXT sheets,
 track problem states, and share a public-facing profile with other signed-in
 users.
@@ -58,9 +58,8 @@ service-role key belongs in the frontend or Vercel environment.
 | `vercel.json` | Rewrite rule for client-side navigation and direct SPA URLs |
 | `architecture.md` | This architecture and deployment reference |
 
-The npm package is still internally named `dsa-sheet-tracker`; the product
-branding shown to users is **Track Sheet**. Renaming the npm package is not
-needed for the application to function.
+The npm package name is `track-sheet`, matching the product name. The bundle
+and deployed site are branded **Track Sheet**.
 
 ## 3. Runtime and authentication
 
