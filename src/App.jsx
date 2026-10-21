@@ -298,15 +298,73 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
   return (
     <div className="auth-shell min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans">
       <div className="auth-layout">
+        <section className="auth-showcase" aria-label="Track Sheet overview">
+          <div className="auth-showcase-brand">
+            <div className="brand-mark">
+              <CheckSquare size={20} className="text-white" />
+            </div>
+            <span>TRACK SHEET</span>
+          </div>
+          <div className="auth-showcase-copy">
+            <span className="auth-showcase-eyebrow">YOUR PRACTICE, IN ONE PLACE</span>
+            <h1>
+              Make every
+              <br />
+              <span>solve count.</span>
+            </h1>
+            <p>
+              Organize the sheets you care about, build a consistent practice
+              habit, and share progress on your terms.
+            </p>
+          </div>
+          <div className="auth-preview" aria-hidden="true">
+            <div className="auth-preview-header">
+              <div>
+                <span className="auth-preview-label">YOUR ACTIVITY</span>
+                <p>A little progress adds up.</p>
+              </div>
+              <div className="auth-preview-icon">
+                <Calendar size={17} />
+              </div>
+            </div>
+            <div className="auth-preview-grid">
+              {[
+                0, 1, 0, 2, 1, 0, 3,
+                1, 2, 0, 3, 2, 1, 0,
+                2, 3, 1, 4, 2, 0, 1,
+                0, 2, 3, 1, 4, 2, 1,
+                1, 0, 2, 3, 1, 2, 4,
+              ].map((level, index) => (
+                <span
+                  key={index}
+                  className={`auth-preview-cell level-${level}`}
+                />
+              ))}
+            </div>
+            <div className="auth-preview-footer">
+              <span>
+                <Target size={14} />
+                Your pace. Your goals.
+              </span>
+              <span>
+                <Trophy size={14} />
+                Every step counts.
+              </span>
+            </div>
+          </div>
+          <div className="auth-showcase-footnote">
+            BUILT FOR THE LONG GAME
+          </div>
+        </section>
         <section className="auth-panel-wrap">
           <div className="auth-panel">
             <div className="brand-mark auth-mobile-mark">
               <CheckSquare size={20} className="text-white" />
             </div>
-            <span className="section-kicker">TRACK SHEET</span>
-            <h2>Sign in to continue</h2>
+            <span className="section-kicker">WELCOME TO TRACK SHEET</span>
+            <h2>Pick up where you left off.</h2>
             <p className="auth-panel-description">
-              Sign in to access your sheets and saved progress.
+              Sign in to continue your practice or set up your new profile.
             </p>
             {error && (
               <p
@@ -346,7 +404,7 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
               <span>SECURE ACCOUNT ACCESS</span>
             </div>
             <p className="auth-legal">
-              Your account securely syncs your profile and progress.
+              Your sheets and progress sync securely to your account.
             </p>
           </div>
         </section>
@@ -2853,7 +2911,16 @@ function AuthenticatedApp({
           </div>
         )}
         {sheetSidebarOpen && (
-          <aside className="surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none">
+          <button
+            type="button"
+            className="sheet-sidebar-backdrop"
+            onClick={() => setSheetSidebarOpen(false)}
+            aria-label="Close sheets menu"
+          />
+        )}
+        <aside
+          className={`sheet-sidebar ${sheetSidebarOpen ? "is-open" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#26262F] bg-[#0B0B0F] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
+        >
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#8A8A98]">
                 Your sheets
@@ -2952,13 +3019,30 @@ function AuthenticatedApp({
                 </p>
               )}
             </nav>
-          </aside>
-        )}
+        </aside>
 
         <section
           className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2"
           style={{ maxHeight: "calc(100vh - 120px)" }}
         >
+          <div className="mobile-problem-search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search problems in this sheet"
+              aria-label="Search problems"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear problem search"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
           <div className="tracker-toolbar flex items-center gap-2 mb-4 flex-wrap">
             {["all", "done", "skipped", "todo"].map((type) => (
               <button
@@ -3150,7 +3234,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
 
   return (
     <div
-      className={`group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? "opacity-50 bg-[#15151B]/40" : "hover:bg-[#1C1C24]"}`}
+      className={`problem-row group flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-200 ${isSkip ? "opacity-50 bg-[#15151B]/40" : "hover:bg-[#1C1C24]"}`}
     >
       <button
         onClick={() => onToggle(prob.id)}
