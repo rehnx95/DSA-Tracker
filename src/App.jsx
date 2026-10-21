@@ -828,7 +828,7 @@ function AuthenticatedApp({
   const [sheetSidebarOpen, setSheetSidebarOpen] = useState(false);
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [isDesktopViewport, setIsDesktopViewport] = useState(() =>
-    window.matchMedia("(min-width: 1024px)").matches,
+    window.matchMedia("(min-width: 768px)").matches,
   );
   const [search, setSearch] = useState(
     () => localStorage.getItem("dsa-search") || "",
@@ -897,7 +897,7 @@ function AuthenticatedApp({
   }, []);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const mediaQuery = window.matchMedia("(min-width: 768px)");
     const handleViewportChange = (event) => {
       setIsDesktopViewport(event.matches);
       setSheetSidebarOpen(false);
@@ -2949,7 +2949,7 @@ function AuthenticatedApp({
               </h2>
               <button
                 onClick={() => setSheetSidebarOpen(false)}
-                className="rounded p-1 text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white lg:hidden"
+                className="sheet-sidebar-close rounded p-1 text-[#A1A1A1] hover:bg-[#1F1F1F] hover:text-white lg:hidden"
                 aria-label="Close sheets sidebar"
               >
                 <X size={16} />
@@ -3046,7 +3046,7 @@ function AuthenticatedApp({
 
         <section
           className="dashboard-content flex-1 min-w-0 overflow-y-auto pr-2"
-          style={{ maxHeight: "calc(100vh - 120px)" }}
+          style={{ maxHeight: "calc(100dvh - 120px)" }}
         >
           <div className="mobile-problem-search">
             <Search size={16} aria-hidden="true" />
@@ -3266,7 +3266,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
             ? `Mark ${prob.title} as not done`
             : `Mark ${prob.title} as done`
         }
-        className={`w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#46A758] border-[#46A758]" : "border-[#EDEDED]/60 bg-transparent hover:border-[#EDEDED]"}`}
+        className={`problem-check w-[22px] h-[22px] flex-shrink-0 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${isDone ? "bg-[#46A758] border-[#46A758]" : "border-[#EDEDED]/60 bg-transparent hover:border-[#EDEDED]"}`}
       >
         {isDone && (
           <svg
@@ -3289,7 +3289,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
 
       <button
         onClick={() => onToggle(prob.id)}
-        className={`flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#A1A1A1]" : "text-[#EDEDED] hover:text-white"}`}
+        className={`problem-title min-w-0 flex-1 text-left text-[15px] leading-snug transition-all duration-200 ${isDone ? "line-through text-[#A1A1A1]" : "text-[#EDEDED] hover:text-white"}`}
       >
         {prob.title}
       </button>
@@ -3297,7 +3297,7 @@ function ProblemRow({ prob, state, onToggle, onSkip }) {
       <button
         onClick={() => onSkip(prob.id)}
         aria-label={isSkip ? `Unskip ${prob.title}` : `Skip ${prob.title}`}
-        className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#F5A623] bg-[#F5A623]/10" : "text-[#A1A1A1] hover:text-[#F5A623] hover:bg-[#F5A623]/10"}`}
+        className={`problem-skip flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md transition-colors duration-200 ${isSkip ? "text-[#F5A623] bg-[#F5A623]/10" : "text-[#A1A1A1] hover:text-[#F5A623] hover:bg-[#F5A623]/10"}`}
       >
         <SkipForward size={13} />
         <span>Skip</span>
@@ -3336,23 +3336,23 @@ function SubSectionRow({
   }
 
   return (
-    <div className="ml-4 pl-3 border-l border-[#262626]">
+    <div className="topic-section ml-4 pl-3 border-l border-[#262626]">
       <button
         onClick={() => onToggle(sub.id)}
-        className="w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#EDEDED] transition-colors"
+        className="topic-toggle w-full flex items-center gap-2 py-2 text-sm group text-left hover:text-[#EDEDED] transition-colors"
       >
         {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        <span className="font-medium text-[#EDEDED]">{sub.title}</span>
-        <div className="flex-1 mx-2">
+        <span className="topic-title font-medium text-[#EDEDED]">{sub.title}</span>
+        <div className="topic-progress flex-1 mx-2">
           <ProgressBar done={done} total={total} />
         </div>
-        <span className="text-xs text-[#A1A1A1] tabular-nums">
+        <span className="topic-count text-xs text-[#A1A1A1] tabular-nums">
           {done}/{total}
         </span>
       </button>
 
       {expanded && (
-        <div className="surface-card mt-2 mb-3 bg-[#0A0A0A] rounded-xl border border-[#262626] p-2">
+        <div className="topic-problems surface-card mt-2 mb-3 bg-[#0A0A0A] rounded-xl border border-[#262626] p-2">
           {visible.length > 0 ? (
             visible.map((p) => (
               <ProblemRow
@@ -3394,10 +3394,10 @@ function StepRow({
   const total = step.subsections.reduce((sum, s) => sum + s.problems.length, 0);
 
   return (
-    <div className="surface-card rounded-xl bg-[#0A0A0A] border border-[#262626] overflow-hidden mb-3">
+    <div className="sheet-section surface-card rounded-xl bg-[#0A0A0A] border border-[#262626] overflow-hidden mb-3">
       <button
         onClick={() => onToggleStep(step.id)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1F1F1F] transition-colors"
+        className="sheet-section-toggle w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-[#1F1F1F] transition-colors"
       >
         <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
           {expandedSteps.has(step.id) ? (
@@ -3417,7 +3417,7 @@ function StepRow({
         </span>
       </button>
 
-      <div className="px-4 pb-3">
+      <div className="sheet-section-content px-4 pb-3">
         {expandedSteps.has(step.id) &&
           step.subsections.map((sub) => (
             <SubSectionRow
