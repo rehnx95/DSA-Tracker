@@ -107,9 +107,15 @@ To create/update a built-in sheet:
 
 4. Review the generated JSON in `src/data/` and commit both source and JSON.
 
-Built-in DSA problem identifiers remain unprefixed for compatibility with
-existing progress. Other built-in sheet IDs are namespaced as
-`<sheet-id>::<problem-id>`.
+These JSON files are templates. On sign-in, Track Sheet copies each template
+into the signed-in user's private `user_sheets` records. Built-in copies then
+behave like uploaded sheets and use UUID-namespaced problem IDs. The first copy
+migrates existing DSA and Backend progress to those IDs.
+
+Users can permanently delete any personal sheet, including a built-in copy.
+Deleting a built-in also removes its saved progress and prevents that template
+from being copied again for that account. It does not affect other users or
+delete the shared JSON template.
 
 ## Upload a personal TXT sheet
 

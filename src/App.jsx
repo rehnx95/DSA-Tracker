@@ -732,6 +732,7 @@ function AuthenticatedApp({
   onProfileUpdated,
   onSignOut,
 }) {
+  const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
   const {
     progress,
     activityLog,
@@ -746,10 +747,8 @@ function AuthenticatedApp({
     theme,
     setTheme,
     reset,
-  } = useProgress(user);
-
+  } = useProgress(customSheetsLoading ? null : user);
   const [customSheets, setCustomSheets] = useState([]);
-  const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
   const [uploadingSheet, setUploadingSheet] = useState(false);
   const [deletingSheetId, setDeletingSheetId] = useState(null);
   const [sheetError, setSheetError] = useState("");
@@ -758,10 +757,7 @@ function AuthenticatedApp({
   );
   const uploadSheetInput = useRef(null);
   const availableSheets = useMemo(
-    () =>
-      [...builtInSheets, ...customSheets].sort((a, b) =>
-        a.title.localeCompare(b.title),
-      ),
+    () => [...customSheets].sort((a, b) => a.title.localeCompare(b.title)),
     [customSheets],
   );
   const savedSheetIdRef = useRef(localStorage.getItem("dsa-active-sheet"));
@@ -995,17 +991,33 @@ function AuthenticatedApp({
 
   useEffect(() => {
     let active = true;
-    supabase
-      .from("user_sheets")
-      .select("id, title, source_name, sheet_data, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true })
-      .then(({ data, error }) => {
+    const loadSheets = async () => {
+      try {
+        const { error: bootstrapError } = await supabase.rpc(
+          "ensure_builtin_sheet_copies",
+          {
+            requested_sheets: builtInSheets.map((sheet) => ({
+              id: sheet.id,
+              title: sheet.title,
+              sheet_data: sheet.sheet,
+            })),
+          },
+        );
+        if (bootstrapError) throw bootstrapError;
+
+        const { data, error } = await supabase
+          .from("user_sheets")
+          .select(
+            "id, title, source_name, sheet_data, created_at, builtin_template_id",
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
         if (error) throw error;
         if (!active) return;
         const loadedSheets = data.map((row) => ({
           id: `custom-${row.id}`,
           customId: row.id,
+          builtinTemplateId: row.builtin_template_id,
           title: row.title,
           sourceName: row.source_name,
           sheet: row.sheet_data,
@@ -1013,19 +1025,29 @@ function AuthenticatedApp({
         }));
         setCustomSheets(loadedSheets);
         const savedSheetId = savedSheetIdRef.current;
-        if (loadedSheets.some((sheet) => sheet.id === savedSheetId))
-          setSelectedSheetId(savedSheetId);
-      })
-      .catch((error) => {
-        if (!active) return;
-        console.error("Failed to load uploaded sheets:", error);
-        setSheetError(
-          "Could not load your uploaded sheets. Check that the user_sheets migration is applied.",
+        const savedSheet = loadedSheets.find(
+          (sheet) =>
+            sheet.id === savedSheetId ||
+            sheet.builtinTemplateId === savedSheetId,
         );
-      })
-      .finally(() => {
+        const defaultSheet =
+          loadedSheets.find((sheet) => sheet.builtinTemplateId === defaultSheetId) ||
+          loadedSheets[0];
+        if (savedSheet || defaultSheet)
+          setSelectedSheetId((savedSheet || defaultSheet).id);
+        else setSelectedSheetId("");
+      } catch (error) {
+        if (!active) return;
+        console.error("Failed to load sheets:", error);
+        setSheetSidebarOpen(true);
+        setSheetError(
+          "Could not load your sheets. Apply the latest Supabase sheet migration and try again.",
+        );
+      } finally {
         if (active) setCustomSheetsLoading(false);
-      });
+      }
+    };
+    loadSheets();
     return () => {
       active = false;
     };
@@ -1036,8 +1058,7 @@ function AuthenticatedApp({
     availableSheets[0];
   const data = useMemo(() => {
     if (!selectedSheet) return { steps: [] };
-    const problemIdPrefix =
-      selectedSheet.id === "dsa" ? "" : `${selectedSheet.id}::`;
+    const problemIdPrefix = `${selectedSheet.id}::`;
     return {
       steps: selectedSheet.sheet.steps.map((step) => ({
         ...step,
@@ -1127,7 +1148,7 @@ function AuthenticatedApp({
   const handleRemoveSheet = async (sheet) => {
     if (!sheet.customId) return;
     const confirmed = window.confirm(
-      `Remove "${sheet.title}" and its saved progress? This cannot be undone.`,
+      `Permanently delete "${sheet.title}" and all of its saved progress? This cannot be undone.`,
     );
     if (!confirmed) return;
 
@@ -1139,13 +1160,21 @@ function AuthenticatedApp({
         { requested_sheet_id: sheet.customId },
       );
       if (error) throw error;
-      if (!removed) throw new Error("This uploaded sheet could not be found.");
+      if (!removed) throw new Error("This sheet could not be found.");
 
       const problemIds = sheet.sheet.steps.flatMap((step) =>
         step.subsections.flatMap((subsection) =>
-          subsection.problems.map(
-            (problem) => `${sheet.id}::${problem.id}`,
-          ),
+          subsection.problems.flatMap((problem) => {
+            const ids = [`${sheet.id}::${problem.id}`];
+            if (sheet.builtinTemplateId) {
+              ids.push(
+                sheet.builtinTemplateId === "dsa"
+                  ? problem.id
+                  : `${sheet.builtinTemplateId}::${problem.id}`,
+              );
+            }
+            return ids;
+          }),
         ),
       );
       await reset(problemIds, { persist: false });
@@ -1154,16 +1183,15 @@ function AuthenticatedApp({
       );
 
       if (selectedSheetId === sheet.id) {
-        const nextSheet =
-          builtInSheets.find((builtInSheet) => builtInSheet.id === defaultSheetId) ||
-          builtInSheets[0] ||
-          customSheets.find((customSheet) => customSheet.id !== sheet.id);
+        const nextSheet = availableSheets.find(
+          (availableSheet) => availableSheet.id !== sheet.id,
+        );
         setSelectedSheetId(nextSheet?.id || "");
         if (nextSheet) localStorage.setItem("dsa-active-sheet", nextSheet.id);
         else localStorage.removeItem("dsa-active-sheet");
       }
     } catch (error) {
-      console.error("Failed to remove uploaded sheet:", error);
+      console.error("Failed to permanently delete sheet:", error);
       setSheetError(
         error.message || "Could not remove this sheet. Please try again.",
       );
@@ -1226,7 +1254,7 @@ function AuthenticatedApp({
   const profileSheetStats = useMemo(
     () =>
       availableSheets.map((sheet) => {
-        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+        const idPrefix = `${sheet.id}::`;
         const problems = sheet.sheet.steps.flatMap((step) =>
           step.subsections.flatMap((subsection) => subsection.problems),
         );
@@ -1260,7 +1288,7 @@ function AuthenticatedApp({
     () =>
       availableSheets
         .flatMap((sheet) => {
-          const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+          const idPrefix = `${sheet.id}::`;
           return sheet.sheet.steps.flatMap((step) =>
             step.subsections.flatMap((subsection) =>
               subsection.problems.flatMap((problem) => {
@@ -1494,7 +1522,7 @@ function AuthenticatedApp({
   }, [search, data]);
 
   const exportProgress = (sheet) => {
-    const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
+    const idPrefix = `${sheet.id}::`;
     const allProblems = sheet.sheet.steps.flatMap((step) =>
       step.subsections.flatMap((subsection) => subsection.problems),
     );
@@ -1544,7 +1572,7 @@ function AuthenticatedApp({
           alert("Select a valid sheet before importing progress.");
           return;
         }
-        const idPrefix = targetSheet.id === "dsa" ? "" : `${targetSheet.id}::`;
+        const idPrefix = `${targetSheet.id}::`;
         const validProblemIds = new Set(
           targetSheet.sheet.steps.flatMap((step) =>
             step.subsections.flatMap((subsection) =>
@@ -1557,12 +1585,21 @@ function AuthenticatedApp({
         for (const [title, value] of Object.entries(imported)) {
           if (value && typeof value === "object" && value.id && value.state) {
             const sourceId = String(value.id);
-            const id =
-              targetSheet.id === "dsa"
-                ? sourceId.replace(/^dsa::/, "")
-                : sourceId.startsWith(idPrefix)
-                  ? sourceId
-                  : `${idPrefix}${sourceId}`;
+            let legacyBuiltInId = sourceId;
+            if (
+              targetSheet.builtinTemplateId === "backend" &&
+              sourceId.startsWith("backend::")
+            ) {
+              legacyBuiltInId = sourceId.slice("backend::".length);
+            } else if (
+              targetSheet.builtinTemplateId === "dsa" &&
+              sourceId.startsWith("dsa::")
+            ) {
+              legacyBuiltInId = sourceId.slice("dsa::".length);
+            }
+            const id = sourceId.startsWith(idPrefix)
+              ? sourceId
+              : `${idPrefix}${legacyBuiltInId}`;
             const state = value.state;
             if (
               validProblemIds.has(id) &&
@@ -1632,10 +1669,14 @@ function AuthenticatedApp({
     );
   }
 
-  if (progressLoading) {
+  if (customSheetsLoading || progressLoading) {
     return (
       <div className="min-h-screen bg-[#0B0B0F] text-[#E8E8EE] font-sans flex items-center justify-center">
-        <p className="text-[#8A8A98]">Syncing your saved progress…</p>
+        <p className="text-[#8A8A98]">
+          {customSheetsLoading
+            ? "Preparing your sheets…"
+            : "Syncing your saved progress…"}
+        </p>
       </div>
     );
   }
@@ -1809,66 +1850,18 @@ function AuthenticatedApp({
       return { weeks, monthLabels };
     }, [activity, dateKey]);
 
-    const profileProgress = profile?.progress || [];
-    const progressById = useMemo(
-      () => new Map(profileProgress.map((row) => [row.problem_id, row])),
-      [profileProgress],
-    );
     const customSheets = profile?.custom_sheets || [];
     const profileSheetStats = useMemo(() => {
-      const builtInStats = builtInSheets.map((sheet) => {
-        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
-        const problems = sheet.sheet.steps.flatMap((step) =>
-          step.subsections.flatMap((subsection) => subsection.problems),
-        );
-        const solved = problems.filter(
-          (problem) =>
-            progressById.get(`${idPrefix}${problem.id}`)?.state === "done",
-        ).length;
-        const skipped = problems.filter((problem) => {
-          const row = progressById.get(`${idPrefix}${problem.id}`);
-          return row?.state === "skipped" || (!row && problem.defaultSkip);
-        }).length;
-        return {
-          id: sheet.id,
-          title: sheet.title,
-          solved,
-          skipped,
-          total: problems.length,
-        };
-      });
-      const uploadedStats = customSheets.map((sheet, index) => ({
+      return customSheets.map((sheet, index) => ({
         id: `${sheet.title}-${index}`,
         title: sheet.title,
         solved: Number(sheet.solved || 0),
         skipped: Number(sheet.skipped || 0),
         total: Number(sheet.total || 0),
       }));
-      return [...builtInStats, ...uploadedStats];
-    }, [customSheets, progressById]);
+    }, [customSheets]);
     const recentAccepted = useMemo(() => {
-      const builtInAccepted = builtInSheets.flatMap((sheet) => {
-        const idPrefix = sheet.id === "dsa" ? "" : `${sheet.id}::`;
-        return sheet.sheet.steps.flatMap((step) =>
-          step.subsections.flatMap((subsection) =>
-            subsection.problems.flatMap((problem) => {
-              const id = `${idPrefix}${problem.id}`;
-              const row = progressById.get(id);
-              if (row?.state !== "done") return [];
-              return [
-                {
-                  id,
-                  title: problem.title,
-                  sheetTitle: sheet.title,
-                  acceptedOn: row.completed_on || null,
-                  completedAt: row.updated_at || null,
-                },
-              ];
-            }),
-          ),
-        );
-      });
-      const uploadedAccepted = (profile?.custom_recent_accepted || []).map(
+      return (profile?.custom_recent_accepted || []).map(
         (problem, index) => ({
           id: `custom-${index}:${problem.sheet_title}:${problem.title}`,
           title: problem.title,
@@ -1877,20 +1870,7 @@ function AuthenticatedApp({
           completedAt: problem.completed_at,
         }),
       );
-      return [...builtInAccepted, ...uploadedAccepted]
-        .sort((first, second) => {
-          if (first.completedAt && second.completedAt) {
-            return second.completedAt.localeCompare(first.completedAt);
-          }
-          if (first.completedAt) return -1;
-          if (second.completedAt) return 1;
-          if (!first.acceptedOn && !second.acceptedOn) return 0;
-          if (!first.acceptedOn) return 1;
-          if (!second.acceptedOn) return -1;
-          return second.acceptedOn.localeCompare(first.acceptedOn);
-        })
-        .slice(0, 8);
-    }, [profile?.custom_recent_accepted, progressById]);
+    }, [profile?.custom_recent_accepted]);
     const activeDays = heatmapData.weeks
       .flat()
       .filter((item) => !item.outOfRange && item.count > 0).length;
@@ -2951,8 +2931,8 @@ function AuthenticatedApp({
                     <button
                       type="button"
                       onClick={() => handleRemoveSheet(sheet)}
-                      disabled={deletingSheetId === sheet.id}
-                      aria-label={`Remove ${sheet.title}`}
+                      disabled={deletingSheetId !== null}
+                      aria-label={`Permanently remove ${sheet.title}`}
                       title={`Remove ${sheet.title}`}
                       className="rounded-lg p-2 text-[#8A8A98] transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
                     >
@@ -2963,12 +2943,12 @@ function AuthenticatedApp({
               ))}
               {availableSheets.length === 0 && (
                 <p className="px-3 py-2 text-sm text-[#8A8A98]">
-                  No converted sheets found.
+                  No sheets available. Upload a TXT sheet to get started.
                 </p>
               )}
               {customSheetsLoading && (
                 <p className="px-3 py-2 text-xs text-[#8A8A98]">
-                  Loading your uploaded sheets…
+                  Loading your sheets…
                 </p>
               )}
             </nav>

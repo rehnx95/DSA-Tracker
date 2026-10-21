@@ -127,7 +127,7 @@ direct opens and refreshes can load these routes. The Vercel function at
 
 ## 5. Problem sheets and identifiers
 
-### Built-in sheets
+### Built-in sheet templates and personal copies
 
 At build time, `src/App.jsx` uses `import.meta.glob("./data/*.json", ...)` to
 load every valid JSON sheet. The filename without `.json` is the sheet ID and
@@ -136,11 +136,19 @@ normally also supplies its title:
 - `src/data/dsa.json` → ID `dsa`, title `DSA`;
 - `src/data/backend.json` → ID `backend`, title `Backend`.
 
-The DSA sheet intentionally uses unprefixed problem IDs for compatibility with
-existing records. Other built-in sheet problem IDs are stored as
-`<sheet-id>::<problem-id>`. The selected built-in sheet is chosen from the
-browser's `dsa-active-sheet` localStorage value when valid; otherwise the
-default sheet ID is `dsa`.
+These files are templates, not the active user sheets. On sign-in, the client
+passes the templates to the `ensure_builtin_sheet_copies` RPC. The RPC creates
+one private `user_sheets` row for each built-in template unless that user
+permanently deleted it. Existing copies are not overwritten when a template is
+changed; future accounts and newly created copies use the current template.
+Each personal copy uses the same UUID-namespaced problem IDs as an uploaded
+sheet: `custom-<user_sheets UUID>::<problem-id>`.
+
+During initial copy creation, the RPC migrates legacy DSA IDs from the
+unprefixed format and Backend IDs from `<sheet-id>::<problem-id>` into the
+personal copy's IDs. It removes the legacy progress rows as part of that
+migration while retaining their states and completion dates. The selected
+personal sheet is stored by its UUID-based ID in browser localStorage.
 
 ### Built-in sheet authoring
 
@@ -153,10 +161,17 @@ default sheet ID is `dsa`.
 The built-in converter lives in `scripts/convert-sheet.cjs`. It is separate
 from the browser parser used for user uploads.
 
-### User-uploaded sheets
+Each built-in template is provisioned into a user's account as a personal sheet
+and then behaves like an uploaded sheet. Removing it permanently deletes the
+user's sheet row and all matching progress, and updates their activity counts.
+The shared template remains in the repository for other users. A deletion
+tombstone prevents the removed template from being recreated for that account.
 
-An authenticated user chooses **Upload a TXT sheet** in the sheets sidebar.
-The browser:
+### Personal sheets and uploads
+
+Built-in copies and user-uploaded sheets both live in `user_sheets`. An
+authenticated user can also choose **Upload a TXT sheet** in the sidebar. The
+browser:
 
 1. checks the `.txt` extension and a 2 MB size limit;
 2. parses the file using `src/utils/parseSheet.js`;
@@ -169,7 +184,7 @@ headings such as `1.1 — Title`, and sequential numbered problem lines. Optiona
 markers include `(LC 123)` and `(Skip)`. `src/utils/parseSheet.js` also exports
 the sample TXT template and problem-count helper.
 
-Custom sheet problem IDs are namespaced as
+Personal sheet problem IDs are namespaced as
 `custom-<user_sheets UUID>::<problem-id>`. Custom sheets are private to their
 owner and are not returned as raw JSON by public profile RPCs. The RPC returns
 only sheet title/count summaries and a small Recent AC list.
@@ -206,7 +221,8 @@ account.
 | Name, username, location, website, onboarding status | `profiles` | One profile row per Auth user |
 | Problem state and completion timestamps | `progress` | Auth user + problem ID |
 | Activity counts by date | `activity_log` | Auth user + date |
-| Uploaded sheet title, source filename and parsed content | `user_sheets` | Auth user |
+| Built-in copies and uploaded sheet title, source and parsed content | `user_sheets` | Auth user |
+| Permanently deleted built-in template IDs | `user_deleted_builtin_sheets` | Auth user + template ID |
 | Theme, selected sheet, filter, search, expanded rows | Browser localStorage | Browser/device |
 
 The `user_settings` table is retained in the schema for compatibility but the
@@ -266,7 +282,7 @@ username; the user completes onboarding to claim their desired username.
 #### `progress`
 
 - `user_id`: owning profile/Auth user.
-- `problem_id`: built-in or namespaced custom sheet problem ID.
+- `problem_id`: UUID-namespaced personal sheet problem ID.
 - `state`: `todo`, `done`, or `skipped` (the client usually represents todo by
   absence of a row).
 - `completed_on`: local calendar date when marked done; null when not done.
@@ -282,9 +298,22 @@ username; the user completes onboarding to claim their desired username.
 
 #### `user_sheets`
 
-- `id`, `user_id`, `title`, `source_name`, `sheet_data` JSONB, `created_at`.
+- `id`, `user_id`, `title`, `source_name`, `sheet_data` JSONB, `created_at`,
+  optional `builtin_template_id`.
+- A partial unique index allows at most one copy per user and built-in
+  template. A null `builtin_template_id` identifies an upload.
 - RLS permits authenticated users to read and insert only their own sheets.
 - No public table grant is used to expose sheet contents to profile viewers.
+
+#### `user_deleted_builtin_sheets`
+
+- `user_id`, `sheet_id`, `deleted_at`; primary key is `(user_id, sheet_id)`.
+- A row is a permanent per-user tombstone that prevents a built-in template
+  from being copied into that account again.
+- Only the authenticated deletion/bootstrap RPCs access this table; clients
+  cannot remove tombstones to restore a deleted default.
+- The personal-sheet migration converts earlier hidden-sheet preferences into
+  tombstones and removes that sheet's legacy progress on the user's next login.
 
 #### `user_settings`
 
@@ -304,16 +333,19 @@ Current public RPC contracts after all migrations:
 - `search_public_profiles(search_term TEXT)` returns `name` and `username` for
   at most five username-prefix matches. It validates a 3–48 character
   alphanumeric/hyphen prefix.
+- `ensure_builtin_sheet_copies(requested_sheets JSONB)` creates missing
+  per-user copies, migrates legacy problem IDs, and respects deletion
+  tombstones.
+- `delete_user_sheet(requested_sheet_id UUID)` permanently removes an owned
+  sheet and its progress; for built-in copies it also records a deletion
+  tombstone.
 - `get_public_profile(requested_username TEXT, requested_today DATE)` returns
   public identity fields, solved total, date/count activity map, streak values,
-  non-custom `done`/`skipped` progress entries, custom sheet summaries, and
-  up to eight custom-sheet Recent AC entries.
+  progress summaries for owned sheets, and up to eight Recent AC entries.
 
 The profile RPC excludes email, auth IDs, credentials, private UI settings,
-custom sheet UUIDs, todo rows, and raw custom sheet data. Built-in problem IDs
-are included because the public UI needs them to map solved/skipped progress
-to the checked-in built-in sheet titles. Do not widen this RPC casually:
-review every added field for privacy and keep uploaded sheet data private.
+sheet UUIDs, todo rows, and raw sheet data. Do not widen this RPC casually:
+review every added field for privacy and keep sheet contents private.
 
 ## 8. Search and public profile data flow
 
