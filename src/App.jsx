@@ -320,74 +320,18 @@ function App() {
 function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
   return (
     <div className="auth-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
-      <div className="auth-layout">
-        <section className="auth-showcase" aria-label="Track Sheet overview">
-          <div className="auth-showcase-brand">
-            <div className="brand-mark">
-              <CheckSquare size={20} className="text-white" />
-            </div>
-            <span>TRACK SHEET</span>
-          </div>
-          <div className="auth-showcase-copy">
-            <span className="auth-showcase-eyebrow">YOUR PRACTICE, IN ONE PLACE</span>
-            <h1>
-              Make every
-              <br />
-              <span>solve count.</span>
-            </h1>
-            <p>
-              Organize the sheets you care about, build a consistent practice
-              habit, and share progress on your terms.
-            </p>
-          </div>
-          <div className="auth-preview" aria-hidden="true">
-            <div className="auth-preview-header">
-              <div>
-                <span className="auth-preview-label">YOUR ACTIVITY</span>
-                <p>A little progress adds up.</p>
-              </div>
-              <div className="auth-preview-icon">
-                <Calendar size={17} />
-              </div>
-            </div>
-            <div className="auth-preview-grid">
-              {[
-                0, 1, 0, 2, 1, 0, 3,
-                1, 2, 0, 3, 2, 1, 0,
-                2, 3, 1, 4, 2, 0, 1,
-                0, 2, 3, 1, 4, 2, 1,
-                1, 0, 2, 3, 1, 2, 4,
-              ].map((level, index) => (
-                <span
-                  key={index}
-                  className={`auth-preview-cell level-${level}`}
-                />
-              ))}
-            </div>
-            <div className="auth-preview-footer">
-              <span>
-                <Target size={14} />
-                Your pace. Your goals.
-              </span>
-              <span>
-                <Trophy size={14} />
-                Every step counts.
-              </span>
-            </div>
-          </div>
-          <div className="auth-showcase-footnote">
-            BUILT FOR THE LONG GAME
-          </div>
-        </section>
+      <div className="auth-layout auth-layout-simple">
         <section className="auth-panel-wrap">
           <div className="auth-panel">
-            <div className="brand-mark auth-mobile-mark">
-              <CheckSquare size={20} className="text-white" />
+            <div className="auth-simple-brand">
+              <div className="brand-mark">
+                <CheckSquare size={20} className="text-black" />
+              </div>
+              <span>Track Sheet</span>
             </div>
-            <span className="section-kicker">WELCOME TO TRACK SHEET</span>
-            <h2>Pick up where you left off.</h2>
+            <h1 className="auth-simple-title">Your practice, in one place.</h1>
             <p className="auth-panel-description">
-              Sign in to continue your practice or set up your new profile.
+              Sign in to track problems, build consistency, and see your progress.
             </p>
             {error && (
               <p
@@ -424,10 +368,10 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
               {!isSigningIn && <ChevronRight size={17} />}
             </button>
             <div className="auth-divider">
-              <span>SECURE ACCOUNT ACCESS</span>
+              <span>SECURE SIGN IN</span>
             </div>
             <p className="auth-legal">
-              Your sheets and progress sync securely to your account.
+              Your sheets and progress sync to your account.
             </p>
           </div>
         </section>
@@ -822,6 +766,8 @@ function AuthenticatedApp({
   onSignOut,
 }) {
   const [customSheetsLoading, setCustomSheetsLoading] = useState(true);
+  const [dialog, setDialog] = useState(null);
+  const dialogResolver = useRef(null);
   const {
     progress,
     activityLog,
@@ -917,6 +863,32 @@ function AuthenticatedApp({
   const [backupAction, setBackupAction] = useState("");
   const importSheetId = useRef(null);
   const importFileInput = useRef(null);
+
+  const showNotice = useCallback((message, title = "Track Sheet") => {
+    setDialog({ type: "notice", title, message });
+  }, []);
+
+  const askConfirmation = useCallback((message, title = "Are you sure?") => (
+    new Promise((resolve) => {
+      dialogResolver.current = resolve;
+      setDialog({ type: "confirm", title, message });
+    })
+  ), []);
+
+  const closeDialog = useCallback((confirmed = false) => {
+    const resolve = dialogResolver.current;
+    dialogResolver.current = null;
+    setDialog(null);
+    resolve?.(confirmed);
+  }, []);
+
+  const renderDialog = () => dialog && (
+    <AppDialog
+      dialog={dialog}
+      onClose={() => closeDialog(false)}
+      onConfirm={() => closeDialog(true)}
+    />
+  );
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1256,8 +1228,9 @@ function AuthenticatedApp({
 
   const handleRemoveSheet = async (sheet) => {
     if (!sheet.customId) return;
-    const confirmed = window.confirm(
+    const confirmed = await askConfirmation(
       `Permanently delete "${sheet.title}" and all of its saved progress? This cannot be undone.`,
+      "Delete this sheet?",
     );
     if (!confirmed) return;
 
@@ -1678,8 +1651,9 @@ function AuthenticatedApp({
           typeof imported !== "object" ||
           Array.isArray(imported)
         ) {
-          alert(
+          showNotice(
             "Invalid backup file format. Choose a progress backup JSON exported from your profile.",
+            "Invalid backup",
           );
           return;
         }
@@ -1688,7 +1662,7 @@ function AuthenticatedApp({
           (sheet) => sheet.id === targetSheetId,
         );
         if (!targetSheet) {
-          alert("Select a valid sheet before importing progress.");
+          showNotice("Select a valid sheet before importing progress.", "Choose a sheet");
           return;
         }
         const idPrefix = `${targetSheet.id}::`;
@@ -1733,27 +1707,30 @@ function AuthenticatedApp({
         }
         const importedCount = Object.keys(newProgress).length;
         if (importedCount === 0) {
-          alert(
+          showNotice(
             `No matching problem states were found for ${targetSheet.title}. Choose a backup with matching problem names or IDs.`,
+            "No matching progress",
           );
           return;
         }
         const saved = await bulkUpdate(newProgress);
         if (!saved) {
-          alert(
+          showNotice(
             "The backup was read, but progress could not be saved to your account. Check the sync error and try again.",
+            "Could not save backup",
           );
           return;
         }
-        alert(
+        showNotice(
           `Successfully imported ${importedCount} problem states into ${targetSheet.title}.`,
+          "Import complete",
         );
       } catch (err) {
         console.error("Import error details:", err);
-        alert(`Failed to import backup file: ${err.message}`);
+        showNotice(`Failed to import backup file: ${err.message}`, "Import failed");
       }
     };
-    reader.onerror = () => alert("Failed to read backup file");
+    reader.onerror = () => showNotice("Failed to read backup file.", "Import failed");
     reader.readAsText(file);
     e.target.value = "";
     setBackupAction("");
@@ -1766,28 +1743,34 @@ function AuthenticatedApp({
 
   if (peopleSearchPage) {
     return (
-      <PeopleSearchPage
-        query={profileSearchQuery}
-        onQueryChange={setProfileSearchQuery}
-        results={profileSearchResults}
-        loading={profileSearchLoading}
-        error={profileSearchError}
-        onSelectProfile={openPublicProfile}
-        onBack={() => navigateTo("/")}
-      />
+      <>
+        <PeopleSearchPage
+          query={profileSearchQuery}
+          onQueryChange={setProfileSearchQuery}
+          results={profileSearchResults}
+          loading={profileSearchLoading}
+          error={profileSearchError}
+          onSelectProfile={openPublicProfile}
+          onBack={() => navigateTo("/")}
+        />
+        {renderDialog()}
+      </>
     );
   }
 
   if (selectedPublicUsername) {
     return (
-      <PublicProfilePage
-        profile={publicProfile}
-        loading={publicProfileLoading}
-        error={publicProfileError}
-        copied={copiedProfileLink}
-        onCopyLink={copyPublicProfileLink}
-        onBack={returnFromPublicProfile}
-      />
+      <>
+        <PublicProfilePage
+          profile={publicProfile}
+          loading={publicProfileLoading}
+          error={publicProfileError}
+          copied={copiedProfileLink}
+          onCopyLink={copyPublicProfileLink}
+          onBack={returnFromPublicProfile}
+        />
+        {renderDialog()}
+      </>
     );
   }
 
@@ -2297,7 +2280,6 @@ function AuthenticatedApp({
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                     <span>Total active days: {activeDays}</span>
-                    <span>Refreshes automatically while this profile is open</span>
                   </div>
                 </section>
 
@@ -2526,13 +2508,12 @@ function AuthenticatedApp({
                     </button>
 
                     <button
-                      onClick={() => {
-                        if (
-                          confirm(
-                            "Reset all progress across every sheet? This cannot be undone.",
-                          )
-                        )
-                          reset();
+                      onClick={async () => {
+                        const confirmed = await askConfirmation(
+                          "Reset all progress across every sheet? This cannot be undone.",
+                          "Reset all progress?",
+                        );
+                        if (confirmed) await reset();
                       }}
                       className="w-full flex items-center justify-between rounded-lg p-3.5 transition-colors hover:bg-red-500/10"
                     >
@@ -2722,7 +2703,7 @@ function AuthenticatedApp({
                                 aria-hidden={day.outOfRange || undefined}
                                 aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? ", today" : ""}`}
                                 title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? "" : ""}`}
-                                className={`activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40 ${day.dateKey === todayDateKey ? "is-today" : ""}`}
+                                className={`activity-day block rounded-[2px] border border-white/[0.04] ${day.dateKey === todayDateKey ? "is-today" : ""}`}
                                 style={{
                                   backgroundColor: [
                                     "#171717",
@@ -2860,8 +2841,9 @@ function AuthenticatedApp({
                         importSheetId.current = sheet.id;
                         const input = importFileInput.current;
                         if (!input) {
-                          alert(
+                          showNotice(
                             "Could not open the file picker. Please try Import again.",
+                            "Could not open file picker",
                           );
                           return;
                         }
@@ -2893,21 +2875,30 @@ function AuthenticatedApp({
 
   if (showSettings) {
     return (
-      <ProfileSettings
-        userId={user.id}
-        profile={profile}
-        onBack={() => navigateTo("/profile")}
-        onGoToDashboard={() => navigateTo("/")}
-        onSaved={onProfileUpdated}
-      />
+      <>
+        <ProfileSettings
+          userId={user.id}
+          profile={profile}
+          onBack={() => navigateTo("/profile")}
+          onGoToDashboard={() => navigateTo("/")}
+          onSaved={onProfileUpdated}
+        />
+        {renderDialog()}
+      </>
     );
   }
 
   if (showProfile) {
-    return <ProfilePage />;
+    return (
+      <>
+        <ProfilePage />
+        {renderDialog()}
+      </>
+    );
   }
 
   return (
+    <>
     <div
       className={`dashboard-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300`}
       data-theme={theme === "light" ? "light" : undefined}
@@ -3328,14 +3319,13 @@ function AuthenticatedApp({
                 </div>
               </div>
               <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Reset progress for ${selectedSheet?.title || "this sheet"} only? Other sheets will not be affected.`,
-                    )
-                  ) {
-                    reset(sheetProblems.map((problem) => problem.id));
-                  }
+                onClick={async () => {
+                  const confirmed = await askConfirmation(
+                    `Reset progress for ${selectedSheet?.title || "this sheet"} only? Other sheets will not be affected.`,
+                    "Reset this sheet?",
+                  );
+                  if (confirmed)
+                    await reset(sheetProblems.map((problem) => problem.id));
                 }}
                 className="w-full text-xs py-1.5 bg-[#1F1F1F] hover:bg-red-500/10 text-[#A1A1A1] hover:text-red-400 rounded-md transition-colors flex items-center justify-center gap-1"
               >
@@ -3353,6 +3343,53 @@ function AuthenticatedApp({
         className="hidden"
         onChange={importProgress}
       />
+    </div>
+    {renderDialog()}
+    </>
+  );
+}
+
+function AppDialog({ dialog, onClose, onConfirm }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="app-dialog-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="app-dialog-title"
+        aria-describedby="app-dialog-message"
+        className="app-dialog"
+      >
+        <h2 id="app-dialog-title">{dialog.title}</h2>
+        <p id="app-dialog-message">{dialog.message}</p>
+        <div className="app-dialog-actions">
+          {dialog.type === "confirm" && (
+            <button type="button" className="app-dialog-cancel" onClick={onClose}>
+              Cancel
+            </button>
+          )}
+          <button
+            type="button"
+            className="app-dialog-confirm"
+            onClick={dialog.type === "confirm" ? onConfirm : onClose}
+            autoFocus
+          >
+            {dialog.type === "confirm" ? "Continue" : "Got it"}
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

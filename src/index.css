@@ -89,6 +89,47 @@ input:focus-visible {
   justify-content: center;
 }
 
+.auth-layout-simple {
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.auth-layout-simple .auth-panel-wrap {
+  width: min(100%, 28rem);
+  min-height: auto;
+  padding: 0;
+}
+
+.auth-layout-simple .auth-panel {
+  padding: clamp(1.5rem, 5vw, 2.25rem);
+  border-radius: 1rem;
+}
+
+.auth-simple-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 2rem;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.auth-simple-brand .brand-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.7rem;
+}
+
+.auth-simple-title {
+  margin: 0.85rem 0 0.55rem;
+  font-size: clamp(1.6rem, 5vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
 .brand-mark {
   display: grid;
   width: 2.75rem;
@@ -148,6 +189,78 @@ input:focus-visible {
   transform: translate(-50%, 0);
   opacity: 1;
   visibility: visible;
+}
+
+.app-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.68);
+  backdrop-filter: blur(4px);
+}
+
+.app-dialog {
+  width: min(100%, 26rem);
+  padding: 1.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 1rem;
+  background: var(--surface);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  color: var(--text);
+}
+
+.app-dialog h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.app-dialog p {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.app-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.35rem;
+}
+
+.app-dialog-actions button {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.app-dialog-cancel {
+  background: var(--surface-raised);
+  color: var(--text);
+}
+
+.app-dialog-cancel:hover {
+  background: var(--surface-hover);
+}
+
+.app-dialog-confirm {
+  border-color: var(--accent) !important;
+  background: var(--accent);
+  color: var(--page);
+}
+
+.app-dialog-confirm:hover {
+  background: var(--accent-hover);
 }
 
 .auth-panel-wrap {
