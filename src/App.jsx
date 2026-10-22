@@ -2236,7 +2236,7 @@ function AuthenticatedApp({
                               <span
                                 key={item.dateKey}
                                 aria-label={`${item.count} problems solved on ${item.date.toLocaleDateString()}${item.dateKey === dateKey ? ", today" : ""}`}
-                                title={`${item.count} ${item.count === 1 ? "problem" : "problems"} solved on ${item.date.toLocaleDateString()}${item.dateKey === dateKey ? " (today)" : ""}`}
+                                title={`${item.count} ${item.count === 1 ? "problem" : "problems"} solved on ${item.date.toLocaleDateString()}${item.dateKey === dateKey ? "" : ""}`}
                                 className={`activity-day block rounded-[2px] border border-white/[0.04] ${item.dateKey === dateKey ? "is-today" : ""}`}
                                 style={{
                                   backgroundColor: [
@@ -2661,7 +2661,7 @@ function AuthenticatedApp({
                                 key={day.dateKey}
                                 aria-hidden={day.outOfRange || undefined}
                                 aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? ", today" : ""}`}
-                                title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? " (today)" : ""}`}
+                                title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? "" : ""}`}
                                 className={`activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40 ${day.dateKey === todayDateKey ? "is-today" : ""}`}
                                 style={{
                                   backgroundColor: [
