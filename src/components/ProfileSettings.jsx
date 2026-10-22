@@ -175,7 +175,7 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
                 placeholder={field.placeholder}
                 value={form[field.name]}
                 onChange={handleChange}
-                className="w-full rounded-lg border border-[#262626] bg-[#000000] px-4 py-3 text-[#EDEDED] placeholder-[#A1A1A1] focus:border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#EDEDED]"
+                className="w-full rounded-lg border border-[#262626] bg-[#000000] px-4 py-3 text-[#EDEDED] placeholder-[#A1A1A1] outline-none transition-colors focus:border-[#EDEDED] focus:outline-none"
               />
               {field.name === 'username' && (
                 <div className="mt-1 space-y-1">

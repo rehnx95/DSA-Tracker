@@ -1804,7 +1804,6 @@ function AuthenticatedApp({
               <span className="font-bold tracking-tight">Track Sheet</span>
             </div>
             <div className="flex-1" />
-            <span className="text-sm font-medium text-[#A1A1A1]">Search</span>
           </div>
         </header>
 

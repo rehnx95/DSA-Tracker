@@ -1043,6 +1043,10 @@ input:focus-visible {
   .dashboard-main.desktop-sidebar-collapsed {
     gap: 0;
   }
+
+  .dashboard-main.desktop-sidebar-collapsed > aside:last-child {
+    margin-left: clamp(1rem, 2vw, 1.75rem);
+  }
 }
 
 @media (max-width: 1023px) {
