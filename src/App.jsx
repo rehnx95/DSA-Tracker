@@ -2707,7 +2707,6 @@ function AuthenticatedApp({
                 </div>
                 <div className="mt-3 flex items-center justify-between text-xs text-[#A1A1A1]">
                   <span>Total active days: {yearlyActiveDays}</span>
-                  <span>Updated live as you mark problems solved</span>
                 </div>
               </div>
 
@@ -3095,7 +3094,7 @@ function AuthenticatedApp({
                 onChange={(event) => setSearch(event.target.value)}
                 aria-label="Search problems"
                 placeholder="Search problems..."
-                className="w-full rounded-lg border border-[#262626] bg-[#0A0A0A] py-2 pl-9 pr-9 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none focus:border-[#EDEDED]"
+                className="w-full rounded-lg border border-[#383838] bg-[#0A0A0A] py-2 pl-9 pr-9 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none focus:border-[#EDEDED]"
               />
               {search && (
                 <button
