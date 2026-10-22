@@ -592,10 +592,10 @@ input:focus-visible {
   aspect-ratio: 1;
 }
 
-.activity-day.is-today {
+/* .activity-day.is-today {
   outline: 1px solid var(--text);
   outline-offset: 1px;
-}
+} */
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
