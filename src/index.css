@@ -144,7 +144,7 @@ input:focus-visible {
 }
 
 .app-tooltip-anchor:hover .app-tooltip,
-.app-tooltip-anchor:focus-within .app-tooltip {
+.app-tooltip-anchor:has(:focus-visible) .app-tooltip {
   transform: translate(-50%, 0);
   opacity: 1;
   visibility: visible;
