@@ -94,6 +94,22 @@ function getActivityLevel(count) {
   return 4;
 }
 
+const activityScrollTimers = new WeakMap();
+
+function handleActivityScroll(event) {
+  const container = event.currentTarget;
+  const previousTimer = activityScrollTimers.get(container);
+  if (previousTimer) window.clearTimeout(previousTimer);
+  container.classList.add("is-scrolling");
+  activityScrollTimers.set(
+    container,
+    window.setTimeout(() => {
+      container.classList.remove("is-scrolling");
+      activityScrollTimers.delete(container);
+    }, 700),
+  );
+}
+
 function normalizeProblemTitle(title) {
   return String(title).normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -1905,6 +1921,12 @@ function AuthenticatedApp({
     onBack,
   }) {
     const [dateKey, setDateKey] = useState(() => getLocalDateKey(new Date()));
+    const activityScrollRef = useRef(null);
+    useEffect(() => {
+      const container = activityScrollRef.current;
+      if (container) container.scrollLeft = container.scrollWidth;
+    }, []);
+
     useEffect(() => {
       const refreshDate = () => {
         setDateKey((current) => {
@@ -2225,7 +2247,11 @@ function AuthenticatedApp({
                       <span>More</span>
                     </div>
                   </div>
-                  <div className="activity-scroll pb-2">
+                  <div
+                    ref={activityScrollRef}
+                    onScroll={handleActivityScroll}
+                    className="activity-scroll pb-2"
+                  >
                     <div className="activity-months mb-2 text-[10px] text-[#A1A1A1]">
                       {heatmapData.monthLabels.map((month, index) => (
                         <span key={index} className="whitespace-nowrap">
@@ -2332,6 +2358,12 @@ function AuthenticatedApp({
 
   // Profile page component
   function ProfilePage() {
+    const activityScrollRef = useRef(null);
+    useEffect(() => {
+      const container = activityScrollRef.current;
+      if (container) container.scrollLeft = container.scrollWidth;
+    }, []);
+
     return (
       <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
@@ -2660,7 +2692,11 @@ function AuthenticatedApp({
                     <span>More</span>
                   </div>
                 </div>
-                <div className="activity-scroll pb-2">
+                <div
+                  ref={activityScrollRef}
+                  onScroll={handleActivityScroll}
+                  className="activity-scroll pb-2"
+                >
                   <div>
                     <div className="activity-months mb-2 text-[10px] text-[#A1A1A1]">
                       {heatmapData.monthLabels.map((month, index) => (
@@ -3094,7 +3130,7 @@ function AuthenticatedApp({
                 onChange={(event) => setSearch(event.target.value)}
                 aria-label="Search problems"
                 placeholder="Search problems..."
-                className="w-full rounded-lg border border-[#383838] bg-[#0A0A0A] py-2 pl-9 pr-9 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none focus:border-[#EDEDED]"
+                className="h-12 w-full rounded-xl border border-[#383838] bg-[#0A0A0A] pl-11 pr-11 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none transition-colors focus:border-[#EDEDED] focus:outline-none"
               />
               {search && (
                 <button

@@ -731,22 +731,39 @@ input:focus-visible {
     background: var(--page-overlay);
   }
 
-  .dashboard-content .tracker-toolbar input[aria-label="Search problems"] {
-    border-color: var(--border-strong) !important;
-  }
-
   .activity-scroll {
     overflow-x: auto;
     overscroll-behavior-x: contain;
   }
 
   .activity-months,
-  .activity-heatmap {
+  .activity-weeks {
     min-width: 36rem;
+  }
+
+  .activity-heatmap {
+    min-width: 0;
   }
 
   .activity-scroll::-webkit-scrollbar {
     height: 4px;
+  }
+
+  .activity-scroll {
+    scrollbar-width: none;
+  }
+
+  .activity-scroll::-webkit-scrollbar-thumb {
+    background: transparent;
+  }
+
+  .activity-scroll.is-scrolling {
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+
+  .activity-scroll.is-scrolling::-webkit-scrollbar-thumb {
+    background: #333;
   }
 
   .mobile-progress-summary {
