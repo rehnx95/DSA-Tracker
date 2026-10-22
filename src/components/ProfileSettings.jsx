@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import TrackSheetBrand from './TrackSheetBrand';
 
-function ProfileSettings({ userId, profile, onBack, onSaved }) {
+function ProfileSettings({ userId, profile, onBack, onGoToDashboard, onSaved }) {
   const [form, setForm] = useState({
     name: profile?.name || '',
     username: profile?.username || '',
@@ -135,11 +136,15 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
             type="button"
             onClick={onBack}
             aria-label="Back to profile"
+            title="Back to your profile"
             className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors"
           >
             <ChevronDown size={20} className="rotate-90" />
           </button>
-          <h1 className="font-bold text-xl">Edit profile</h1>
+          <TrackSheetBrand
+            onNavigate={onGoToDashboard}
+            subtitle="Edit profile"
+          />
         </div>
       </header>
 

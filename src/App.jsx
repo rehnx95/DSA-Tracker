@@ -26,6 +26,7 @@ import {
 import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { useProgress } from "./hooks/useProgress";
 import ProfileSettings from "./components/ProfileSettings";
+import TrackSheetBrand from "./components/TrackSheetBrand";
 import {
   countSheetProblems,
   parseSheet,
@@ -258,6 +259,7 @@ function App() {
       <OnboardingPage
         user={user}
         profile={profile}
+        onGoToDashboard={() => window.location.assign("/")}
         onComplete={(savedProfile) => {
           setProfile(savedProfile);
           setAppState(AppState.AUTHENTICATED);
@@ -420,7 +422,13 @@ function UnauthenticatedView({ onSignIn, isSigningIn, error }) {
 // =============================================================================
 // Onboarding Page Component
 // =============================================================================
-function OnboardingPage({ user, profile, onComplete, onSignOut }) {
+function OnboardingPage({
+  user,
+  profile,
+  onGoToDashboard,
+  onComplete,
+  onSignOut,
+}) {
   const [formData, setFormData] = useState({
     name:
       profile?.name ||
@@ -562,13 +570,14 @@ function OnboardingPage({ user, profile, onComplete, onSignOut }) {
       <header className="dashboard-header bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-5xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center">
-              <CheckSquare size={16} className="text-black" />
-            </div>
-            <h1 className="font-bold text-lg">Complete Your Profile</h1>
+            <TrackSheetBrand
+              onNavigate={onGoToDashboard}
+              subtitle="Complete your profile"
+            />
           </div>
           <button
             onClick={onSignOut}
+            title="Sign out of your account"
             className="text-[#A1A1A1] hover:text-[#EDEDED] flex items-center gap-2 text-sm"
           >
             <LogOut size={14} />
@@ -1793,16 +1802,12 @@ function AuthenticatedApp({
               type="button"
               onClick={onBack}
               aria-label="Back to tracker"
+              title="Back to tracker"
               className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#EDEDED]">
-                <CheckSquare size={16} className="text-black" />
-              </div>
-              <span className="font-bold tracking-tight">Track Sheet</span>
-            </div>
+            <TrackSheetBrand onNavigate={onBack} />
             <div className="flex-1" />
           </div>
         </header>
@@ -1996,11 +2001,15 @@ function AuthenticatedApp({
               type="button"
               onClick={onBack}
               aria-label="Back to tracker"
+              title="Back to tracker"
               className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
-            <h1 className="text-xl font-bold">Public profile</h1>
+            <TrackSheetBrand
+              onNavigate={() => navigateTo("/")}
+              subtitle="Public profile"
+            />
             <div className="flex-1" />
             <button
               type="button"
@@ -2324,12 +2333,18 @@ function AuthenticatedApp({
         <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
             <button
+              type="button"
               onClick={() => navigateTo("/")}
+              aria-label="Back to tracker"
+              title="Back to tracker"
               className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#EDEDED]"
             >
               <ChevronDown size={20} className="rotate-90" />
             </button>
-            <h1 className="font-bold text-xl">My Profile</h1>
+            <TrackSheetBrand
+              onNavigate={() => navigateTo("/")}
+              subtitle="My profile"
+            />
             <div className="flex-1" />
             <div className="flex items-center gap-3">
               {userUsername && (
@@ -2348,12 +2363,15 @@ function AuthenticatedApp({
               <button
                 onClick={openProfileSettings}
                 aria-label="Edit profile settings"
+                title="Edit profile"
                 className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#A1A1A1]"
               >
                 <Settings size={20} />
               </button>
               <button
                 onClick={onSignOut}
+                aria-label="Sign out"
+                title="Sign out"
                 className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400"
               >
                 <LogOut size={20} />
@@ -2837,6 +2855,7 @@ function AuthenticatedApp({
         userId={user.id}
         profile={profile}
         onBack={() => navigateTo("/profile")}
+        onGoToDashboard={() => navigateTo("/")}
         onSaved={onProfileUpdated}
       />
     );
@@ -2859,23 +2878,17 @@ function AuthenticatedApp({
             aria-label={
               desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
             }
+            title={
+              desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
+            }
             aria-expanded={desktopSidebarOpen}
           >
             <Menu size={22} />
           </button>
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#EDEDED] flex items-center justify-center flex-shrink-0">
-              <CheckSquare size={16} className="text-black" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-bold text-lg tracking-tight truncate">
-                Track Sheet
-              </h1>
-              <p className="hidden truncate text-[10px] leading-tight text-[#A1A1A1] sm:block">
-                {selectedSheet?.title || "DSA"}
-              </p>
-            </div>
-          </div>
+          <TrackSheetBrand
+            subtitle={selectedSheet?.title || "DSA"}
+            onNavigate={() => navigateTo("/")}
+          />
           <div className="flex-1" />
           <div className="relative hidden sm:block">
             <Search
@@ -2917,6 +2930,7 @@ function AuthenticatedApp({
           <button
             onClick={() => navigateTo("/profile")}
             aria-label="Profile"
+            title="Open your profile"
             className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
           >
             <User size={14} className="text-[#EDEDED]" />
@@ -2967,6 +2981,7 @@ function AuthenticatedApp({
                 type="button"
                 onClick={() => uploadSheetInput.current?.click()}
                 disabled={uploadingSheet}
+                title="Upload a personal problem sheet from a TXT file"
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#EDEDED] transition-colors hover:border-[#EDEDED]/60 hover:bg-[#1F1F1F] disabled:cursor-wait disabled:opacity-60"
               >
                 <Upload size={15} />
@@ -2977,6 +2992,7 @@ function AuthenticatedApp({
               <button
                 type="button"
                 onClick={downloadSampleFormat}
+                title="Download a sample TXT sheet format"
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[#A1A1A1] transition-colors hover:bg-[#1F1F1F] hover:text-white"
               >
                 <Download size={13} />
@@ -3008,6 +3024,7 @@ function AuthenticatedApp({
                       setSelectedSheetId(sheet.id);
                       setDesktopSidebarOpen(false);
                     }}
+                    title={`Open ${sheet.title} sheet`}
                     aria-current={
                       selectedSheet?.id === sheet.id ? "page" : undefined
                     }
