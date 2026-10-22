@@ -27,6 +27,7 @@ import { supabase, isSupabaseConfigured } from "./lib/supabase";
 import { useProgress } from "./hooks/useProgress";
 import ProfileSettings from "./components/ProfileSettings";
 import TrackSheetBrand from "./components/TrackSheetBrand";
+import Tooltip from "./components/Tooltip";
 import {
   countSheetProblems,
   parseSheet,
@@ -575,14 +576,15 @@ function OnboardingPage({
               subtitle="Complete your profile"
             />
           </div>
-          <button
-            onClick={onSignOut}
-            title="Sign out of your account"
-            className="text-[#A1A1A1] hover:text-[#EDEDED] flex items-center gap-2 text-sm"
-          >
-            <LogOut size={14} />
-            Sign out
-          </button>
+          <Tooltip label="Sign out of your account">
+            <button
+              onClick={onSignOut}
+              className="text-[#A1A1A1] hover:text-[#EDEDED] flex items-center gap-2 text-sm"
+            >
+              <LogOut size={14} />
+              Sign out
+            </button>
+          </Tooltip>
         </div>
       </header>
 
@@ -1798,15 +1800,16 @@ function AuthenticatedApp({
       <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 border-b">
           <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Back to tracker"
-              title="Back to tracker"
-              className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
-            >
-              <ChevronDown size={20} className="rotate-90" />
-            </button>
+            <Tooltip label="Back to tracker">
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back to tracker"
+                className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
+              >
+                <ChevronDown size={20} className="rotate-90" />
+              </button>
+            </Tooltip>
             <TrackSheetBrand onNavigate={onBack} />
             <div className="flex-1" />
           </div>
@@ -1997,15 +2000,16 @@ function AuthenticatedApp({
       <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
         <header className="dashboard-header sticky top-0 z-50 border-b">
           <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 py-4 md:px-6">
-            <button
-              type="button"
-              onClick={onBack}
-              aria-label="Back to tracker"
-              title="Back to tracker"
-              className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
-            >
-              <ChevronDown size={20} className="rotate-90" />
-            </button>
+            <Tooltip label="Back to tracker">
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back to tracker"
+                className="rounded-lg p-2 text-[#EDEDED] transition-colors hover:bg-[#1F1F1F]"
+              >
+                <ChevronDown size={20} className="rotate-90" />
+              </button>
+            </Tooltip>
             <TrackSheetBrand
               onNavigate={() => navigateTo("/")}
               subtitle="Public profile"
@@ -2332,15 +2336,16 @@ function AuthenticatedApp({
       <div className="profile-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans transition-colors duration-300">
         <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => navigateTo("/")}
-              aria-label="Back to tracker"
-              title="Back to tracker"
-              className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#EDEDED]"
-            >
-              <ChevronDown size={20} className="rotate-90" />
-            </button>
+            <Tooltip label="Back to tracker">
+              <button
+                type="button"
+                onClick={() => navigateTo("/")}
+                aria-label="Back to tracker"
+                className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#EDEDED]"
+              >
+                <ChevronDown size={20} className="rotate-90" />
+              </button>
+            </Tooltip>
             <TrackSheetBrand
               onNavigate={() => navigateTo("/")}
               subtitle="My profile"
@@ -2360,22 +2365,24 @@ function AuthenticatedApp({
                   <span className="hidden sm:inline">Public profile</span>
                 </button>
               )}
-              <button
-                onClick={openProfileSettings}
-                aria-label="Edit profile settings"
-                title="Edit profile"
-                className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#A1A1A1]"
-              >
-                <Settings size={20} />
-              </button>
-              <button
-                onClick={onSignOut}
-                aria-label="Sign out"
-                title="Sign out"
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400"
-              >
-                <LogOut size={20} />
-              </button>
+              <Tooltip label="Edit profile">
+                <button
+                  onClick={openProfileSettings}
+                  aria-label="Edit profile settings"
+                  className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#A1A1A1]"
+                >
+                  <Settings size={20} />
+                </button>
+              </Tooltip>
+              <Tooltip label="Sign out">
+                <button
+                  onClick={onSignOut}
+                  aria-label="Sign out"
+                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400"
+                >
+                  <LogOut size={20} />
+                </button>
+              </Tooltip>
             </div>
           </div>
         </header>
@@ -2872,19 +2879,20 @@ function AuthenticatedApp({
     >
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
-          <button
-            onClick={() => setDesktopSidebarOpen((open) => !open)}
-            className="p-1.5 -ml-1 text-[#EDEDED]"
-            aria-label={
-              desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
-            }
-            title={
-              desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
-            }
-            aria-expanded={desktopSidebarOpen}
+          <Tooltip
+            label={desktopSidebarOpen ? "Hide sidebar" : "Show sidebar"}
           >
-            <Menu size={22} />
-          </button>
+            <button
+              onClick={() => setDesktopSidebarOpen((open) => !open)}
+              className="p-1.5 -ml-1 text-[#EDEDED]"
+              aria-label={
+                desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
+              }
+              aria-expanded={desktopSidebarOpen}
+            >
+              <Menu size={22} />
+            </button>
+          </Tooltip>
           <TrackSheetBrand
             subtitle={selectedSheet?.title || "DSA"}
             onNavigate={() => navigateTo("/")}
@@ -2927,14 +2935,15 @@ function AuthenticatedApp({
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button
-            onClick={() => navigateTo("/profile")}
-            aria-label="Profile"
-            title="Open your profile"
-            className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-          >
-            <User size={14} className="text-[#EDEDED]" />
-          </button>
+          <Tooltip label="Open your profile">
+            <button
+              onClick={() => navigateTo("/profile")}
+              aria-label="Profile"
+              className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            >
+              <User size={14} className="text-[#EDEDED]" />
+            </button>
+          </Tooltip>
         </div>
       </header>
 
@@ -2981,7 +2990,6 @@ function AuthenticatedApp({
                 type="button"
                 onClick={() => uploadSheetInput.current?.click()}
                 disabled={uploadingSheet}
-                title="Upload a personal problem sheet from a TXT file"
                 className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#383838] px-3 py-2 text-sm text-[#EDEDED] transition-colors hover:border-[#EDEDED]/60 hover:bg-[#1F1F1F] disabled:cursor-wait disabled:opacity-60"
               >
                 <Upload size={15} />
@@ -2992,7 +3000,6 @@ function AuthenticatedApp({
               <button
                 type="button"
                 onClick={downloadSampleFormat}
-                title="Download a sample TXT sheet format"
                 className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs text-[#A1A1A1] transition-colors hover:bg-[#1F1F1F] hover:text-white"
               >
                 <Download size={13} />
@@ -3024,7 +3031,6 @@ function AuthenticatedApp({
                       setSelectedSheetId(sheet.id);
                       setDesktopSidebarOpen(false);
                     }}
-                    title={`Open ${sheet.title} sheet`}
                     aria-current={
                       selectedSheet?.id === sheet.id ? "page" : undefined
                     }
@@ -3046,7 +3052,6 @@ function AuthenticatedApp({
                       onClick={() => handleRemoveSheet(sheet)}
                       disabled={deletingSheetId !== null}
                       aria-label={`Permanently remove ${sheet.title}`}
-                      title={`Remove ${sheet.title}`}
                       className="rounded-lg p-2 text-[#A1A1A1] transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:cursor-wait disabled:opacity-50"
                     >
                       <Trash2 size={15} />

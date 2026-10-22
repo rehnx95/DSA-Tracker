@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import TrackSheetBrand from './TrackSheetBrand';
+import Tooltip from './Tooltip';
 
 function ProfileSettings({ userId, profile, onBack, onGoToDashboard, onSaved }) {
   const [form, setForm] = useState({
@@ -132,15 +133,16 @@ function ProfileSettings({ userId, profile, onBack, onGoToDashboard, onSaved }) 
     <div className="profile-settings-shell min-h-screen bg-[#000000] text-[#EDEDED] font-sans">
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-3xl mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="Back to profile"
-            title="Back to your profile"
-            className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors"
-          >
-            <ChevronDown size={20} className="rotate-90" />
-          </button>
+          <Tooltip label="Back to profile">
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Back to profile"
+              className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors"
+            >
+              <ChevronDown size={20} className="rotate-90" />
+            </button>
+          </Tooltip>
           <TrackSheetBrand
             onNavigate={onGoToDashboard}
             subtitle="Edit profile"
