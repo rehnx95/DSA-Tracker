@@ -2977,6 +2977,14 @@ function AuthenticatedApp({
             </div>
           </div>
         )}
+        {desktopSidebarOpen && (
+          <button
+            type="button"
+            aria-label="Close sheets sidebar"
+            onClick={() => setDesktopSidebarOpen(false)}
+            className="sheet-sidebar-backdrop lg:hidden"
+          />
+        )}
         <aside
           className={`sheet-sidebar ${!desktopSidebarOpen ? "sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
@@ -3077,6 +3085,29 @@ function AuthenticatedApp({
           style={{ maxHeight: "calc(100vh - 120px)" }}
         >
           <div className="tracker-toolbar flex items-center gap-2 mb-4 flex-wrap">
+            <div className="relative w-full sm:hidden">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A1A1A1]"
+              />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                aria-label="Search problems"
+                placeholder="Search problems..."
+                className="w-full rounded-lg border border-[#262626] bg-[#0A0A0A] py-2 pl-9 pr-9 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none focus:border-[#EDEDED]"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear problem search"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#A1A1A1] hover:text-white"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
             {["all", "done", "skipped", "todo"].map((type) => (
               <button
                 key={type}
@@ -3103,6 +3134,48 @@ function AuthenticatedApp({
               Hide skipped
             </label>
           </div>
+
+          <section
+            className="mobile-progress-summary surface-card mb-4 rounded-xl border border-[#262626] bg-[#0A0A0A] p-4 lg:hidden"
+            aria-label="Overall progress"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xs font-medium uppercase tracking-wide text-[#A1A1A1]">
+                  Overall progress
+                </h2>
+                <p className="mt-1 text-sm text-[#A1A1A1]">
+                  {doneCount} of {totalProblems} problems solved
+                </p>
+              </div>
+              <span className="text-2xl font-bold tabular-nums text-[#EDEDED]">
+                {totalProblems > 0
+                  ? Math.round((doneCount / totalProblems) * 100)
+                  : 0}
+                %
+              </span>
+            </div>
+            <div
+              className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#262626]"
+              role="progressbar"
+              aria-label="Overall problem completion"
+              aria-valuemin={0}
+              aria-valuemax={totalProblems}
+              aria-valuenow={doneCount}
+            >
+              <div
+                className="h-full rounded-full bg-[#EDEDED] transition-all"
+                style={{
+                  width: `${totalProblems > 0 ? (doneCount / totalProblems) * 100 : 0}%`,
+                }}
+              />
+            </div>
+            <div className="mt-3 flex justify-between gap-2 text-xs text-[#A1A1A1]">
+              <span>{doneCount} done</span>
+              <span>{skippedCount} skipped</span>
+              <span>{todoCount} to do</span>
+            </div>
+          </section>
 
           <div className="flex items-center gap-2 mb-4 text-xs text-[#A1A1A1]">
             <button

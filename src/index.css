@@ -596,6 +596,7 @@ input:focus-visible {
 
 .activity-scroll {
   width: 100%;
+  min-width: 0;
 }
 
 .activity-months {
@@ -712,8 +713,36 @@ input:focus-visible {
     gap: 0.8rem;
   }
 
+  .dashboard-content {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0;
+  }
+
+  .dashboard-main {
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+  }
+
   .dashboard-content > .tracker-toolbar {
     margin-inline: -0.1rem;
+  }
+
+  .activity-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .activity-months,
+  .activity-heatmap {
+    min-width: 36rem;
+  }
+
+  .activity-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .mobile-progress-summary {
+    box-shadow: 0 4px 14px var(--shadow);
   }
 }
 
@@ -1158,6 +1187,29 @@ input:focus-visible {
   .dashboard-header > div {
     gap: 0.55rem;
   }
+
+  .tracker-toolbar {
+    column-gap: 0.4rem;
+    row-gap: 0.55rem;
+  }
+
+  .tracker-toolbar > label {
+    margin-left: 0;
+  }
+}
+
+@media (hover: none) {
+  .app-tooltip {
+    display: none;
+  }
+}
+
+.sheet-sidebar-backdrop {
+  position: fixed;
+  inset: 57px 0 0;
+  z-index: 30;
+  border: 0;
+  background: rgba(0, 0, 0, 0.58);
 }
 
 @media (prefers-reduced-motion: reduce) {
