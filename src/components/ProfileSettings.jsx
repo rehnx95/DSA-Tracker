@@ -12,11 +12,46 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [usernameAvailability, setUsernameAvailability] = useState('idle');
   const closeTimer = useRef(null);
 
   useEffect(() => () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
+
+  useEffect(() => {
+    const username = form.username.trim().toLowerCase();
+    if (!/^(?=.*[a-z0-9])[a-z0-9-]{3,30}$/.test(username)) {
+      setUsernameAvailability('idle');
+      return undefined;
+    }
+    if (username === (profile?.username || '').toLowerCase()) {
+      setUsernameAvailability('current');
+      return undefined;
+    }
+
+    let active = true;
+    setUsernameAvailability('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const { data: isAvailable, error } = await supabase.rpc(
+          'is_username_available',
+          { candidate_username: username },
+        );
+        if (error) throw error;
+        if (active) setUsernameAvailability(isAvailable ? 'available' : 'taken');
+      } catch (availabilityError) {
+        if (!active) return;
+        console.error('Failed to check username availability:', availabilityError);
+        setUsernameAvailability('error');
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [form.username, profile?.username]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -24,6 +59,7 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
       ...current,
       [name]: name === 'username' ? value.toLowerCase() : value,
     }));
+    if (name === 'username') setUsernameAvailability('idle');
     setErrorMessage('');
     setSuccessMessage('');
   };
@@ -59,13 +95,15 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
     setErrorMessage('');
     setSuccessMessage('');
     try {
-      const { data: isAvailable, error: availabilityError } = await supabase.rpc('is_username_available', {
-        candidate_username: values.username,
-      });
-      if (availabilityError) throw availabilityError;
-      if (!isAvailable) {
-        setErrorMessage('That username is already taken.');
-        return;
+      if (values.username !== (profile?.username || '').toLowerCase()) {
+        const { data: isAvailable, error: availabilityError } = await supabase.rpc('is_username_available', {
+          candidate_username: values.username,
+        });
+        if (availabilityError) throw availabilityError;
+        if (!isAvailable) {
+          setErrorMessage('That username is already taken.');
+          return;
+        }
       }
 
       const { data: savedProfile, error } = await supabase
@@ -140,7 +178,24 @@ function ProfileSettings({ userId, profile, onBack, onSaved }) {
                 className="w-full rounded-lg border border-[#262626] bg-[#000000] px-4 py-3 text-[#EDEDED] placeholder-[#A1A1A1] focus:border-[#EDEDED] focus:outline-none focus:ring-2 focus:ring-[#EDEDED]"
               />
               {field.name === 'username' && (
-                <p className="mt-1 text-xs text-[#A1A1A1]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
+                <div className="mt-1 space-y-1">
+                  <p className="text-xs text-[#A1A1A1]">3–30 characters; lowercase letters, numbers, and hyphens.</p>
+                  {usernameAvailability === 'checking' && (
+                    <p role="status" className="text-xs text-[#A1A1A1]">Checking username…</p>
+                  )}
+                  {usernameAvailability === 'available' && (
+                    <p role="status" className="text-xs text-green-400">Username is available.</p>
+                  )}
+                  {usernameAvailability === 'taken' && (
+                    <p role="status" className="text-xs text-red-400">That username is already taken.</p>
+                  )}
+                  {usernameAvailability === 'current' && (
+                    <p role="status" className="text-xs text-[#A1A1A1]">This is your current username.</p>
+                  )}
+                  {usernameAvailability === 'error' && (
+                    <p role="alert" className="text-xs text-red-400">Could not check username availability. You can still try saving.</p>
+                  )}
+                </div>
               )}
             </div>
           ))}

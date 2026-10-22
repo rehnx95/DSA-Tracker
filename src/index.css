@@ -592,6 +592,11 @@ input:focus-visible {
   aspect-ratio: 1;
 }
 
+.activity-day.is-today {
+  outline: 1px solid var(--text);
+  outline-offset: 1px;
+}
+
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
@@ -987,6 +992,17 @@ input:focus-visible {
   opacity: 0;
 }
 
+.sheet-sidebar:not(.sidebar-closed) {
+  visibility: visible;
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sheet-sidebar.sidebar-closed {
+  pointer-events: none;
+}
+
 .problem-row:focus-within {
   background: var(--surface-hover);
 }
@@ -1002,13 +1018,16 @@ input:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .sheet-sidebar {
-    visibility: visible;
-    transform: none;
-    opacity: 1;
+  .dashboard-main > aside.sheet-sidebar {
+    position: sticky;
+    height: calc(100vh - 7rem);
+    height: calc(100dvh - 7rem);
+    max-height: calc(100vh - 7rem);
+    max-height: calc(100dvh - 7rem);
+    align-self: flex-start;
   }
 
-  .sheet-sidebar.desktop-sidebar-closed {
+  .sheet-sidebar.sidebar-closed {
     width: 0;
     min-width: 0;
     flex: 0 0 0;
@@ -1023,6 +1042,22 @@ input:focus-visible {
 
   .dashboard-main.desktop-sidebar-collapsed {
     gap: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  .dashboard-main > aside.sheet-sidebar {
+    position: fixed;
+    top: 57px;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    z-index: 40;
+    width: 16rem;
+    height: auto;
+    max-height: none;
+    align-self: auto;
+    border-radius: 0;
   }
 }
 

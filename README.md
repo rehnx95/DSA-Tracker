@@ -143,11 +143,20 @@ Download the sample TXT from the upload sidebar. The parser and sample are in
 namespaced by the owner's sheet ID; uploaded sheet contents are not exposed
 through the public-profile API.
 
+## Progress backups
+
+Progress exports are named after the sheet and contain completed and skipped
+problem states. Imports first match problem IDs when available, then match
+normalized problem names so a backup can be restored to the same sheet uploaded
+under a different account.
+
 ## Routes
 
 | Route | Purpose | Authentication |
 | --- | --- | --- |
 | `/` | Tracker, sign-in, or onboarding | Tracker requires sign-in |
+| `/profile` | Signed-in user's profile and progress | Required |
+| `/profile/edit` | Edit signed-in user's profile | Required |
 | `/people` | Search user profiles by username | Required |
 | `/user/:username` | Shareable profile page | Required |
 | `/u/:username` | Legacy profile URL alias | Required |

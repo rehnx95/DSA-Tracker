@@ -92,6 +92,10 @@ function getActivityLevel(count) {
   return 4;
 }
 
+function normalizeProblemTitle(title) {
+  return String(title).normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function getPeopleRoute(pathname = window.location.pathname) {
   if (pathname === "/people") return { page: "people", username: "" };
   const profileMatch = pathname.match(
@@ -825,7 +829,7 @@ function AuthenticatedApp({
       ? savedSheetId
       : defaultSheetId;
   });
-  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(false);
   const [search, setSearch] = useState(
     () => localStorage.getItem("dsa-search") || "",
   );
@@ -855,8 +859,14 @@ function AuthenticatedApp({
   const [activeFilter, setActiveFilter] = useState(
     () => localStorage.getItem("dsa-filter") || "all",
   );
-  const [showProfile, setShowProfile] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(
+    () =>
+      window.location.pathname === "/profile" ||
+      window.location.pathname === "/profile/edit",
+  );
+  const [showSettings, setShowSettings] = useState(
+    () => window.location.pathname === "/profile/edit",
+  );
   const [peopleSearchPage, setPeopleSearchPage] = useState(
     () => getPeopleRoute().page === "people",
   );
@@ -887,6 +897,11 @@ function AuthenticatedApp({
       setPeopleSearchPage(route.page === "people");
       setProfileSearchOpen(route.page === "people");
       setSelectedPublicUsername(route.username);
+      setShowProfile(
+        window.location.pathname === "/profile" ||
+          window.location.pathname === "/profile/edit",
+      );
+      setShowSettings(window.location.pathname === "/profile/edit");
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
@@ -898,6 +913,8 @@ function AuthenticatedApp({
     setPeopleSearchPage(route.page === "people");
     setProfileSearchOpen(route.page === "people");
     setSelectedPublicUsername(route.username);
+    setShowProfile(path === "/profile" || path === "/profile/edit");
+    setShowSettings(path === "/profile/edit");
   };
 
   const openPeopleSearch = () => {
@@ -1038,13 +1055,20 @@ function AuthenticatedApp({
   };
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const refreshToday = () => {
       setTodayDateKey(current => {
         const today = getLocalDateKey(new Date());
         return current === today ? current : today;
       });
-    }, 60_000);
-    return () => window.clearInterval(timer);
+    };
+    const timer = window.setInterval(refreshToday, 60_000);
+    window.addEventListener("focus", refreshToday);
+    document.addEventListener("visibilitychange", refreshToday);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshToday);
+      document.removeEventListener("visibilitychange", refreshToday);
+    };
   }, []);
 
   useEffect(() => {
@@ -1097,7 +1121,7 @@ function AuthenticatedApp({
       } catch (error) {
         if (!active) return;
         console.error("Failed to load sheets:", error);
-        setSheetSidebarOpen(true);
+        setDesktopSidebarOpen(true);
         setSheetError(
           "Could not load your sheets. Apply the latest Supabase sheet migration and try again.",
         );
@@ -1143,7 +1167,7 @@ function AuthenticatedApp({
   const userWebsite = profile?.website || "";
 
   const openProfileSettings = () => {
-    setShowSettings(true);
+    navigateTo("/profile/edit");
   };
 
   const handleUploadSheet = async (event) => {
@@ -1192,7 +1216,7 @@ function AuthenticatedApp({
       setCustomSheets((current) => [...current, nextSheet]);
       setSelectedSheetId(nextSheet.id);
       localStorage.setItem("dsa-active-sheet", nextSheet.id);
-      setSheetSidebarOpen(false);
+      setDesktopSidebarOpen(false);
     } catch (error) {
       console.error("Failed to upload sheet:", error);
       setSheetError(
@@ -1559,25 +1583,28 @@ function AuthenticatedApp({
   }, []);
 
   const filteredSteps = useMemo(() => {
-    let result = data.steps;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result
-        .map((step) => {
-          const filteredSubs = step.subsections
-            .map((sub) => {
-              const filteredProbs = sub.problems.filter((p) =>
-                p.title.toLowerCase().includes(q),
+    const query = search.trim().toLowerCase();
+    return data.steps
+      .map((step) => {
+        const subsections = step.subsections
+          .map((subsection) => {
+            const problems = subsection.problems.filter((problem) => {
+              const state = getState(problem.id, problem.defaultSkip);
+              return (
+                (!query || problem.title.toLowerCase().includes(query)) &&
+                (!hideSkipped || state !== "skipped") &&
+                (activeFilter === "all" ||
+                  !["done", "skipped", "todo"].includes(activeFilter) ||
+                  state === activeFilter)
               );
-              return { ...sub, problems: filteredProbs };
-            })
-            .filter((sub) => sub.problems.length > 0);
-          return { ...step, subsections: filteredSubs };
-        })
-        .filter((step) => step.subsections.length > 0);
-    }
-    return result;
-  }, [search, data]);
+            });
+            return { ...subsection, problems };
+          })
+          .filter((subsection) => subsection.problems.length > 0);
+        return { ...step, subsections };
+      })
+      .filter((step) => step.subsections.length > 0);
+  }, [activeFilter, data, getState, hideSkipped, search]);
 
   const exportProgress = (sheet) => {
     const idPrefix = `${sheet.id}::`;
@@ -1598,7 +1625,14 @@ function AuthenticatedApp({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${sheet.id}-progress.json`;
+    const safeTitle = sheet.title
+      .trim()
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 80);
+    a.download = `${safeTitle || "sheet"}-progress.json`;
     a.click();
     URL.revokeObjectURL(url);
     setBackupAction("");
@@ -1631,46 +1665,49 @@ function AuthenticatedApp({
           return;
         }
         const idPrefix = `${targetSheet.id}::`;
-        const validProblemIds = new Set(
-          targetSheet.sheet.steps.flatMap((step) =>
-            step.subsections.flatMap((subsection) =>
-              subsection.problems.map((problem) => `${idPrefix}${problem.id}`),
-            ),
+        const targetProblems = targetSheet.sheet.steps.flatMap((step) =>
+          step.subsections.flatMap((subsection) =>
+            subsection.problems.map((problem) => ({
+              id: `${idPrefix}${problem.id}`,
+              localId: String(problem.id),
+              title: problem.title,
+              normalizedTitle: normalizeProblemTitle(problem.title),
+            })),
           ),
         );
-        const newProgress = {};
-        let importedCount = 0;
-        for (const [title, value] of Object.entries(imported)) {
-          if (value && typeof value === "object" && value.id && value.state) {
-            const sourceId = String(value.id);
-            let legacyBuiltInId = sourceId;
-            if (
-              targetSheet.builtinTemplateId === "backend" &&
-              sourceId.startsWith("backend::")
-            ) {
-              legacyBuiltInId = sourceId.slice("backend::".length);
-            } else if (
-              targetSheet.builtinTemplateId === "dsa" &&
-              sourceId.startsWith("dsa::")
-            ) {
-              legacyBuiltInId = sourceId.slice("dsa::".length);
-            }
-            const id = sourceId.startsWith(idPrefix)
-              ? sourceId
-              : `${idPrefix}${legacyBuiltInId}`;
-            const state = value.state;
-            if (
-              validProblemIds.has(id) &&
-              (state === "done" || state === "skipped")
-            ) {
-              newProgress[id] = state;
-              importedCount++;
-            }
-          }
+        const targetById = new Map(
+          targetProblems.map((problem) => [problem.id, problem]),
+        );
+        const targetByTitle = new Map();
+        for (const problem of targetProblems) {
+          const matches = targetByTitle.get(problem.normalizedTitle) || [];
+          matches.push(problem);
+          targetByTitle.set(problem.normalizedTitle, matches);
         }
+        const newProgress = {};
+        for (const [title, value] of Object.entries(imported)) {
+          if (!value || typeof value !== "object") continue;
+          const state = value.state;
+          if (state !== "done" && state !== "skipped") continue;
+
+          const sourceId = typeof value.id === "string" ? value.id : "";
+          const directMatch = targetById.get(sourceId);
+          const normalizedTitle = normalizeProblemTitle(title);
+          const titleMatches = targetByTitle.get(normalizedTitle) || [];
+          const sourceLocalId = sourceId.split("::").at(-1);
+          const localIdMatch = titleMatches.find(
+            (problem) => problem.localId === sourceLocalId,
+          );
+          const matchedProblem =
+            directMatch ||
+            localIdMatch ||
+            (titleMatches.length === 1 ? titleMatches[0] : null);
+          if (matchedProblem) newProgress[matchedProblem.id] = state;
+        }
+        const importedCount = Object.keys(newProgress).length;
         if (importedCount === 0) {
           alert(
-            `No matching problem states were found for ${targetSheet.title}. Choose a progress backup that contains problem IDs from this sheet.`,
+            `No matching problem states were found for ${targetSheet.title}. Choose a backup with matching problem names or IDs.`,
           );
           return;
         }
@@ -1792,7 +1829,7 @@ function AuthenticatedApp({
               placeholder="Search by username"
               aria-autocomplete="list"
               aria-controls="people-search-results"
-              className="h-12 w-full rounded-xl border border-[#383838] bg-[#0A0A0A] pl-11 pr-4 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none transition-colors focus:border-[#EDEDED]"
+              className="h-12 w-full rounded-xl border border-[#383838] bg-[#0A0A0A] pl-11 pr-4 text-sm text-[#EDEDED] placeholder-[#A1A1A1] outline-none transition-colors focus:border-[#EDEDED] focus:outline-none"
             />
             {query.trim().length >= 3 && (
               <div
@@ -1862,13 +1899,20 @@ function AuthenticatedApp({
   }) {
     const [dateKey, setDateKey] = useState(() => getLocalDateKey(new Date()));
     useEffect(() => {
-      const timer = window.setInterval(() => {
+      const refreshDate = () => {
         setDateKey((current) => {
           const today = getLocalDateKey(new Date());
           return current === today ? current : today;
         });
-      }, 60_000);
-      return () => window.clearInterval(timer);
+      };
+      const timer = window.setInterval(refreshDate, 60_000);
+      window.addEventListener("focus", refreshDate);
+      document.addEventListener("visibilitychange", refreshDate);
+      return () => {
+        window.clearInterval(timer);
+        window.removeEventListener("focus", refreshDate);
+        document.removeEventListener("visibilitychange", refreshDate);
+      };
     }, []);
 
     const activity = profile?.activity || {};
@@ -2191,9 +2235,9 @@ function AuthenticatedApp({
                             {week.map((item) => (
                               <span
                                 key={item.dateKey}
-                                aria-label={`${item.count} problems solved on ${item.date.toLocaleDateString()}`}
-                                title={`${item.count} ${item.count === 1 ? "problem" : "problems"} solved on ${item.date.toLocaleDateString()}`}
-                                className="activity-day block rounded-[2px] border border-white/[0.04]"
+                                aria-label={`${item.count} problems solved on ${item.date.toLocaleDateString()}${item.dateKey === dateKey ? ", today" : ""}`}
+                                title={`${item.count} ${item.count === 1 ? "problem" : "problems"} solved on ${item.date.toLocaleDateString()}${item.dateKey === dateKey ? " (today)" : ""}`}
+                                className={`activity-day block rounded-[2px] border border-white/[0.04] ${item.dateKey === dateKey ? "is-today" : ""}`}
                                 style={{
                                   backgroundColor: [
                                     "#171717",
@@ -2281,7 +2325,7 @@ function AuthenticatedApp({
         <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
           <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-4 flex items-center gap-4">
             <button
-              onClick={() => setShowProfile(false)}
+              onClick={() => navigateTo("/")}
               className="p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors text-[#EDEDED]"
             >
               <ChevronDown size={20} className="rotate-90" />
@@ -2616,9 +2660,9 @@ function AuthenticatedApp({
                               <span
                                 key={day.dateKey}
                                 aria-hidden={day.outOfRange || undefined}
-                                aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}`}
-                                title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}`}
-                                className="activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40"
+                                aria-label={`${day.count} problems solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? ", today" : ""}`}
+                                title={`${day.count} ${day.count === 1 ? "problem" : "problems"} solved on ${day.date.toLocaleDateString()}${day.dateKey === todayDateKey ? " (today)" : ""}`}
+                                className={`activity-day block rounded-[2px] border border-white/[0.04] hover:ring-1 hover:ring-white/40 ${day.dateKey === todayDateKey ? "is-today" : ""}`}
                                 style={{
                                   backgroundColor: [
                                     "#171717",
@@ -2735,8 +2779,7 @@ function AuthenticatedApp({
                       <li>Select the destination sheet below.</li>
                       <li>Choose the matching progress backup JSON file.</li>
                       <li>
-                        Only problem IDs belonging to that sheet will be
-                        imported.
+                        Matching problem names or IDs will be imported.
                       </li>
                     </ol>
                     <p className="mt-2 text-xs text-[#A1A1A1]">
@@ -2794,7 +2837,7 @@ function AuthenticatedApp({
       <ProfileSettings
         userId={user.id}
         profile={profile}
-        onBack={() => setShowSettings(false)}
+        onBack={() => navigateTo("/profile")}
         onSaved={onProfileUpdated}
       />
     );
@@ -2873,7 +2916,7 @@ function AuthenticatedApp({
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button
-            onClick={() => setShowProfile(true)}
+            onClick={() => navigateTo("/profile")}
             aria-label="Profile"
             className="profile-trigger w-9 h-9 rounded-full flex items-center justify-center transition-colors"
           >
@@ -2913,7 +2956,7 @@ function AuthenticatedApp({
           </div>
         )}
         <aside
-          className={`sheet-sidebar ${!desktopSidebarOpen ? "desktop-sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
+          className={`sheet-sidebar ${!desktopSidebarOpen ? "sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#A1A1A1]">
@@ -3057,21 +3100,27 @@ function AuthenticatedApp({
           </div>
 
           <div>
-            {filteredSteps.map((step) => (
-              <StepRow
-                key={step.id}
-                step={step}
-                progressState={progressState}
-                expandedSteps={expandedSteps}
-                onToggleStep={toggleStep}
-                expandedSubs={expandedSubs}
-                onToggleSub={toggleSub}
-                onToggleProb={handleToggle}
-                onSkipProb={handleSkip}
-                hideSkipped={hideSkipped}
-                filter={activeFilter}
-              />
-            ))}
+            {filteredSteps.length > 0 ? (
+              filteredSteps.map((step) => (
+                <StepRow
+                  key={step.id}
+                  step={step}
+                  progressState={progressState}
+                  expandedSteps={expandedSteps}
+                  onToggleStep={toggleStep}
+                  expandedSubs={expandedSubs}
+                  onToggleSub={toggleSub}
+                  onToggleProb={handleToggle}
+                  onSkipProb={handleSkip}
+                  hideSkipped={hideSkipped}
+                  filter={activeFilter}
+                />
+              ))
+            ) : (
+              <p className="py-10 text-center text-sm text-[#A1A1A1]">
+                No problems match your current filters.
+              </p>
+            )}
           </div>
         </section>
 
