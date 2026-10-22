@@ -825,28 +825,7 @@ function AuthenticatedApp({
       ? savedSheetId
       : defaultSheetId;
   });
-  const [desktopSidebarPinned, setDesktopSidebarPinned] = useState(false);
-  const [desktopSidebarHovering, setDesktopSidebarHovering] = useState(false);
-  const sidebarHoverTimeout = useRef(null);
-  const showSidebarOnHover = () => {
-    window.clearTimeout(sidebarHoverTimeout.current);
-    setDesktopSidebarHovering(true);
-  };
-  const hideSidebarAfterHover = () => {
-    window.clearTimeout(sidebarHoverTimeout.current);
-    sidebarHoverTimeout.current = window.setTimeout(() => {
-      setDesktopSidebarHovering(false);
-    }, 200);
-  };
-  const closeSidebar = () => {
-    window.clearTimeout(sidebarHoverTimeout.current);
-    setDesktopSidebarHovering(false);
-    setDesktopSidebarPinned(false);
-  };
-  useEffect(
-    () => () => window.clearTimeout(sidebarHoverTimeout.current),
-    [],
-  );
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [search, setSearch] = useState(
     () => localStorage.getItem("dsa-search") || "",
   );
@@ -2833,20 +2812,12 @@ function AuthenticatedApp({
       <header className="dashboard-header sticky top-0 z-50 bg-[#000000]/80 backdrop-blur-xl border-b border-[#262626]">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <button
-            onClick={() => setDesktopSidebarPinned((pinned) => !pinned)}
-            onMouseEnter={showSidebarOnHover}
-            onMouseLeave={hideSidebarAfterHover}
-            onFocus={showSidebarOnHover}
-            onBlur={hideSidebarAfterHover}
+            onClick={() => setDesktopSidebarOpen((open) => !open)}
             className="p-1.5 -ml-1 text-[#EDEDED]"
             aria-label={
-              desktopSidebarPinned ? "Unpin sheets sidebar" : "Show sheets sidebar"
+              desktopSidebarOpen ? "Hide sheets sidebar" : "Show sheets sidebar"
             }
-            aria-expanded={desktopSidebarPinned || desktopSidebarHovering}
-            aria-pressed={desktopSidebarPinned}
-            title={
-              desktopSidebarPinned ? "Unpin sheets sidebar" : "Show sidebar"
-            }
+            aria-expanded={desktopSidebarOpen}
           >
             <Menu size={22} />
           </button>
@@ -2912,7 +2883,7 @@ function AuthenticatedApp({
       </header>
 
       <main
-        className="dashboard-main max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0"
+        className={`dashboard-main ${!desktopSidebarOpen ? "desktop-sidebar-collapsed" : ""} max-w-7xl mx-auto px-4 md:px-6 py-6 flex min-h-0`}
       >
         {progressError && (
           <div
@@ -2942,17 +2913,7 @@ function AuthenticatedApp({
           </div>
         )}
         <aside
-          onMouseEnter={showSidebarOnHover}
-          onMouseLeave={hideSidebarAfterHover}
-          onFocus={showSidebarOnHover}
-          onBlur={hideSidebarAfterHover}
-          className={`sheet-sidebar ${
-            desktopSidebarPinned
-              ? "is-pinned"
-              : desktopSidebarHovering
-                ? "is-hovering"
-                : "is-hidden"
-          } surface-card fixed top-[57px] bottom-0 left-0 z-40 w-56 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:rounded-2xl lg:border lg:shadow-none`}
+          className={`sheet-sidebar ${!desktopSidebarOpen ? "desktop-sidebar-closed" : ""} surface-card fixed top-[57px] bottom-0 left-0 z-40 w-64 overflow-y-auto border-r border-[#262626] bg-[#000000] p-3 shadow-2xl lg:static lg:top-auto lg:bottom-auto lg:z-auto lg:w-56 lg:flex-shrink-0 lg:rounded-2xl lg:border lg:shadow-none`}
         >
             <div className="mb-3 flex items-center justify-between px-2">
               <h2 className="text-xs font-semibold uppercase tracking-wide text-[#A1A1A1]">
@@ -3003,7 +2964,7 @@ function AuthenticatedApp({
                     type="button"
                     onClick={() => {
                       setSelectedSheetId(sheet.id);
-                      closeSidebar();
+                      setDesktopSidebarOpen(false);
                     }}
                     aria-current={
                       selectedSheet?.id === sheet.id ? "page" : undefined

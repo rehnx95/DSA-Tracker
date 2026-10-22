@@ -974,8 +974,6 @@ input:focus-visible {
 }
 
 .sheet-sidebar {
-  position: fixed;
-  width: 14rem;
   visibility: hidden;
   transform: translateX(-104%);
   transition:
@@ -987,18 +985,6 @@ input:focus-visible {
     padding 200ms ease,
     border-width 200ms ease;
   opacity: 0;
-}
-
-.sheet-sidebar.is-hovering,
-.sheet-sidebar.is-pinned {
-  visibility: visible;
-  transform: none;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.sheet-sidebar.is-hidden {
-  pointer-events: none;
 }
 
 .problem-row:focus-within {
@@ -1016,32 +1002,27 @@ input:focus-visible {
 }
 
 @media (min-width: 1024px) {
-  .dashboard-main > aside.sheet-sidebar {
-    position: fixed;
-    max-height: none;
-    align-self: auto;
+  .sheet-sidebar {
+    visibility: visible;
+    transform: none;
+    opacity: 1;
   }
 
-  .dashboard-main > aside.sheet-sidebar.is-hovering {
-    top: 57px;
-    bottom: 0;
-    left: 0;
-    z-index: 40;
-    width: 14rem;
-    max-height: none;
-    border-radius: 0;
+  .sheet-sidebar.desktop-sidebar-closed {
+    width: 0;
+    min-width: 0;
+    flex: 0 0 0;
+    overflow: hidden;
+    padding: 0;
+    border-width: 0;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateX(-0.5rem);
   }
 
-  .dashboard-main > aside.sheet-sidebar.is-pinned {
-    position: sticky;
-    top: 5.8rem;
-    bottom: auto;
-    left: auto;
-    z-index: auto;
-    width: 14rem;
-    max-height: calc(100vh - 7rem);
-    flex: 0 0 14rem;
-    align-self: flex-start;
+  .dashboard-main.desktop-sidebar-collapsed {
+    gap: 0;
   }
 }
 
