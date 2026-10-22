@@ -753,20 +753,6 @@ input:focus-visible {
     box-shadow: 0 4px 14px var(--shadow);
   }
 
-  .dashboard-main > aside.sheet-sidebar {
-    top: 5.25rem;
-    right: auto;
-    bottom: max(1rem, env(safe-area-inset-bottom));
-    left: 1rem;
-    width: min(14rem, calc(100vw - 2rem));
-    height: auto;
-    max-height: calc(100dvh - 6.25rem);
-    border: 1px solid var(--border) !important;
-    border-radius: 1rem !important;
-    background: var(--surface) !important;
-    box-shadow: 0 8px 24px var(--shadow) !important;
-  }
-
   .sheet-sidebar-backdrop {
     inset: 4.3rem 0 0;
   }
@@ -1156,16 +1142,19 @@ input:focus-visible {
 @media (max-width: 1023px) {
   .dashboard-main > aside.sheet-sidebar {
     position: fixed;
-    top: 57px;
+    top: 5.5rem;
     right: auto;
-    bottom: 0;
-    left: 0;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    left: 1rem;
     z-index: 40;
-    width: 16rem;
+    width: min(14rem, calc(100vw - 2rem));
     height: auto;
-    max-height: none;
+    max-height: calc(100dvh - 6.5rem);
     align-self: auto;
-    border-radius: 0;
+    border: 1px solid var(--border) !important;
+    border-radius: 1rem !important;
+    background: var(--surface) !important;
+    box-shadow: 0 8px 24px var(--shadow) !important;
   }
 }
 
