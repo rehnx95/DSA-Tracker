@@ -1,517 +1,603 @@
 # Track Sheet — Architecture and Operations
 
-Track Sheet is a multi-user sheet tracker for DSA practice. Users authenticate with
-Google through Supabase, choose built-in sheets or upload private TXT sheets,
-track problem states, and share a public-facing profile with other signed-in
-users.
+This guide explains how Track Sheet works as a system: what runs in the
+browser, what runs on Vercel and Supabase, how data moves between them, and
+how the database protects account information. It is intended to make the
+project understandable without requiring a code walkthrough.
 
-This document describes the current implementation and its operating
-requirements. It is intended to give an engineer enough context to maintain,
-deploy, or extend the application without first tracing every component.
+## 1. Product model
 
-## 1. System at a glance
+Track Sheet is a multi-user problem-sheet tracker. A signed-in user can:
+
+- choose from built-in DSA and Backend tracks;
+- upload and manage private TXT-based tracks;
+- mark individual problems done or skipped;
+- search and filter a track;
+- review completion totals, activity, and streaks;
+- export or restore progress;
+- maintain a profile and view profiles of other signed-in users.
+
+The built-in tracks contain 518 DSA problems and 84 Backend problems. Their
+JSON data is bundled with the frontend as templates. Each signed-in account
+gets its own database-backed copies, which allows progress and sheet deletion
+to be scoped to that account.
+
+## 2. System overview
 
 ```text
-Browser
-  React 18 SPA (Vite)
-    ├─ Supabase Auth: Google OAuth session
-    ├─ Supabase PostgREST: own profile, progress, activity, uploaded sheets
-    ├─ Supabase RPC: username search and authenticated public profiles
-    └─ Vercel Function /api/search
-         └─ validates caller's bearer token, invokes search RPC
-
-Vercel
-  ├─ serves Vite production output from dist/
-  ├─ rewrites SPA routes to index.html
-  └─ runs api/search.js as a serverless function
-
-Supabase
-  ├─ Auth users and OAuth provider configuration
-  ├─ PostgreSQL tables protected by row-level security
-  └─ SECURITY DEFINER RPCs for carefully scoped cross-user discovery
+┌──────────────────────────────── Browser ───────────────────────────────┐
+│ React 18 SPA, built by Vite                                             │
+│                                                                         │
+│  Screens and interactions ── useProgress ── Supabase JS client           │
+│           │                               │                              │
+│           ├── static built-in JSON        ├── Supabase Auth              │
+│           └── localStorage preferences   ├── PostgREST table requests   │
+│                                           └── PostgreSQL RPC requests   │
+└─────────────────────────────────────────────────────────────────────────┘
+                   │                                │
+                   ▼                                ▼
+          Vercel static site                Supabase project
+          and /api/search                   ├── Auth
+                   │                        ├── PostgreSQL
+                   └── token-verified RPC   └── RLS + SQL functions
 ```
 
-The browser uses the public Supabase anon/publishable key. User access is
-authorized by the signed-in Supabase session and database policies; no
-service-role key belongs in the frontend or Vercel environment.
+### Responsibilities
 
-## 2. Repository map
-
-| Path | Responsibility |
+| Part | Responsibility |
 | --- | --- |
-| `index.html` | HTML shell, browser title/description, font loading, React root |
-| `src/main.jsx` | React entry point, global stylesheet import, Supabase global, render error boundary |
-| `src/App.jsx` | Authentication state machine, onboarding, tracker, search routes, owner/public profiles, sheet upload and backup UI |
-| `src/index.css` | Main design tokens, dark/light theme variables, global and component styling |
-| `src/App.css` | Additional/older styling; inspect actual imports before assuming it affects the running app |
-| `src/hooks/useProgress.js` | Active per-user progress/activity state, persistence, reset and theme state |
-| `src/hooks/useSupabaseProgress.js` | Older/legacy progress hook; the active app imports `useProgress.js` |
-| `src/components/ProfileSettings.jsx` | Edit the signed-in user's name, username, location and website |
-| `src/components/Onboarding.jsx` | Older onboarding implementation; `App.jsx` currently contains and renders its own `OnboardingPage` |
-| `src/lib/supabase.js` | Creates the browser Supabase client from Vite environment variables |
-| `src/utils/parseSheet.js` | Browser parser and sample TXT template for uploaded sheets |
-| `src/data/*.json` | Built-in sheet data imported by filename at build time |
-| `source/*.txt` | Source text files used to generate built-in JSON sheets |
-| `scripts/convert-sheet.cjs` | Converts a selected source TXT file into `src/data/<name>.json` |
-| `api/search.js` | Authenticated username-prefix search Vercel Function |
-| `supabase/migrations/*.sql` | Ordered database schema, security policies and RPC definitions |
-| `vercel.json` | Rewrite rule for client-side navigation and direct SPA URLs |
-| `architecture.md` | This architecture and deployment reference |
+| React application | Renders the tracker and profiles, handles UI state, validates user input, and requests account data. |
+| Supabase Auth | Handles Google OAuth, issues and refreshes sessions, and identifies the current user. |
+| Supabase database API | Exposes PostgreSQL table and RPC requests to the browser under the caller's session and database permissions. |
+| PostgreSQL | Stores accounts' profiles, problem states, activity, and private sheet records. |
+| SQL migrations | Create and evolve schema, indexes, RLS policies, triggers, and database functions. |
+| Vercel | Hosts the Vite output and invokes `api/search.js` for username autocomplete. |
+| Browser localStorage | Saves convenience preferences for the current browser; it is not the account data store. |
 
-The npm package name is `track-sheet`, matching the product name. The bundle
-and deployed site are branded **Track Sheet**.
+The browser does not open a PostgreSQL connection. It sends HTTPS requests to
+Supabase using the project's public anon/publishable key and, when signed in,
+the current user's access token. PostgreSQL's row-level security (RLS) and
+function permissions determine what the request can access.
 
-## 3. Runtime and authentication
+## 3. Application startup and authentication
 
-### Application startup
+### Startup sequence
 
-1. `src/main.jsx` mounts `App` inside an error boundary.
-2. `App` checks that the Supabase URL and anon key are configured.
-3. Supabase Auth restores a persisted session. The app subscribes to auth-state
-   changes and records the authenticated Supabase user.
-4. For an authenticated user, `App` loads that user's profile row by `auth.uid`
-   equivalent (`profiles.id = user.id`).
-5. `onboarding_completed` selects the next screen:
-   - false or missing profile: onboarding;
-   - true: authenticated tracker.
-6. The tracker calls `useProgress(user)` to load that user's progress and
-   activity. Uploaded sheets are fetched separately from `user_sheets`.
+1. `src/main.jsx` imports global CSS and mounts `App` inside a React error
+   boundary.
+2. `src/lib/supabase.js` reads `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY`. If either is absent, the browser client is not
+   created and the UI reports that Supabase is not configured.
+3. `App` asks Supabase Auth for the restored session and subscribes to auth
+   changes.
+4. When a session has a user, `App` fetches that user's `profiles` row.
+5. Profile onboarding status selects the next screen:
+   - no completed profile: onboarding;
+   - completed profile: authenticated tracker.
+6. The tracker initializes that user's sheet copies and loads their progress
+   and activity.
 
-The application state machine in `App.jsx` uses `LOADING`,
-`UNAUTHENTICATED`, `ONBOARDING`, and `AUTHENTICATED`. Search and public-profile
-pages are rendered inside the authenticated app; public profile URLs are not
-anonymous/public-to-the-internet endpoints.
+The top-level states are `LOADING`, `UNAUTHENTICATED`, `ONBOARDING`, and
+`AUTHENTICATED`. People search and profile views are screens inside the
+authenticated application. A URL that looks shareable is not an anonymous
+public endpoint: viewing it still requires a signed-in session.
 
-### Google OAuth
+### Google sign-in and onboarding
 
-The browser starts OAuth with the Supabase Google provider and redirects back
-to the current site origin. Configuration is split between:
+The browser starts Google OAuth through Supabase Auth. Supabase handles the
+provider exchange and returns the user to the application origin. Google
+client credentials are configured in Supabase, not in frontend source or
+`VITE_` values.
 
-- Google Cloud OAuth client: authorized JavaScript origins for production and
-  any intended preview origins; authorized redirect URI is the Supabase
-  callback URL.
-- Supabase Auth provider: Google client ID and secret.
-- Supabase Auth URL configuration: production Site URL and allowed app return
-  URLs.
+An Auth database trigger creates a minimal profile row when a new Auth user is
+created. The user then completes onboarding with a name and username; location
+and website are optional. The `onboarding_completed` field determines whether
+the tracker can be entered. Username availability is checked by the
+`is_username_available` database function, and uniqueness is also enforced by
+a database index.
 
-The OAuth secret is configured in Supabase, never in frontend variables.
+Editing the profile updates the user's own row in `profiles`. Email comes
+from Auth and is displayed only on the signed-in user's own profile.
 
-### User profile and onboarding
+## 4. Routes and navigation
 
-The active onboarding page is embedded in `src/App.jsx`. It gathers the
-display name and unique username; location and website are optional. Usernames
-are normalized to lowercase and must use letters, numbers, and hyphens.
-`profiles.onboarding_completed` controls whether onboarding is required.
+The app implements page navigation with the browser History API and
+`popstate`; it does not use React Router. Route state is parsed from
+`window.location.pathname`.
 
-`src/components/ProfileSettings.jsx` edits the same public-facing profile
-fields after onboarding. It saves to the user's own `profiles` row and returns
-the saved row to the parent app.
-
-## 4. Application routes and navigation
-
-Routing is lightweight client-side state/history handling in `src/App.jsx`;
-the application does not use React Router.
-
-| URL | View | Access |
+| Path | Screen | Access |
 | --- | --- | --- |
-| `/` | Tracker (or sign-in/onboarding depending on auth state) | Signed-in tracker |
-| `/people` | Username search | Signed-in users |
-| `/user/:username` | Shareable public profile view | Signed-in users |
-| `/u/:username` | Legacy alias for the same profile view | Signed-in users |
+| `/` | Sign-in, onboarding, or tracker according to auth/profile state | Tracker requires sign-in |
+| `/profile` | Owner profile, statistics, and data management | Sign-in required |
+| `/profile/edit` | Edit owner profile fields | Sign-in required |
+| `/people` | Username-prefix search | Sign-in required |
+| `/user/:username` | Profile view | Sign-in required |
+| `/u/:username` | Legacy alias for profile view | Sign-in required |
+| `/api/search?q=<prefix>` | Vercel username search function | Valid bearer token required |
 
-`getPeopleRoute()` parses `/people`, `/user/...`, and `/u/...`; navigation
-updates browser history and the `popstate` listener keeps the view in sync with
-back/forward navigation. `vercel.json` rewrites requests to the SPA entry so
-direct opens and refreshes can load these routes. The Vercel function at
-`/api/search` remains a function route, not a client-side page.
+`vercel.json` sends page paths to `index.html`, allowing direct navigation and
+refresh of client-side routes. Vercel still handles `/api/search` as a
+serverless function.
 
-## 5. Problem sheets and identifiers
+The authenticated tracker also includes a responsive mobile layout. On
+small screens, its search/filter toolbar stays visible while browsing; the
+sheets list opens as a drawer; and profile heatmaps retain all 53 weeks and
+can be swiped horizontally.
 
-### Built-in sheet templates and personal copies
+## 5. Main browser modules
 
-At build time, `src/App.jsx` uses `import.meta.glob("./data/*.json", ...)` to
-load every valid JSON sheet. The filename without `.json` is the sheet ID and
-normally also supplies its title:
+| Module | Responsibility |
+| --- | --- |
+| `src/main.jsx` | React entry point, global stylesheet import, render error boundary. |
+| `src/App.jsx` | Authentication state machine, onboarding, history-based navigation, tracker, sheets, profiles, import/export, and custom dialogs. |
+| `src/hooks/useProgress.js` | Loads and updates cloud progress/activity, applies optimistic updates, serializes writes, and manages theme. |
+| `src/components/ProfileSettings.jsx` | Profile edit form and save/availability flow. |
+| `src/components/TrackSheetBrand.jsx` | Shared clickable product branding and current-page/track label. |
+| `src/components/Tooltip.jsx` | Accessible themed tooltip behavior for interactive controls. |
+| `src/lib/supabase.js` | Creates the browser Supabase client from the public Vite environment variables. |
+| `src/utils/parseSheet.js` | Parses user-uploaded TXT sheets and exports the sample format. |
+| `src/data/*.json` | Built-in sheet templates included at build time. |
+| `api/search.js` | Authenticated username-prefix search function. |
+| `supabase/migrations/*.sql` | Database schema, RLS policies, triggers, indexes, and RPC implementations. |
 
-- `src/data/dsa.json` → ID `dsa`, title `DSA`;
-- `src/data/backend.json` → ID `backend`, title `Backend`.
+Most product UI is intentionally concentrated in `App.jsx`; profile settings,
+the brand, and tooltip are extracted components. `src/components/Onboarding.jsx`
+and `src/hooks/useSupabaseProgress.js` are legacy implementations. The active
+onboarding screen is embedded in `App.jsx`, and active progress synchronization
+is implemented by `useProgress.js`.
 
-These files are templates, not the active user sheets. On sign-in, the client
-passes the templates to the `ensure_builtin_sheet_copies` RPC. The RPC creates
-one private `user_sheets` row for each built-in template unless that user
-permanently deleted it. Existing copies are not overwritten when a template is
-changed; future accounts and newly created copies use the current template.
-Each personal copy uses the same UUID-namespaced problem IDs as an uploaded
-sheet: `custom-<user_sheets UUID>::<problem-id>`.
+## 6. Sheets and problem identifiers
 
-During initial copy creation, the RPC migrates legacy DSA IDs from the
-unprefixed format and Backend IDs from `<sheet-id>::<problem-id>` into the
-personal copy's IDs. It removes the legacy progress rows as part of that
-migration while retaining their states and completion dates. The selected
-personal sheet is stored by its UUID-based ID in browser localStorage.
+### Sheet data shape
 
-### Built-in sheet authoring
+A sheet is JSON shaped as a set of ordered steps, subsections, and problems:
 
-1. Add or update a TXT source in `source/`.
-2. Run `npm run convert-sheet` and choose the matching source filename (or pass
-   the source name as an argument).
-3. Review the generated JSON under `src/data/`.
-4. Commit both the source and generated JSON so the Vite build includes it.
+```text
+Sheet
+└── steps[]
+    ├── id
+    ├── title
+    └── subsections[]
+        ├── id
+        ├── title (optional for implicit subsections)
+        └── problems[]
+            ├── id
+            ├── title
+            ├── lc (optional LeetCode number)
+            └── defaultSkip
+```
 
-The built-in converter lives in `scripts/convert-sheet.cjs`. It is separate
-from the browser parser used for user uploads.
+The frontend loads all valid `src/data/*.json` files at build time. A
+filename becomes the template ID (`dsa.json` → `dsa`); titles are derived from
+that ID, with DSA displayed as “DSA”.
 
-Each built-in template is provisioned into a user's account as a personal sheet
-and then behaves like an uploaded sheet. Removing it permanently deletes the
-user's sheet row and all matching progress, and updates their activity counts.
-The shared template remains in the repository for other users. A deletion
-tombstone prevents the removed template from being recreated for that account.
+### Per-account built-in copies
 
-### Personal sheets and uploads
+Templates are not the user's live sheet records. After sign-in, the browser
+sends built-in template metadata and JSON to
+`ensure_builtin_sheet_copies(requested_sheets)`. The authenticated SQL
+function:
 
-Built-in copies and user-uploaded sheets both live in `user_sheets`. An
-authenticated user can also choose **Upload a TXT sheet** in the sidebar. The
-browser:
+1. verifies the caller and validates the template list and data size;
+2. serializes initialization for that user with an advisory transaction lock;
+3. creates any missing personal copies;
+4. skips templates that have a deletion tombstone;
+5. migrates legacy DSA/Backend progress identifiers into the UUID-based
+   identifiers for a first personal copy.
 
-1. checks the `.txt` extension and a 2 MB size limit;
-2. parses the file using `src/utils/parseSheet.js`;
-3. derives a display title from the filename;
-4. inserts the converted sheet into `user_sheets`;
-5. adds it to the current session's sheet list.
+An existing copy is not overwritten by new template JSON. This preserves
+user-owned sheet contents and progress if a built-in template changes later.
 
-The supported format uses `Step N — Title` headings, optional subsection
-headings such as `1.1 — Title`, and sequential numbered problem lines. Optional
-markers include `(LC 123)` and `(Skip)`. `src/utils/parseSheet.js` also exports
-the sample TXT template and problem-count helper.
+Personal sheet records are in `user_sheets`. Both a built-in copy and an
+uploaded sheet have an internal UUID and are represented in the app with a
+namespaced sheet ID:
 
-Personal sheet problem IDs are namespaced as
-`custom-<user_sheets UUID>::<problem-id>`. Custom sheets are private to their
-owner and are not returned as raw JSON by public profile RPCs. The RPC returns
-only sheet title/count summaries and a small Recent AC list.
+```text
+custom-<user_sheets UUID>
+```
 
-### Progress state and backup format
+Individual problems are namespaced under that sheet:
 
-Each problem's persisted state is `done` or `skipped`; an absent progress row
-means `todo`, except built-in problems with `defaultSkip: true`, which default
-to skipped. The state is stored per account and problem ID.
+```text
+custom-<user_sheets UUID>::<problem ID from the sheet>
+```
 
-Profile backup export/import operates on one selected sheet at a time. Its JSON
-shape is:
+The prefix prevents ID collisions when two sheets reuse local IDs such as
+`s1-1.1-p1`. The user's selected sheet is saved in localStorage.
+
+### Uploading a personal sheet
+
+The browser:
+
+1. accepts `.txt` files no larger than 2 MB;
+2. reads and parses the file using `parseSheet`;
+3. requires at least one step and one problem, rejects empty titles and
+   duplicate problem IDs, and extracts optional LeetCode/skip markers;
+4. derives a title from the filename;
+5. inserts the parsed JSON into the authenticated user's `user_sheets` row.
+
+Supported headings are `Step N — Title`; subsection headings such as
+`1.1 — Title` are optional. Problem lines are numbered and expected to be
+sequential, including when multiple lines are accidentally joined together.
+The parser handles common joined-line cases by detecting the next expected
+problem number.
+
+### Deleting a sheet
+
+The client calls `delete_user_sheet(UUID)` rather than deleting rows directly.
+The function confirms ownership, deletes sheet-specific progress, updates
+activity counts for removed solved problems, and deletes zero-count activity
+rows. Deleting a built-in copy also creates a tombstone in
+`user_deleted_builtin_sheets`, preventing automatic recreation for that user.
+The shared JSON template and other users' copies are unaffected.
+
+## 7. Progress, synchronization, and activity
+
+### Problem states
+
+Progress is keyed by `(user_id, problem_id)` and has one of three states:
+
+- `todo`
+- `done`
+- `skipped`
+
+An absent row is treated as `todo`, except a problem whose template has
+`defaultSkip: true`, which is displayed as skipped unless the user has saved
+another state.
+
+When a user changes a problem, `useProgress.update()` updates the local React
+state immediately, then queues the database write. The write queue ensures
+that rapid updates from one browser session execute in order. A failed write
+is logged and surfaced as a sync error in the UI. This is optimistic
+synchronization, not a durable offline queue: a pending write is not
+guaranteed to survive closing or reloading the page.
+
+`bulkUpdate()` follows the same model for imported backup entries. Reset can
+delete one sheet's problem rows or all of the user's progress and activity.
+
+### Completion dates and activity counts
+
+When a problem transitions to done, the hook records:
+
+- `completed_on`: the user's local calendar date (`YYYY-MM-DD`);
+- `updated_at`: an ISO timestamp.
+
+The hook changes the `activity_log` count for the affected completion date.
+Changing a done problem back to todo/skipped reduces the count for the date it
+was originally completed. A problem marked skipped does not add activity.
+The write queue persists progress and the corresponding activity updates.
+
+The signed-in owner's heatmap and streak calculations use loaded
+`activity_log` counts. The public-profile database function derives activity
+and streak dates from done rows in `progress`; it prefers `completed_on` and
+falls back to the UTC date of `updated_at` for older rows. These are distinct
+read paths and can disagree if activity rows drift. Completion dates on
+progress rows are the best source when investigating a discrepancy.
+
+Both profile views display the most recent 53 weeks. On mobile, the grid is
+horizontally scrollable and initially positioned at the latest weeks.
+
+### Profile summaries
+
+The owner profile combines:
+
+- profile fields and Auth email;
+- sheet totals and progress;
+- current and longest streak;
+- yearly activity heatmap and active-day count;
+- recent accepted problems;
+- owner-only import/export and reset controls.
+
+The public profile omits email, account identifiers, private settings, and raw
+uploaded sheet JSON. It displays selected profile fields, solved/streak
+summaries, sheet title/count summaries, activity, and up to eight recent
+accepted items. Public profile data refreshes periodically while the page is
+open and on browser focus.
+
+## 8. Progress backup format
+
+Export and import operate on one selected sheet. An export contains only
+explicitly done or skipped problems, as a JSON object keyed by problem title:
 
 ```json
 {
-  "Problem title": {
-    "id": "problem-id-or-namespaced-id",
+  "Two Sum": {
+    "id": "custom-<sheet UUID>::s1-1.1-p1",
     "state": "done"
   }
 }
 ```
 
-Import validates IDs against the selected sheet before writing. Reset can
-remove one sheet's progress or all progress and activity for the signed-in
-account.
+Import validates the JSON shape and state values. It first tries a direct ID
+match, then matches normalized problem titles and local IDs. This permits
+restoring a backup to a matching sheet copy whose UUID differs. Unknown or
+ambiguous problems are ignored; if none match, the user receives a message.
+Successful imports are saved through the same queued progress path.
 
-## 6. Persistence and synchronization
+## 9. Persistence map
 
-### Source-of-truth responsibilities
-
-| Data | Storage | Scope |
+| Information | Source of truth | Scope |
 | --- | --- | --- |
-| Login/session | Supabase Auth | Account |
-| Name, username, location, website, onboarding status | `profiles` | One profile row per Auth user |
-| Problem state and completion timestamps | `progress` | Auth user + problem ID |
-| Activity counts by date | `activity_log` | Auth user + date |
-| Built-in copies and uploaded sheet title, source and parsed content | `user_sheets` | Auth user |
-| Permanently deleted built-in template IDs | `user_deleted_builtin_sheets` | Auth user + template ID |
-| Theme, selected sheet, filter, search, expanded rows | Browser localStorage | Browser/device |
+| Account identity and OAuth session | Supabase Auth | User account |
+| Name, username, location, website, onboarding state | `profiles` | One row per Auth user |
+| Problem state and completion date | `progress` | User + namespaced problem ID |
+| Daily solved count | `activity_log` | User + calendar date |
+| Built-in copies and uploads | `user_sheets` | User-owned sheet |
+| Deleted built-in IDs | `user_deleted_builtin_sheets` | User + template ID |
+| Theme | Browser `localStorage`, key `theme` | Browser/device |
+| Selected sheet | Browser `localStorage`, key `dsa-active-sheet` | Browser/device |
+| Search/filter/expanded state | Browser `localStorage` (`dsa-search`, `dsa-filter`, `dsa-hide-skipped`, `dsa-expanded-steps`, `dsa-expanded-subs`) | Browser/device |
 
-The `user_settings` table is retained in the schema for compatibility but the
-current tracker stores these UI preferences in localStorage.
+The `user_settings` table remains in the schema for compatibility, but the
+active application stores its current tracker preferences in localStorage.
+Those preferences do not sync between browsers or devices.
 
-### Progress writes
+## 10. Database model and access control
 
-`src/hooks/useProgress.js` loads progress and activity rows for the signed-in
-user. `update()` and `bulkUpdate()` optimistically update React state, then
-serialize database writes through a promise queue. A transition into `done`
-records `completed_on` in the user's local calendar and an ISO `updated_at`.
-Changes to solved state adjust the corresponding `activity_log` date count.
-Skipped states do not count as activity. Reset removes progress and adjusts or
-clears activity as appropriate.
+Timestamped SQL files in `supabase/migrations/` are the source of truth for
+database schema and policies. Apply every migration in timestamp order on a
+new Supabase project; apply missing migrations to an existing database.
 
-On save failures, the hook logs the database error and sets a user-visible sync
-error. The UI is not an offline-first queue: pending edits are not guaranteed
-to survive reloads before the write succeeds.
-
-### Activity heatmap and date handling
-
-The owner profile currently builds its heatmap, current streak, longest streak,
-and yearly totals from the loaded `activity_log`. The public-profile RPC
-derives activity and streak dates from solved rows in `progress`, using
-`completed_on` when present and a UTC `updated_at` date fallback for older
-rows. The public profile passes the browser's local date to the RPC and refreshes
-while open (every 15 seconds, and on window focus).
-
-These are separate read paths: owner profile uses persisted activity-log
-counts, while public profile derives activity from progress rows. If the
-activity log drifts, owner and public heatmaps can differ; use progress
-completion dates as the canonical source when reconciling such a discrepancy.
-The `20261020170900_activity_calendar_streaks.sql` migration backfills
-completion dates and rebuilds activity counts for existing records.
-
-## 7. Database model and access control
-
-The schema is created and evolved by timestamped SQL migrations in
-`supabase/migrations/`. Apply every migration in timestamp order to a new
-project; for an existing project, apply any migrations it has not yet received.
-
-### Main tables
+### Core tables
 
 #### `profiles`
 
-- `id`: UUID referencing `auth.users.id`, primary key.
-- `name`, `username`, `location`, `website`: user-managed profile details.
-- `bio`: legacy nullable/retained field; current profile UI does not collect or
-  display it.
-- `onboarding_completed`, `updated_at`.
-- Username uniqueness is case-insensitive; search has a lower-case prefix
-  index.
-
-An Auth trigger creates a minimally populated profile with a generated
-username; the user completes onboarding to claim their desired username.
+One row per `auth.users` identity. Stores display name, username, optional
+location/website, onboarding status, and update time. Username matching is
+case-insensitive and has a supporting prefix-search index. The account
+creation trigger inserts a generated placeholder username; onboarding lets
+the user choose their public username.
 
 #### `progress`
 
-- `user_id`: owning profile/Auth user.
-- `problem_id`: UUID-namespaced personal sheet problem ID.
-- `state`: `todo`, `done`, or `skipped` (the client usually represents todo by
-  absence of a row).
-- `completed_on`: local calendar date when marked done; null when not done.
-- `updated_at`.
-- Primary key: `(user_id, problem_id)`.
+Stores a user's state for a namespaced problem ID. The primary key is
+`(user_id, problem_id)`. Rows include `state`, `updated_at`, and
+`completed_on` (added by the activity-calendar migration). The user foreign
+key cascades when the owning profile is removed.
 
 #### `activity_log`
 
-- `user_id`, `date`, `count`, `updated_at`.
-- Primary key: `(user_id, date)`.
-- Maintained by the client as solved problem transitions occur; rebuilt from
-  progress rows during the activity-date migration.
+Stores daily activity counts keyed by `(user_id, date)`. Counts are updated
+alongside progress writes and rebuilt from progress during the migration that
+introduces completion dates.
 
 #### `user_sheets`
 
-- `id`, `user_id`, `title`, `source_name`, `sheet_data` JSONB, `created_at`,
-  optional `builtin_template_id`.
-- A partial unique index allows at most one copy per user and built-in
-  template. A null `builtin_template_id` identifies an upload.
-- RLS permits authenticated users to read and insert only their own sheets.
-- No public table grant is used to expose sheet contents to profile viewers.
+Stores private sheet metadata and JSON: owner UUID, title, source filename,
+sheet data, creation timestamp, and optional `builtin_template_id`. A partial
+unique index enforces one copy of each built-in template per user. RLS scopes
+direct reads/inserts to the owner. Cross-user profile functions do not expose
+the raw JSON.
 
 #### `user_deleted_builtin_sheets`
 
-- `user_id`, `sheet_id`, `deleted_at`; primary key is `(user_id, sheet_id)`.
-- A row is a permanent per-user tombstone that prevents a built-in template
-  from being copied into that account again.
-- Only the authenticated deletion/bootstrap RPCs access this table; clients
-  cannot remove tombstones to restore a deleted default.
-- The personal-sheet migration converts earlier hidden-sheet preferences into
-  tombstones and removes that sheet's legacy progress on the user's next login.
+Stores deletion tombstones by `(user_id, sheet_id)`. The personal-copy
+bootstrap function checks these rows before provisioning a template. The
+table is not a client-managed preference surface.
 
 #### `user_settings`
 
-Legacy per-user preferences table with RLS. Current code uses localStorage for
-theme and tracker UI preferences instead.
+Legacy settings table with owner-scoped RLS. The current frontend does not use
+it for active tracker preferences.
 
-### Row-level security and RPC boundary
+### RLS and SQL function boundary
 
-RLS is enabled on account-owned tables. Direct table access is scoped to the
-authenticated owner. Cross-user search/profile reads are implemented through
-`SECURITY DEFINER` SQL functions with a fixed `search_path`, explicit
-authenticated-only execution grants, onboarding-complete profile filtering,
-and a response limited to public-facing fields.
+RLS is enabled on account-owned tables. Direct table operations are restricted
+to the authenticated owner with policies based on `auth.uid()`. Cross-user
+profile discovery is intentionally handled through narrowly scoped SQL
+functions rather than broad table-read policies.
 
-Current public RPC contracts after all migrations:
+The cross-user functions are `SECURITY DEFINER`, use a fixed `search_path`,
+require an authenticated identity, and have execute permissions restricted to
+the authenticated role. Their returned fields should remain narrowly scoped:
 
-- `search_public_profiles(search_term TEXT)` returns `name` and `username` for
-  at most five username-prefix matches. It validates a 3–48 character
-  alphanumeric/hyphen prefix.
-- `ensure_builtin_sheet_copies(requested_sheets JSONB)` creates missing
-  per-user copies, migrates legacy problem IDs, and respects deletion
-  tombstones.
-- `delete_user_sheet(requested_sheet_id UUID)` permanently removes an owned
-  sheet and its progress; for built-in copies it also records a deletion
-  tombstone.
-- `get_public_profile(requested_username TEXT, requested_today DATE)` returns
-  public identity fields, solved total, date/count activity map, streak values,
-  progress summaries for owned sheets, and up to eight Recent AC entries.
+| Function | Purpose and return contract |
+| --- | --- |
+| `is_username_available(candidate_username)` | Check whether a candidate username is available to the caller. |
+| `search_public_profiles(search_term)` | Return at most five onboarding-complete prefix matches as `{ name, username }`. |
+| `ensure_builtin_sheet_copies(requested_sheets)` | Provision or migrate the caller's built-in sheet copies. |
+| `delete_user_sheet(requested_sheet_id)` | Delete an owned sheet, related progress, activity deltas, and a built-in tombstone when applicable. |
+| `get_public_profile(requested_username, requested_today)` | Return the selected public profile, activity/streak summary, safe sheet summaries, and recent accepted items. |
 
-The profile RPC excludes email, auth IDs, credentials, private UI settings,
-sheet UUIDs, todo rows, and raw sheet data. Do not widen this RPC casually:
-review every added field for privacy and keep sheet contents private.
+The profile function intentionally omits email, Auth IDs, credentials, todo
+rows, private UI settings, sheet UUIDs, and uploaded sheet JSON. Treat
+additions to its return shape as privacy-sensitive changes.
 
-## 8. Search and public profile data flow
+## 11. People search and public profile request flow
 
 ### Username autocomplete
 
-1. `/people` requires a signed-in user.
-2. After at least three input characters, the browser obtains the current
-   Supabase access token.
-3. It sends `GET /api/search?q=<prefix>` with a bearer authorization header.
-4. `api/search.js` accepts GET only, validates the prefix, validates the token
-   with Supabase Auth, then invokes `search_public_profiles`.
-5. The function returns at most five `{ name, username }` results and sets
-   private/no-store cache headers.
-6. Selecting a result navigates to `/user/<username>`.
+1. The signed-in user enters at least three characters in `/people`.
+2. The browser obtains the current Supabase session access token.
+3. The browser sends `GET /api/search?q=<prefix>` with a bearer token.
+4. `api/search.js` accepts GET only and validates a 3–48 character
+   alphanumeric/hyphen prefix.
+5. The function calls Supabase Auth `getUser(token)` to validate the caller.
+6. It invokes `search_public_profiles` using the anon key and the verified
+   caller token.
+7. It returns at most five `{ name, username }` results and uses private,
+   no-store cache headers.
 
-The endpoint uses the anon key together with the verified caller's token; it
-does not use a service-role key.
+The function does not use a service-role key. The SQL function also applies
+the authenticated caller and onboarding-complete checks.
 
-### Profile view
+### Public profile
 
-The public profile page invokes `get_public_profile` and renders profile
-identity, streak cards, built-in and custom sheet progress, activity heatmap,
-and Recent AC. It uses the same built-in JSON data bundled into the app to map
-public progress IDs to sheet totals and problem titles. The owner-only
-Progress & Data Management panel is not shown.
+Selecting a search result navigates to `/user/<username>`; `/u/<username>` is
+also supported. The frontend calls
+`get_public_profile(requested_username, requested_today)` using the browser's
+local calendar date. The SQL function computes solved dates, activity,
+streaks, and carefully limited sheet summaries. The frontend maps safe
+progress summaries against built-in JSON and renders profile data. Uploaded
+sheet contents remain private.
 
-Search and profile loading errors are explicitly displayed. A missing username
-renders a not-found state. The SQL function only returns onboarding-complete
-profiles and requires `auth.uid()` to be present.
+## 12. TXT sheet authoring and parser rules
 
-## 9. Frontend state and design
+Two independent tools handle text sheets:
 
-`src/App.jsx` currently contains both the top-level authentication state
-machine and most tracker/profile UI. `ProfileSettings` is extracted; the
-onboarding view and profile display remain embedded.
+- `scripts/convert-sheet.cjs` converts repository-maintained source text into
+  build-time JSON templates.
+- `src/utils/parseSheet.js` parses user-uploaded text in the browser.
 
-The app defaults to the dark theme. `useProgress` persists theme to
-localStorage and applies/removes `data-theme="light"` on the document root.
-`src/index.css` defines global CSS variables and theme overrides; many
-components also use explicit Tailwind color classes. A visual theme change may
-therefore require checking both the CSS variables and component utility
-classes.
+The upload parser normalizes CRLF line endings, recognizes Step and optional
+subsection headings using em dash, en dash, or hyphen separators, handles
+common joined-line cases, and splits sequential problem numbers. It extracts
+`(LC N)` into the `lc` property, converts `(Skip)` into `defaultSkip`, and
+removes those markers from the displayed title.
 
-The profile display includes public profile identity, current/best streaks,
-per-sheet progress, heatmap/active-day count, and Recent AC. The signed-in
-owner's profile additionally shows email and Progress & Data Management
-controls. Account email is not returned by the public profile RPC.
+When changing a built-in sheet, update both its source and generated JSON.
+When changing upload parsing, preserve compatibility with the sample format
+and existing saved sheet JSON.
 
-`src/main.jsx` wraps the React app with an error boundary. A render exception
-shows a reload fallback and is logged to the browser console.
+## 13. UI behavior and themes
 
-## 10. Environment and configuration
+The default theme is dark. `useProgress` reads and writes the `theme` local
+storage value and applies `data-theme="light"` to the document root for light
+mode. `src/index.css` defines CSS variables for page, surface, border, text,
+and theme colors; some components also use Tailwind utility colors.
 
-### Frontend build/runtime
+The authenticated interface includes:
 
-Required Vite environment variables:
+- searchable and filterable problem groups;
+- custom confirmations and notices styled to match the application;
+- accessible hover/focus tooltips;
+- desktop sheets sidebar and mobile drawer;
+- mobile search/filter controls that stay visible while scrolling;
+- a compact mobile overall-progress summary;
+- full 53-week profile heatmaps that can be horizontally swiped on narrow
+  screens.
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+`src/main.jsx` wraps the application in a React error boundary. A render
+exception is logged and shows a reload fallback; asynchronous request errors
+are surfaced in the relevant UI or sync-error message.
 
-They are read by `src/lib/supabase.js` and compiled into the frontend as
-project URL and public anon/publishable key. Never set a service-role secret as
-a `VITE_` variable.
+## 14. Environment and configuration
 
-### Vercel Function
+### Browser build
 
-`api/search.js` accepts:
+| Variable | Used by | Value |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | Supabase browser client | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase browser client | Public anon/publishable key |
 
-- `SUPABASE_URL` (falls back to `VITE_SUPABASE_URL`)
-- `SUPABASE_ANON_KEY` (falls back to `VITE_SUPABASE_ANON_KEY`)
+Vite embeds `VITE_` values in browser output. Never place a service-role key or
+other secret in one.
 
-Configure these for the Vercel Function using the same public project URL and
-anon/publishable key. Do not configure the service-role key for search.
+### Vercel function
 
-### Google and Supabase
+`api/search.js` reads:
 
-Configure the Google provider in Supabase Auth, set the Supabase callback URI
-in Google Cloud, and configure production/preview redirect origins in Supabase
-Auth URL settings. These dashboards are part of the application setup and are
-not represented by repository files.
+- `SUPABASE_URL`, with fallback to `VITE_SUPABASE_URL`;
+- `SUPABASE_ANON_KEY`, with fallback to `VITE_SUPABASE_ANON_KEY`.
 
-## 11. Local development, data updates, and deployment
+Use the same project URL and public anon/publishable key. The function verifies
+each caller token and executes the search RPC as that caller.
+
+### Google OAuth
+
+Configure the Google provider in Supabase Auth. In Google Cloud, register the
+Supabase callback URL. In Supabase Auth URL configuration, allow the deployed
+site URL and intended local/preview origins. Keep provider secrets in the
+Supabase dashboard.
+
+## 15. Local development, validation, and deployment
 
 ### Local development
 
-```sh
+```bash
 npm install
 npm run dev
 ```
 
-Create a local `.env` with the two required `VITE_` variables. `.env` is
-ignored by Git and must not be committed.
+Create the local `.env` values described above. Do not commit `.env`.
 
-### Build and preview
+### Production build
 
-```sh
+```bash
 npm run build
 npm run preview
 ```
 
-The production build is emitted into `dist/`. `npm run convert-sheet` is the
-separate built-in sheet generation command.
+`npm run build` checks that Vite can bundle the production application.
+`package.json` currently has no automated test or lint script.
 
-### Vercel production
+### Vercel deployment
 
-1. Import the repository with the repository root as project root.
-2. Use `npm run build` and `dist` as the output directory.
-3. Set frontend and Function environment variables described above.
-4. Configure Google OAuth and Supabase allowed return URLs for the deployed
-   origin.
-5. Apply the SQL migrations in timestamp order.
-6. Deploy/redeploy after environment variable or source changes.
-7. Smoke-test Google sign-in, onboarding, marking a problem done/skipped,
-   reload persistence, TXT upload, backup import/export, `/people`, and direct
-   `/user/<username>` navigation.
+1. Set the repository root as the Vercel project root.
+2. Configure build command `npm run build` and output directory `dist`.
+3. Add frontend and function variables.
+4. Configure Google and Supabase redirect URLs for the deployment origin.
+5. Apply database migrations in timestamp order.
+6. Deploy, then verify authentication, onboarding, saving progress, uploading
+   and deleting sheets, backup import/export, people search, public profiles,
+   and direct page-route refresh.
 
-`vercel.json` currently rewrites all paths to `index.html`. Vercel Functions
-under `api/` are still served as functions; if API routing is changed, verify
-`/api/search` before deployment.
+## 16. Migration history
 
-## 12. Migration sequence
+The following migrations are applied in filename/timestamp order:
 
-Apply these files in order:
-
-1. `20261020165100_multi_user_auth_profiles.sql` — profiles, progress,
-   activity, RLS, signup trigger and username availability.
-2. `20261020170900_activity_calendar_streaks.sql` — `completed_on` and activity
-   count rebuild.
+1. `20261020165100_multi_user_auth_profiles.sql` — profile, progress,
+   activity, and legacy settings tables; owner RLS; signup profile trigger;
+   username availability.
+2. `20261020170900_activity_calendar_streaks.sql` — completion calendar date
+   and activity-history backfill/rebuild.
 3. `20261020174800_decouple_auth_signup_from_user_settings.sql` — signup
-   trigger no longer depends on optional settings insert.
-4. `20261020175400_remove_bio_signup_dependency.sql` — removes bio from
-   signup-trigger requirements.
-5. `20261021003000_user_uploaded_sheets.sql` — private uploaded sheet table and
+   trigger no longer depends on inserting a settings row.
+4. `20261020175400_remove_bio_signup_dependency.sql` — signup no longer
+   depends on the legacy bio field.
+5. `20261021003000_user_uploaded_sheets.sql` — private user sheet storage and
    owner policies.
-6. `20261021012200_public_profile_search.sql` — initial authenticated search
-   and profile RPCs.
-7. `20261021013500_public_profile_search_long_usernames.sql` — supports longer
-   generated usernames.
-8. `20261021025300_indexed_user_search_limit.sql` — indexed prefix search and
-   five-result cap.
-9. `20261021031600_public_profile_full_data.sql` — extends profile data for
-   profile sections.
-10. `20261021035000_public_profile_activity_dates.sql` — final two-argument
-    profile RPC with local-date alignment and completion-date fallback.
+6. `20261021012200_public_profile_search.sql` — initial authenticated profile
+   search and profile functions.
+7. `20261021013500_public_profile_search_long_usernames.sql` — support for
+   longer generated usernames.
+8. `20261021025300_indexed_user_search_limit.sql` — prefix index and five
+   result cap.
+9. `20261021031600_public_profile_full_data.sql` — profile summaries needed
+   by the profile views.
+10. `20261021035000_public_profile_activity_dates.sql` — current
+    `get_public_profile(TEXT, DATE)` signature and local-date activity
+    handling.
+11. `20261021120000_delete_uploaded_sheets.sql` — server-side deletion of an
+    owned sheet and associated progress/activity.
+12. `20261021133000_user_hidden_sheets.sql` — per-user hidden built-in sheet
+    tracking used by the prior lifecycle.
+13. `20261021180000_personal_sheet_copies.sql` — built-in personal copies,
+    legacy progress migration, deletion tombstones, and ownership-checked
+    deletion.
 
-The latest public-profile code calls
-`get_public_profile(TEXT, DATE)`. If the final migration is missing, the RPC
-call fails and the profile page displays a migration error. On an existing
-database, do not rerun an old migration as a substitute for applying the
-missing latest migration.
+For a fresh database, apply all migrations. For an existing database, apply
+only migrations that have not already been applied, in order. The current
+client expects the latest profile function signature and personal-sheet RPCs;
+missing migrations produce visible sheet/profile errors.
 
-## 13. Known implementation boundaries
+## 17. Operational considerations and known boundaries
 
-- User search, public profile pages, and their RPCs currently require a
-  Supabase-authenticated caller; profiles are not accessible to signed-out
-  visitors.
-- Public profiles refresh by polling every 15 seconds and on focus; there is
-  no Supabase Realtime subscription for profile updates.
-- Activity is represented in two read paths: owner profile reads
-  `activity_log`, public profile derives from `progress`. They can diverge if
-  activity counts become stale.
-- `src/components/Onboarding.jsx` and `src/hooks/useSupabaseProgress.js` are
-  legacy implementations; the canonical flow is embedded in `App.jsx` plus
-  `src/hooks/useProgress.js`.
-- Vercel rewrite and frontend routing should be checked together whenever
-  adding new routes or API endpoints.
-- `architecture.md` is the maintained architecture document. Update it when
-  routes, RPC signatures, schema migrations, environment variables, or
-  persistence contracts change.
+- **Authenticated profiles:** search and profile views require a signed-in
+  caller; they are not publicly accessible to anonymous visitors.
+- **Activity sources:** the owner's heatmap reads `activity_log`; public
+  profile activity is derived from progress completion dates. If they differ,
+  compare solved progress rows and activity counts.
+- **Cloud-first progress:** optimistic updates improve responsiveness, but the
+  app does not maintain a durable offline write queue.
+- **Preferences are local:** localStorage preferences are per browser/device
+  and are not restored by signing in on another device.
+- **Built-in copies persist:** changing a JSON template does not rewrite
+  existing personal copies.
+- **Route configuration:** verify both SPA rewrites and API routing when
+  adding routes or serverless endpoints.
+- **Large client bundle:** Vite reports a chunk-size advisory during the
+  production build; it does not fail the build.
+
+## 18. Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| App reports Supabase is not configured | Confirm both `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, then restart Vite. |
+| Google sign-in or callback fails | Check Google provider settings, Supabase callback URL, Site URL, and allowed redirect URLs. |
+| Profile cannot load | Confirm all migrations are applied, especially the latest public-profile migration. |
+| Sheets fail to load | Confirm the personal-sheet migration and its RPC grants are installed. |
+| Progress does not sync | Check the browser console and visible sync error; verify Supabase connectivity and owner RLS policies. |
+| `/people` search fails | Check `SUPABASE_URL` and `SUPABASE_ANON_KEY` on Vercel, bearer-session validity, and the search RPC migration. |
+| A route fails on direct refresh | Check the Vercel SPA rewrite and ensure function routes remain reachable. |
+| Owner and public heatmaps differ | Compare `progress.completed_on`/`updated_at` with `activity_log` rows for that account. |

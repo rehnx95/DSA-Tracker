@@ -1,131 +1,130 @@
 # Track Sheet
 
-Track Sheet helps you organize coding-practice sheets, track problem progress,
-and view your activity over time. It supports built-in and personal TXT-based
-sheets, Google sign-in, cloud-saved progress, and searchable profiles for
-signed-in users.
+Track Sheet is a full-stack coding-practice tracker for organizing problem
+sheets, recording progress, and sharing a public learning profile. It includes
+curated DSA and Backend tracks, private user-uploaded sheets, per-problem
+status, activity history, and account-based synchronization.
 
-## Features
+**Live app:** [tracksheet-rehnx.vercel.app](https://tracksheet-rehnx.vercel.app/)
 
-- **Multiple problem sheets:** includes built-in DSA and Backend sheets.
-- **Personal sheets:** upload a TXT sheet; its parsed contents are stored
-  privately in your Supabase account.
-- **Per-problem tracking:** mark problems done or skipped, filter the list, and
-  search problem titles.
-- **Cloud persistence:** progress, completion dates, activity, and profile
-  details are stored per signed-in account.
-- **Progress profiles:** view streaks, sheet progress, Recent AC, and a
-  year-style activity heatmap on your own profile.
-- **People search:** find a user by username and view their public profile.
-  Search and profile viewing require sign-in.
-- **Backups:** export or import progress for a selected sheet.
-- **Themes:** dark mode by default with a light theme option.
+## What it does
 
-## Tech stack
+- Track problems as **to do**, **done**, or **skipped**.
+- Browse built-in DSA and Backend sheets, or upload a private TXT sheet.
+- Filter and search problems, collapse or expand topics, and hide skipped items.
+- View solved counts, streaks, recent accepted problems, and a year-long activity
+  heatmap on a profile.
+- Search for other users by username and view their profiles. These features
+  require sign-in.
+- Export or restore progress for an individual sheet.
+- Use dark or light mode and a responsive layout for desktop and mobile.
 
-- React 18 and Vite 5
-- Supabase Auth and PostgreSQL
+## How the application is built
+
+```text
+Browser
+  React + Vite application
+       ├── Supabase Auth for Google sign-in and sessions
+       ├── Supabase client for account-scoped data
+       └── /api/search for authenticated username search
+                 │
+           Vercel hosting
+                 │
+Supabase Auth + PostgreSQL + row-level security + SQL RPCs
+```
+
+The React application is the user interface and coordinates user actions.
+Supabase provides authentication and the primary backend/database services.
+PostgreSQL stores profiles, progress, activity, and personal sheet copies.
+Vercel serves the built application and runs the small username-search
+function. The browser uses the public Supabase anon/publishable key; it does
+not connect to PostgreSQL with a database password.
+
+## Technology
+
+- React 18, Vite 5, JavaScript, and Tailwind CSS
+- Supabase Auth, PostgreSQL, PostgREST, row-level security, and SQL RPCs
 - Vercel static hosting and serverless functions
-- Tailwind CSS and Lucide icons
+- Lucide icons
 
 ## Run locally
 
 ### Requirements
 
 - Node.js and npm
-- A Supabase project with the repository migrations applied
-- Google OAuth configured in Supabase if testing sign-in
+- A Supabase project
+- Google OAuth configured in Supabase to test sign-in
 
-### Install and configure
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Create a local `.env` in the repository root:
+Create `.env` in the project root:
 
 ```dotenv
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
 ```
 
-Use the public anon/publishable key only. Never put a Supabase service-role key
-in a `VITE_` variable or commit `.env`.
+Apply the SQL migrations under
+[`supabase/migrations/`](./supabase/migrations/) in filename order before
+using authenticated features. See [Architecture and operations](./architecture.md)
+for the database setup, authentication configuration, and deployment model.
 
-Start the development server:
+Start the local development server:
 
 ```bash
 npm run dev
 ```
 
-Vite prints the local URL (normally `http://localhost:5173`).
+Vite prints the local address, normally `http://localhost:5173`.
 
-## Supabase setup
+## Build and preview
 
-Apply every SQL migration under [`supabase/migrations/`](./supabase/migrations/)
-in filename timestamp order. The current public-profile implementation requires
-the latest migration,
-[`20261021035000_public_profile_activity_dates.sql`](./supabase/migrations/20261021035000_public_profile_activity_dates.sql).
+```bash
+npm run build
+npm run preview
+```
 
-Configure Google authentication:
+The production bundle is emitted to `dist/`.
 
-1. Enable Google under Supabase **Authentication → Providers** and enter the
-   Google OAuth client ID and secret.
-2. Add the Supabase callback URL shown in Supabase to the Google OAuth
-   authorized redirect URIs.
-3. Set the production Site URL and allowed redirect URLs in Supabase Auth.
-   Include local development and any Vercel preview origins you use.
-4. Add the production and intended preview origins to the Google OAuth
-   authorized JavaScript origins.
+To run the available automated checks, inspect the scripts in
+[`package.json`](./package.json). The project currently defines development,
+production build/preview, and sheet-conversion commands; it does not define an
+automated test script.
 
-The sign-in secret stays in Supabase. The browser uses only the public project
-URL and anon/publishable key.
+## Built-in problem sheets
 
-## Built-in sheets
+The built-in sheets are data files bundled into the frontend:
 
-Built-in sheets are JSON files under [`src/data/`](./src/data/), loaded
-automatically at build time. The filename (without `.json`) becomes the sheet
-ID and, in most cases, its display title:
+| File | Track | Problems |
+| --- | --- | ---: |
+| [`src/data/dsa.json`](./src/data/dsa.json) | DSA | 518 |
+| [`src/data/backend.json`](./src/data/backend.json) | Backend | 84 |
 
-- `src/data/dsa.json` → **DSA**
-- `src/data/backend.json` → **Backend**
+Their editable text sources live in [`source/`](./source/). To update a
+built-in sheet:
 
-To create/update a built-in sheet:
+1. Update or add its TXT source.
+2. Run `npm run convert-sheet`, or pass a filename such as
+   `npm run convert-sheet -- backend.txt`.
+3. Review the generated JSON in `src/data/`.
+4. Commit both source and generated data.
 
-1. Add its source TXT under [`source/`](./source/).
-2. Run:
+These JSON files are templates. When an account initializes its sheets,
+Supabase creates private copies so each user's sheet identifiers and progress
+are isolated. Existing personal copies are not silently overwritten by later
+template edits.
 
-   ```bash
-   npm run convert-sheet
-   ```
+## Upload a personal sheet
 
-3. Select the source file when prompted, or pass its filename:
+Signed-in users can upload a TXT file from the sheets sidebar. The browser
+parses it and saves the resulting sheet privately to the user's account.
+Uploads are limited to 2 MB.
 
-   ```bash
-   npm run convert-sheet -- backend.txt
-   ```
-
-4. Review the generated JSON in `src/data/` and commit both source and JSON.
-
-These JSON files are templates. On sign-in, Track Sheet copies each template
-into the signed-in user's private `user_sheets` records. Built-in copies then
-behave like uploaded sheets and use UUID-namespaced problem IDs. The first copy
-migrates existing DSA and Backend progress to those IDs.
-
-Users can permanently delete any personal sheet, including a built-in copy.
-Deleting a built-in also removes its saved progress and prevents that template
-from being copied again for that account. It does not affect other users or
-delete the shared JSON template.
-
-## Upload a personal TXT sheet
-
-Signed-in users can select **Upload a TXT sheet** from the sheets sidebar. The
-browser parses the file and stores the converted sheet in the user's private
-`user_sheets` row. Uploads are limited to 2 MB.
-
-The supported format uses `Step N — Title` headings and sequential numbered
-problem lines. Subsection headings are optional. `(LC 123)` and `(Skip)` are
-optional markers.
+Supported headings and markers:
 
 ```text
 Step 1 — Arrays
@@ -133,109 +132,83 @@ Step 1 — Arrays
 1. Two Sum (LC 1)
 2. Best Time to Buy and Sell Stock (LC 121)
 
-Step 2 — Two Pointers
-3. Valid Palindrome (LC 125)
-4. 3Sum (LC 15) (Skip)
+Step 2 — Dynamic Programming
+3. Climbing Stairs (LC 70) (Skip)
 ```
 
-Download the sample TXT from the upload sidebar. The parser and sample are in
-[`src/utils/parseSheet.js`](./src/utils/parseSheet.js). Custom problem IDs are
-namespaced by the owner's sheet ID; uploaded sheet contents are not exposed
-through the public-profile API.
+Step headings and numbered problems are required. Subsection headings,
+`(LC number)`, and `(Skip)` are optional. The upload parser and sample format
+are in [`src/utils/parseSheet.js`](./src/utils/parseSheet.js).
 
-## Progress backups
+## Main routes
 
-Progress exports are named after the sheet and contain completed and skipped
-problem states. Imports first match problem IDs when available, then match
-normalized problem names so a backup can be restored to the same sheet uploaded
-under a different account.
-
-## Routes
-
-| Route | Purpose | Authentication |
+| Route | Purpose | Access |
 | --- | --- | --- |
-| `/` | Tracker, sign-in, or onboarding | Tracker requires sign-in |
-| `/profile` | Signed-in user's profile and progress | Required |
-| `/profile/edit` | Edit signed-in user's profile | Required |
-| `/people` | Search user profiles by username | Required |
-| `/user/:username` | Shareable profile page | Required |
-| `/u/:username` | Legacy profile URL alias | Required |
-| `/api/search?q=<prefix>` | Username autocomplete API | Bearer token required |
+| `/` | Tracker, sign-in, or onboarding | Sign-in required for tracker |
+| `/profile` | Your profile, statistics, and progress management | Sign-in required |
+| `/profile/edit` | Edit profile details | Sign-in required |
+| `/people` | Search for profiles by username | Sign-in required |
+| `/user/:username` | View a profile | Sign-in required |
+| `/u/:username` | Legacy alias for a profile | Sign-in required |
+| `/api/search?q=<prefix>` | Username autocomplete endpoint | Valid bearer session required |
 
-Vercel rewrites app routes to `index.html`; the API route is handled by
+Page navigation is handled by the React app; Vercel rewrites app routes to the
+SPA entry point. The API route is implemented separately in
 [`api/search.js`](./api/search.js).
 
 ## Data and privacy
 
-- Supabase Auth manages accounts and sessions.
-- `profiles` contains the user's display name, username, location, website, and
-  onboarding status.
-- `progress` stores each account's problem state and completion timestamps.
-- `activity_log` stores daily activity counts used by the signed-in owner's
-  heatmap.
-- `user_sheets` stores uploaded sheet data under owner-only row-level security.
-- Tracker preferences such as selected sheet, theme, filters, and expanded
-  sections are stored in browser localStorage.
-- Direct table access is owner-scoped by RLS. Cross-user lookup uses
-  authenticated-only SQL RPCs that return selected profile/progress summaries,
-  not email, credentials, or raw uploaded sheets.
+- Supabase Auth manages identities and sign-in sessions.
+- PostgreSQL stores profiles, problem states, activity counts, and personal
+  sheet data.
+- Row-level security restricts direct account data access to its owner.
+- Profile search and profile summaries use authenticated database functions
+  that return selected public-facing fields.
+- Uploaded sheet JSON, email addresses, and account IDs are not exposed by
+  public-profile lookups.
+- Theme, selected sheet, filters, search text, and expanded sections are kept
+  in browser local storage, so those preferences do not automatically sync
+  between devices.
 
-The owner heatmap reads `activity_log`; public profile activity is derived from
-solved progress rows and completion dates. The migration history includes
-backfill/rebuild logic for the activity table. If these views ever differ,
-investigate the progress completion dates and activity rows for that account.
+## Deploy
 
-## Deployment
+The application is configured for Vercel:
 
-### Vercel
+1. Set the repository root as the project root.
+2. Use `npm run build` as the build command and `dist` as the output directory.
+3. Configure the frontend environment variables listed above.
+4. Configure `SUPABASE_URL` and `SUPABASE_ANON_KEY` for the `/api/search`
+   function. The public Vite variables can be used as fallbacks, but dedicated
+   function variables make the deployment configuration explicit.
+5. Configure Google OAuth callback and allowed return URLs in Google Cloud and
+   Supabase Auth.
+6. Apply all migrations in timestamp order.
+7. Test sign-in, onboarding, progress sync, sheet upload/deletion, backups,
+   profile search, and direct profile URLs.
 
-1. Import the repository into Vercel with the repository root as the project
-   root.
-2. Set the build command to `npm run build` and the output directory to `dist`.
-3. Add these environment variables to the deployment:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `SUPABASE_URL` (for `/api/search`)
-   - `SUPABASE_ANON_KEY` (for `/api/search`)
-4. Use the Supabase project URL and public anon/publishable key for both
-   frontend and function variables. Do not use a service-role secret.
-5. Configure Supabase and Google OAuth URLs for the deployed domain.
-6. Apply the Supabase migrations in timestamp order.
-7. Deploy and smoke-test sign-in, onboarding, progress persistence, sheet
-   upload, backups, `/people`, and direct profile URLs.
+Never place a Supabase service-role key in a `VITE_` variable or expose it to
+the browser. The search function uses the public anon key with the caller's
+verified access token.
 
-`vercel.json` contains the SPA rewrite for direct route loads. Redeploy after
-changing source or Vercel environment variables.
-
-### Production build locally
-
-```bash
-npm run build
-npm run preview
-```
-
-The build output is written to `dist/`. The available npm scripts are listed in
-[`package.json`](./package.json); there is no automated test script currently
-defined there.
-
-## Project structure
+## Project map
 
 ```text
-api/                    Vercel serverless functions
-source/                 TXT sources for built-in sheets
+api/                    Vercel serverless API
 scripts/                Built-in sheet converter
+source/                 TXT sources for built-in tracks
 src/
-  components/           Profile settings and legacy onboarding component
-  data/                 Built-in sheet JSON
-  hooks/                Supabase progress persistence
-  lib/                  Supabase browser client
-  utils/                User-upload TXT parser/template
-  App.jsx               Main application, routes, and primary views
-  index.css             Global styles and theme tokens
+  App.jsx               Authentication flow, routing, tracker, profile UI
+  components/           Shared brand, tooltip, profile settings UI
+  data/                 Bundled built-in track templates
+  hooks/useProgress.js  Progress, activity, theme, and sync behavior
+  lib/supabase.js       Browser Supabase client
+  utils/parseSheet.js   TXT upload parser and sample template
+  index.css             Theme, component, and responsive styles
   main.jsx              React entry point and render error boundary
-supabase/migrations/    Database schema and access-control changes
-architecture.md         Detailed architecture and operations guide
+supabase/migrations/    Database schema, access policies, and RPC history
+architecture.md         System design and operating guide
 ```
 
-For deeper system behavior, database contracts, security boundaries, and
-maintenance notes, see [`architecture.md`](./architecture.md).
+For the request flows, data contracts, access-control model, migration
+sequence, and operational details, continue to
+[Architecture and operations](./architecture.md).
