@@ -756,7 +756,7 @@ function OnboardingPage({
 }
 
 // =============================================================================
-// Authenticated App Component (Main DSA Tracker)
+// Authenticated App Component (Main Tracker)
 // =============================================================================
 function AuthenticatedApp({
   user,
@@ -2920,7 +2920,7 @@ function AuthenticatedApp({
             </button>
           </Tooltip>
           <TrackSheetBrand
-            subtitle={selectedSheet?.title || "DSA"}
+            subtitle={selectedSheet?.title || "Select a sheet"}
             onNavigate={() => navigateTo("/")}
           />
           <div className="flex-1" />

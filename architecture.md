@@ -7,20 +7,22 @@ project understandable without requiring a code walkthrough.
 
 ## 1. Product model
 
-Track Sheet is a multi-user problem-sheet tracker. A signed-in user can:
+Track Sheet is a multi-user tracker for coding problem sheets, not a
+DSA-only application. A signed-in user can:
 
-- choose from built-in DSA and Backend tracks;
-- upload and manage private TXT-based tracks;
+- choose from built-in DSA and Backend sheets;
+- upload and manage private sheets in the supported TXT format;
 - mark individual problems done or skipped;
 - search and filter a track;
 - review completion totals, activity, and streaks;
 - export or restore progress;
 - maintain a profile and view profiles of other signed-in users.
 
-The built-in tracks contain 518 DSA problems and 84 Backend problems. Their
-JSON data is bundled with the frontend as templates. Each signed-in account
-gets its own database-backed copies, which allows progress and sheet deletion
-to be scoped to that account.
+The built-in sheets are DSA (518 problems) and Backend (84 problems). Users
+can also upload private sheets in the supported TXT format. Built-in JSON data
+is bundled with the frontend as templates. Each signed-in account gets its
+own database-backed copies, which allows progress and sheet deletion to be
+scoped to that account.
 
 ## 2. System overview
 
@@ -330,7 +332,9 @@ Successful imports are saved through the same queued progress path.
 
 The `user_settings` table remains in the schema for compatibility, but the
 active application stores its current tracker preferences in localStorage.
-Those preferences do not sync between browsers or devices.
+Those preferences do not sync between browsers or devices. The `dsa-` key
+prefix is retained for compatibility with existing browser preferences; it
+does not limit the app to DSA sheets.
 
 ## 10. Database model and access control
 

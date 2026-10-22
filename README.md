@@ -1,9 +1,9 @@
 # Track Sheet
 
-Track Sheet is a full-stack coding-practice tracker for organizing problem
-sheets, recording progress, and sharing a public learning profile. It includes
-curated DSA and Backend tracks, private user-uploaded sheets, per-problem
-status, activity history, and account-based synchronization.
+Track Sheet is a full-stack coding-practice tracker for organizing and tracking
+problem sheets. Start with the built-in DSA and Backend sheets or upload your
+own, record progress and activity, and share a public learning profile.
+Personal sheets and progress are synchronized to the user's account.
 
 **Live app:** [tracksheet-rehnx.vercel.app](https://tracksheet-rehnx.vercel.app/)
 
